@@ -31,20 +31,7 @@
     <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" placeholder="Sua senha" required minlength="6">
     <button type="submit" class="btn primary full" id="login-button">Entrar no sistema <span>→</span></button><button type="button" id="reset-password" class="link-button">Esqueci minha senha</button>
     <p class="tiny">Os acessos são criados pela administração. Não existe cadastro público.</p>
-<details class="setup-guide"><summary>Primeiro acesso · configurar o Firebase</summary>
-<div class="setup-body">
-<p><b>1.</b> Publique este único HTML em <b>HTTPS</b> (Firebase Hosting ou outro servidor estático). Habilite <b>Authentication → E-mail/senha</b> e autorize o domínio em Authentication → Configurações.</p>
-<p><b>2.</b> No Firebase Console, em <b>Realtime Database → Regras</b>, publique as regras de segurança incluídas neste HTML antes de cadastrar ou importar qualquer nota. Atenção: confira se a instância não contém dados de outro sistema antes de substituir as regras.</p>
-<button type="button" class="btn soft" id="copy-rules">Copiar regras do Firebase</button>
-<p><b>3.</b> Em <b>Authentication → Usuários</b>, crie uma conta com e-mail e senha para cada professor. Copie cada UID. No Realtime Database → Dados, crie o nó <code>users</code> com cada UID como chave e os campos <code>name</code>, <code>email</code>, <code>role</code> e <code>key</code>. Somente Alberson terá <code>role: "coordinator"</code>; os outros terão <code>role: "teacher"</code>. Use as chaves abaixo (não são senhas):</p>
-<div class="setup-keys">Alberson: <code>alberson</code> · Adriana: <code>adriana</code> · Bruno: <code>bruno</code> · Hélio: <code>helio</code> · Wagner: <code>wagner</code> · Fábio: <code>fabio</code> · José Eduardo: <code>jose-eduardo</code></div>
-<p>Exemplo de perfil em <code>users/UID_DO_ALBERSON</code>:</p>
-<pre>{"name":"Prof. Alberson","email":"EMAIL_REAL","role":"coordinator","key":"alberson"}</pre>
-<p><b>4.</b> Entre como Alberson → <b>Professores</b> → <b>Importar grupos protegidos</b>. Use a senha de importação enviada separadamente com o arquivo. Após importar, defina quantas bancas cabem por dia, gere o sorteio sem conflito e distribua as avaliações.</p>
-<p class="tiny">Nenhuma conta é criada pelo HTML; senhas, credenciais administrativas e regras não são protegidas se colocadas somente no navegador. Não adicione chaves de conta de serviço a este arquivo.</p>
-</div></details>
-
-  </form>
+</form>
 </section>
 <div id="app-view" class="app-shell hidden">
   <aside class="sidebar"><div class="logo"><span>TCC</span><div>Sistema de Avaliação<small>Universidade do Vale do Paraíba</small></div></div><p class="side-heading">SISTEMA DE AVALIAÇÃO</p><nav id="desktop-nav" aria-label="Navegação principal"></nav><div class="side-foot"><div class="avatar" id="side-avatar">P</div><div><strong id="side-name">Professor</strong><small id="side-role">Avaliador</small></div><button type="button" id="logout" class="icon-btn" title="Sair" aria-label="Sair">↪</button></div></aside>
@@ -99,7 +86,7 @@
       ".read": "auth !== null && root.child('users').child(auth.uid).exists()",
       "$bid": {
         ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
-        ".validate": "newData.hasChildren(['groupId','advisorUid','advisorName','members','memberNames','startAt','durationMin','room','createdBy','createdAt']) && root.child('groups').child(newData.child('groupId').val()).exists() && newData.child('advisorUid').val() === root.child('groups').child(newData.child('groupId').val()).child('advisorUid').val() && newData.child('members').child(newData.child('advisorUid').val()).val() === true && newData.child('createdBy').val() === auth.uid && newData.child('durationMin').val() % 15 === 0 && newData.child('startAt').val() % 900000 === 0 && newData.child('startAt').val() > now - 60000",
+        ".validate": "newData.hasChildren(['groupId','advisorUid','advisorName','members','memberNames','startAt','durationMin','room','createdBy','createdAt']) && root.child('groups').child(newData.child('groupId').val()).exists() && newData.child('advisorUid').val() === root.child('groups').child(newData.child('groupId').val()).child('advisorUid').val() && newData.child('members').hasChildren() && newData.child('createdBy').val() === auth.uid && newData.child('durationMin').val() % 15 === 0 && newData.child('startAt').val() % 900000 === 0 && newData.child('startAt').val() > now - 60000",
         "groupId": {
           ".validate": "newData.isString()"
         },
@@ -306,7 +293,7 @@ const who = uid => state.users[uid]?.name || Object.values(state.boards).flatMap
 const dateStr = ms => new Date(ms).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'});
 const boardGrades = id => isCoord() ? (state.grades[id] || {}) : ({[state.user.uid]:state.grades[id]?.[state.user.uid] || {}});
 const notice = (message, error=false) => {let box=$('#toast');box.textContent=message;box.className=(error?'error ':'')+'show';clearTimeout(notice.timer);notice.timer=setTimeout(()=>box.className='',5500);};
-const fail = error => {console.error(error);notice(({ 'PERMISSION_DENIED':'Acesso negado. Confira seu perfil e as regras do Firebase.', 'auth/invalid-credential':'E-mail ou senha incorretos.', 'auth/too-many-requests':'Muitas tentativas. Tente novamente mais tarde.' })[error?.code] || error?.message || 'Não foi possível concluir a operação.', true);};
+const fail = error => {console.error(error);notice(({ 'PERMISSION_DENIED':'Acesso negado. Solicite a atualização de suas permissões à coordenação.', 'auth/invalid-credential':'E-mail ou senha incorretos.', 'auth/too-many-requests':'Muitas tentativas. Tente novamente mais tarde.' })[error?.code] || (/firebase/i.test(error?.message || '') ? 'Não foi possível concluir a operação. Verifique sua conexão ou procure a coordenação.' : error?.message) || 'Não foi possível concluir a operação.', true);};
 const activeBoards = () => Object.entries(state.boards).filter(([,b])=>isCoord() || b.members?.[state.user.uid]);
 const studentsOf = group => Object.entries(group?.students || {});
 const badge = (text,kind='gray')=>`<span class="chip ${kind}">${esc(text)}</span>`;
@@ -318,7 +305,7 @@ $('#login-form').addEventListener('submit', async e => {e.preventDefault();const
 $('#reset-password').addEventListener('click',async()=>{const email=$('#email').value.trim();if(!email){notice('Informe seu e-mail primeiro.',true);return;}try{await sendPasswordResetEmail(auth,email);notice('Se o e-mail estiver cadastrado, você receberá instruções.');}catch(e){fail(e);}});
 $('#logout').addEventListener('click',()=>signOut(auth).catch(fail));
 function clearListeners(){state.unsubs.forEach(unsub=>unsub());state.unsubs=[];state.teacherSubs.forEach(unsubs=>unsubs.forEach(fn=>fn()));state.teacherSubs.clear();}
-function listen(path, key, allow=true){if(!allow)return;state.unsubs.push(onValue(ref(db,path),snap=>{const next=snap.val()||{};if(state.plan.length && ['groups','users','boards','groupBoards','locks','roomLocks'].includes(key) && JSON.stringify(next)!==JSON.stringify(state[key])){state.plan=[];state.planMeta=null;state.planUnassigned=[];notice('A agenda foi alterada no Firebase. Gere novamente o sorteio para evitar conflitos.',true);}state[key]=next;if(key==='boards'&&!isCoord())syncTeacherSubs();render();},fail));}
+function listen(path, key, allow=true){if(!allow)return;state.unsubs.push(onValue(ref(db,path),snap=>{const next=snap.val()||{};if(state.plan.length && ['groups','users','boards','groupBoards','locks','roomLocks'].includes(key) && JSON.stringify(next)!==JSON.stringify(state[key])){state.plan=[];state.planMeta=null;state.planUnassigned=[];notice('A agenda foi atualizada. Gere novamente o sorteio para evitar conflitos.',true);}state[key]=next;if(key==='boards'&&!isCoord())syncTeacherSubs();render();},fail));}
 function syncTeacherSubs(){if(!state.user||isCoord())return;const uid=state.user.uid;for(const [bid,board] of activeBoards()){
  if(state.teacherSubs.has(bid))continue;
  const subs=[onValue(ref(db,`grades/${bid}/${uid}`),s=>{state.grades[bid]={[uid]:s.val()||{}};render();},fail),onValue(ref(db,`seals/${bid}`),s=>{state.seals[bid]=s.val()||null;render();},fail)];state.teacherSubs.set(bid,subs);
@@ -350,7 +337,7 @@ function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,
  ${isCoord() && !Object.keys(state.groups).length ? '<div class="notice">Nenhum grupo cadastrado. Acesse Professores e importe os grupos da planilha usando a senha de importação fornecida separadamente.</div>' : ''}<section class="card">${heading('Próximas bancas',isCoord()?'Acompanhe as bancas criadas e o andamento das notas.':'Somente as bancas das quais você participa.',`<button class="btn soft" data-route="bancas">Ver todas →</button>`)}${boardList(boards.slice().sort((a,b)=>a[1].startAt-b[1].startAt).slice(0,5))}</section>`;
 }
 function boardStatus(bid,b){if(state.seals[bid])return badge('Concluída','green');if(!isCoord())return badge('Agendada','blue');const g=groupOf(b);if(g&&situacao(b,g,boardGrades(bid),state.deliveries[bid]).pronta)return badge('Notas completas','green');return badge('Em avaliação','orange');}
-function boardList(boards){if(!boards.length)return empty('Nenhuma banca por aqui','Crie uma banca ou aguarde a atribuição da coordenação.');return `<div class="group-list">${boards.map(([id,b])=>{const g=groupOf(b);return `<article class="group-card"><div><div class="row">${badge(g?.className||'TCC','blue')}${boardStatus(id,b)}<span class="muted tiny">${dateStr(b.startAt)} · ${esc(b.room)}</span></div><h4>${esc(g?.name||b.groupId)} — ${esc(g?.title||'')}</h4><p>Orientador: ${esc(b.advisorName)} · ${Object.keys(b.members||{}).length} avaliadores · ${studentsOf(g).length} alunos</p></div><button class="btn soft" data-open-board="${esc(id)}">${isCoord()?'Detalhes':'Avaliar'} →</button></article>`;}).join('')}</div>`;}
+function boardList(boards){if(!boards.length)return empty('Nenhuma banca por aqui','Crie uma banca ou aguarde a atribuição da coordenação.');return `<div class="group-list">${boards.map(([id,b])=>{const g=groupOf(b);return `<article class="group-card"><div><div class="row">${badge(g?.className||'TCC','blue')}${boardStatus(id,b)}<span class="muted tiny">${dateStr(b.startAt)} · ${esc(b.room)}</span></div><h4>${esc(g?.name||b.groupId)} — ${esc(g?.title||'')}</h4><p>Orientador: ${esc(b.advisorName)} ${b.members?.[b.advisorUid]?'(participa da banca)':'(não participa da banca)'} · ${Object.keys(b.members||{}).length} avaliadores · ${studentsOf(g).length} alunos</p></div><button class="btn soft" data-open-board="${esc(id)}">${isCoord()?'Detalhes':'Avaliar'} →</button></article>`;}).join('')}</div>`;}
 function boardsView(){let arr=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);
  if(state.filter!=='todas')arr=arr.filter(([,b])=>groupOf(b)?.className===state.filter);
  const all=Object.values(state.groups);return `${heading(isCoord()?'Agenda de bancas':'Suas bancas',`${arr.length} banca(s) encontrada(s).`,isCoord()?'<button class="btn primary" data-route="sortear">+ Nova banca</button>':'')}
@@ -366,42 +353,49 @@ function lotteryView(){
  const classes=[...new Set(pending.map(g=>g.className))].sort();
  const meta=state.planMeta, unassigned=state.planUnassigned;
  const days=state.plan.length?Object.entries(state.plan.reduce((acc,b)=>{const k=localDayKey(b.startAt);acc[k]=(acc[k]||0)+1;return acc;},{})).sort(([a],[b])=>a.localeCompare(b)):[];
- return `<div class="notice">O orientador é integrante obrigatório de todas as bancas sorteadas, mesmo quando é o coordenador. A quantidade por dia inclui bancas que já estiverem agendadas. Professores e salas não podem ter horários sobrepostos.</div>
- <div class="card">${heading('Montagem manual','Escolha um grupo, horário, sala e professores.')}<form id="manual-form" class="form-grid">
+ const advisorCount=state.plan.filter(b=>!!b.members[b.advisorUid]).length;
+ return `<div class="notice">O orientador tem prioridade na composição, mas a participação não é obrigatória. As bancas podem ocorrer simultaneamente sem conflito de professores ou salas. O limite diário inclui as bancas já agendadas.</div>
+ <div class="card">${heading('Montagem manual','Escolha o grupo, a data, a sala e 2 ou 3 professores.')}<form id="manual-form" class="form-grid">
  <div class="field wide"><label for="manual-group">Grupo / projeto</label><select id="manual-group" name="groupId" required><option value="">Selecione um grupo</option>${opts(pending.map(g=>[g.id,`${g.name} — ${g.title}`]))}</select></div>
  <div class="field"><label>Data e horário</label><input type="datetime-local" name="date" step="900" required></div><div class="field"><label>Sala / link</label><input name="room" maxlength="80" placeholder="Sala 01" required></div>
- <div class="field"><label>Duração</label><select name="duration">${opts([['30','30 minutos'],['45','45 minutos'],['60','60 minutos'],['90','90 minutos']],'60')}</select></div><div class="field"><label>Professores na banca</label><select name="size">${opts([['2','2 (orientador + 1)'],['3','3 (orientador + 2)']],'3')}</select></div>
- <div class="wide" id="manual-members"><p class="muted tiny">Selecione um grupo para escolher os professores.</p></div><div class="wide row"><button class="btn primary" type="submit" ${!pending.length?'disabled':''}>Criar banca</button></div></form></div>
- <div class="card">${heading('Sorteio automático de todas as bancas','Escolha a capacidade diária e o período. O sistema organiza todos os grupos selecionados, considerando os agendamentos já existentes.')}
+ <div class="field"><label>Duração</label><select name="duration">${opts([['30','30 minutos'],['45','45 minutos'],['60','60 minutos'],['90','90 minutos']],'60')}</select></div>
+ <div class="field"><label>Professores na banca</label><select name="size">${opts([['2','2 professores'],['3','3 professores']],'3')}</select></div>
+ <div class="wide" id="manual-members"><p class="muted tiny">Selecione um grupo para escolher os avaliadores.</p></div><div class="wide row"><button class="btn primary" type="submit" ${!pending.length?'disabled':''}>Criar banca</button></div></form></div>
+ <div class="card">${heading('Sorteio automático','Configure a capacidade diária e o período. O sistema priorizará o orientador e organizará todas as bancas possíveis sem conflitos.')}
  <form id="lottery-form" class="form-grid">
  <div class="field"><label for="lot-class">Turmas incluídas</label><select id="lot-class" name="className" required>${opts([['todas','Todas as turmas'],...classes.map(c=>[c,`Turma ${c}`])],'todas')}</select></div>
- <div class="field"><label for="lot-count">Máximo de bancas por dia</label><input id="lot-count" type="number" name="perDay" min="1" max="200" step="1" value="6" required><small>Considera também as bancas existentes nos mesmos dias.</small></div>
+ <div class="field"><label for="lot-count">Máximo de bancas por dia</label><input id="lot-count" type="number" name="perDay" min="1" max="200" step="1" value="6" required><small>Inclui as bancas existentes nos mesmos dias.</small></div>
  <div class="field"><label for="lot-date">Primeiro dia do sorteio</label><input id="lot-date" type="date" name="date" required></div>
- <div class="field"><label for="lot-days">Dias letivos disponíveis</label><input id="lot-days" name="maxDays" type="number" min="1" max="120" step="1" value="30" required><small>O sorteio continua nos dias seguintes até distribuir os grupos ou atingir este limite.</small></div>
+ <div class="field"><label for="lot-days">Dias letivos disponíveis</label><input id="lot-days" name="maxDays" type="number" min="1" max="120" step="1" value="30" required><small>Distribui os grupos pelos dias disponíveis.</small></div>
  <div class="field"><label for="lot-start">Início das atividades</label><input id="lot-start" name="dayStart" type="time" step="900" value="08:00" required></div>
  <div class="field"><label for="lot-end">Término das atividades</label><input id="lot-end" name="dayEnd" type="time" step="900" value="22:00" required></div>
  <div class="field"><label>Duração de cada banca</label><select name="duration">${opts([['30','30 minutos'],['45','45 minutos'],['60','60 minutos'],['90','90 minutos']],'60')}</select></div>
  <div class="field"><label>Salas simultâneas</label><select name="rooms">${opts([['1','1 sala'],['2','2 salas'],['3','3 salas'],['4','4 salas'],['5','5 salas'],['6','6 salas']],'2')}</select></div>
- <div class="field"><label>Professores por banca</label><select name="size">${opts([['2','2 (incluindo orientador)'],['3','3 (incluindo orientador)']],'3')}</select></div>
+ <div class="field"><label>Professores por banca</label><select name="size">${opts([['2','2 professores'],['3','3 professores']],'3')}</select></div>
  <div class="field"><label>Identificação das salas</label><input name="roomPrefix" value="Sala" maxlength="40" required></div>
  <label class="field wide" style="flex-direction:row;align-items:center;gap:10px"><input type="checkbox" name="skipWeekends" checked style="min-height:auto;width:18px;height:18px">Não sortear aos sábados e domingos</label>
- <div class="wide row"><button class="btn dark" type="submit" ${!pending.length?'disabled':''}>Realizar sorteio de todas as bancas</button><span class="muted tiny">${pending.length} grupos não agendados · ${teachers.length} professores cadastrados</span></div>
+ <div class="wide row"><button class="btn dark" type="submit" ${!pending.length?'disabled':''}>Gerar escala automática</button><span class="muted tiny">${pending.length} grupos pendentes · ${teachers.length} professores cadastrados</span></div>
  </form>
- ${meta?`<div class="schedule-summary"><div><strong>${state.plan.length}</strong><span>Bancas encaixadas</span></div><div><strong>${days.length}</strong><span>Dias com novas bancas</span></div><div><strong>${unassigned.length}</strong><span>Grupos sem horário</span></div></div>
+ ${meta?`<div class="schedule-summary"><div><strong>${state.plan.length}</strong><span>Bancas organizadas</span></div><div><strong>${advisorCount}</strong><span>Com orientador presente</span></div><div><strong>${unassigned.length}</strong><span>Grupos sem horário</span></div></div>
  ${days.length?`<div class="schedule-days">${days.map(([day,n])=>`<span><b>${esc(day.split('-').reverse().join('/'))}</b> · ${n} nova(s)</span>`).join('')}</div>`:''}
- ${unassigned.length?`<div class="schedule-warning"><h4>A escala ainda não contempla todos os grupos</h4><p class="muted tiny">O orientador não foi substituído. Amplie os dias, horários, professores disponíveis ou reduza o tamanho da banca e sorteie novamente.</p><ul>${unassigned.map(item=>`<li>${esc(item.name)} — ${esc(item.reason)}</li>`).join('')}</ul></div>`:'<div class="notice good">Todos os grupos selecionados foram encaixados com os respectivos orientadores, sem sobreposição de professores ou salas.</div>'}
- ${state.plan.length?`<div class="table-scroll"><table class="data-table"><thead><tr><th>Data e horário</th><th>Grupo / turma</th><th>Orientador</th><th>Demais avaliadores</th><th>Sala</th></tr></thead><tbody>${state.plan.slice().sort((a,b)=>a.startAt-b.startAt||a.room.localeCompare(b.room)).map(b=>`<tr><td><b>${dateStr(b.startAt)}</b></td><td>${esc(state.groups[b.groupId]?.name)}<br><small>${esc(state.groups[b.groupId]?.className)}</small></td><td>${esc(b.advisorName)}</td><td>${Object.keys(b.members).filter(uid=>uid!==b.advisorUid).map(uid=>esc(who(uid))).join(' · ')}</td><td>${esc(b.room)}</td></tr>`).join('')}</tbody></table></div>`:''}
- <div class="schedule-plan-actions"><button class="btn primary" data-commit-plan="1" ${unassigned.length||!state.plan.length?'disabled':''}>Confirmar ${state.plan.length} bancas no Firebase</button><button class="btn soft" data-clear-plan="1">Descartar prévia</button></div>
- <p class="muted tiny">A escala é uma prévia. Nenhuma banca será gravada antes da confirmação. Se o banco mudar, gere um novo sorteio. Regras atualizadas do Firebase são necessárias para reservar também as salas.</p>`:''}</div>`;
+ ${unassigned.length?`<div class="schedule-warning"><h4>Há grupos sem horário</h4><p class="muted tiny">Amplie os dias ou horários, aumente as salas ou reduza o tamanho das bancas para tentar novamente.</p><ul>${unassigned.map(item=>`<li>${esc(item.name)} — ${esc(item.reason)}</li>`).join('')}</ul></div>`:`<div class="notice good">Todos os grupos selecionados foram distribuídos. ${advisorCount} de ${state.plan.length} bancas terão o orientador presente, sem conflitos de professores ou salas.</div>`}
+ ${state.plan.length?`<div class="table-scroll"><table class="data-table"><thead><tr><th>Data e horário</th><th>Grupo / turma</th><th>Orientador</th><th>Participação</th><th>Avaliadores</th><th>Sala</th></tr></thead><tbody>${state.plan.slice().sort((a,b)=>a.startAt-b.startAt||a.room.localeCompare(b.room)).map(b=>`<tr><td><b>${dateStr(b.startAt)}</b></td><td>${esc(state.groups[b.groupId]?.name)}<br><small>${esc(state.groups[b.groupId]?.className)}</small></td><td>${esc(b.advisorName)}</td><td>${b.members[b.advisorUid]?badge('Participa','green'):badge('Não participa','orange')}</td><td>${Object.keys(b.members).map(uid=>esc(who(uid))).join(' · ')}</td><td>${esc(b.room)}</td></tr>`).join('')}</tbody></table></div>`:''}
+ <div class="schedule-plan-actions"><button class="btn primary" data-commit-plan="1" ${unassigned.length||!state.plan.length?'disabled':''}>Confirmar ${state.plan.length} bancas</button><button class="btn soft" data-clear-plan="1">Descartar prévia</button></div>
+ <p class="muted tiny">Revise a escala antes de confirmar. Nenhuma banca será salva antes da confirmação. Se houver atualização da agenda, gere uma nova prévia.</p>`:''}</div>`;
 }
-
-function manualMemberPicker(){const id=$('#manual-group')?.value;const g=state.groups[id],p=$('#manual-members');if(!p)return;if(!g){p.innerHTML='<p class="muted tiny">Selecione um grupo para escolher os professores.</p>';return;}
- const teachers=Object.entries(state.users).filter(([uid,u])=>uid!==g.advisorUid&&['coordinator','teacher'].includes(u.role));p.innerHTML=`<p class="muted tiny">Orientador obrigatório: <b>${esc(who(g.advisorUid))}</b>. Marque mais 1 ou 2 professores de acordo com o total escolhido.</p><div class="check-list">${teachers.map(([uid,u])=>`<label class="check-tag"><input type="checkbox" name="evaluator" value="${esc(uid)}">${esc(u.name)}</label>`).join('')}</div>`;
+function manualMemberPicker(){
+ const id=$('#manual-group')?.value,g=state.groups[id],p=$('#manual-members');
+ if(!p)return;
+ if(!g){p.innerHTML='<p class="muted tiny">Selecione um grupo para escolher os professores.</p>';return;}
+ const previouslySelected=new Set([...p.querySelectorAll('input[name="evaluator"]:checked')].map(input=>input.value));
+ const teachers=Object.entries(state.users).filter(([,u])=>['coordinator','teacher'].includes(u.role));
+ const advisorIsTeacher=teachers.some(([uid])=>uid===g.advisorUid);
+ p.innerHTML=`<p class="muted tiny">Orientador: <b>${esc(who(g.advisorUid))}</b>. Selecione 2 ou 3 avaliadores, preferencialmente incluindo o orientador. A ausência dele não impede a criação da banca.</p><div class="check-list">${teachers.map(([uid,u])=>`<label class="check-tag"><input type="checkbox" name="evaluator" value="${esc(uid)}" ${previouslySelected.has(uid)||(uid===g.advisorUid&&!previouslySelected.size)?'checked':''}>${esc(u.name)} ${uid===g.advisorUid?'<small>· orientador</small>':''}</label>`).join('')}</div>${!advisorIsTeacher?'<p class="muted tiny">O orientador não está entre os professores cadastrados e não poderá ser incluído nesta banca.</p>':''}`;
 }
 function gradeView(){let id=state.selectedBoard;let board=state.boards[id];if(!board||(!isCoord()&&!board.members?.[state.user.uid])){const first=activeBoards()[0];id=first?.[0];board=first?.[1];state.selectedBoard=id||'';}
  if(!board)return empty('Nenhuma banca atribuída','Você verá sua avaliação quando o coordenador criar uma banca.');const g=groupOf(board);if(!g)return empty('Grupo ainda não importado');const sealed=!!state.seals[id];const selfMember=!!board.members[state.user.uid];const own=state.grades[id]?.[state.user.uid]||{};
  return `<div class="row space">${heading(g.name,g.title)}<select class="filter" id="board-switch">${opts(activeBoards().map(([bid,b])=>[bid,`${groupOf(b)?.name||bid} · ${dateStr(b.startAt)}`]),id)}</select></div>
- <div class="card"><div class="row space"><div class="board-details"><div><b>Orientador:</b> ${esc(board.advisorName)}</div><div><b>Horário:</b> ${dateStr(board.startAt)} · ${esc(board.room)} · ${board.durationMin} min</div><div><b>Banca:</b> ${Object.keys(board.members).map(uid=>esc(board.memberNames?.[uid]||who(uid))).join(', ')}</div></div>${badge(sealed?'Concluída':'Em avaliação',sealed?'green':'orange')}</div></div>
+ <div class="card"><div class="row space"><div class="board-details"><div><b>Orientador:</b> ${esc(board.advisorName)} · ${board.members?.[board.advisorUid]?"participa da banca":"não participa da banca"}</div><div><b>Horário:</b> ${dateStr(board.startAt)} · ${esc(board.room)} · ${board.durationMin} min</div><div><b>Banca:</b> ${Object.keys(board.members).map(uid=>esc(board.memberNames?.[uid]||who(uid))).join(', ')}</div></div>${badge(sealed?'Concluída':'Em avaliação',sealed?'green':'orange')}</div></div>
  ${!selfMember?'<div class="notice">Você pode consultar esta banca, mas não está entre seus avaliadores.</div>':sealed?'<div class="notice good">Banca encerrada. As notas estão bloqueadas para edição.</div>':'<div class="notice">As notas são individuais por aluno. Apenas você e o coordenador podem acessar as avaliações que você envia.</div>'}
  ${selfMember?studentsOf(g).map(([sid,name])=>`<form class="student" data-grade-form="${esc(id)}" data-student="${esc(sid)}"><h4>${esc(name)}</h4><p>${esc(g.name)} · ${esc(g.title)}</p><div class="grade-grid">${CRITERIOS.map(([key,label])=>`<div class="field"><label for="${esc(id)}-${esc(sid)}-${key}">${label}</label><input id="${esc(id)}-${esc(sid)}-${key}" name="${key}" type="number" inputmode="decimal" min="0" max="10" step="0.1" required ${sealed?'disabled':''} value="${own[sid]?.[key]??''}" placeholder="0 a 10"></div>`).join('')}</div><div class="grade-foot"><span class="muted tiny">Média deste avaliador: <strong>${mediaAvaliador(own[sid])===null?'—':fmt(mediaAvaliador(own[sid]))}</strong></span>${!sealed?'<button class="btn primary" type="submit">Salvar notas</button>':''}</div></form>`).join(''):empty('Apenas os avaliadores podem lançar notas nesta banca')}`;
 }
@@ -413,13 +407,22 @@ function reportsView(){if(!isCoord())return empty('Acesso exclusivo da coordena�
  ${!allReady?'<div class="notice">O relatório consolidado só será habilitado quando todas as bancas do filtro estiverem concluídas. É possível emitir individualmente o relatório de uma banca concluída.</div>':'<div class="notice good">Todas as bancas do filtro estão concluídas e podem ser exportadas.</div>'}
  ${filtered.length?filtered.map(([id,b])=>{const g=groupOf(b);const s=g?situacao(b,g,boardGrades(id),state.deliveries[id]):{pendencias:[]};const sealed=!!state.seals[id];return `<article class="group-card"><div><div class="row">${badge(g?.className||'', 'blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||id)} — ${esc(g?.title||'')}</h4><p>${esc(b.advisorName)} · ${s.pendencias.length} lançamento(s) pendente(s) · ${dateStr(b.startAt)}</p></div><div class="row">${!sealed?`<button class="btn soft" data-seal="${esc(id)}" ${!s.pronta?'disabled':''}>Concluir banca</button>`:''}<button class="btn primary" data-print-one="${esc(id)}" ${!sealed?'disabled':''}>Relatório / PDF</button></div></article>`;}).join(''):empty('Nenhuma banca encontrada')}`;
 }
-function teachersView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');return `${heading('Equipe de professores','Crie contas e perfis de acesso no Firebase Console; não existe cadastro público.')}<div class="grid">${stats('Professores',Object.keys(state.users).length,'04')}${stats('Coordenador',Object.values(state.users).filter(u=>u.role==='coordinator').length,'05')}</div><div class="card">${Object.entries(state.users).map(([id,u])=>`<div class="group-card"><div><h4>${esc(u.name)}</h4><p>${esc(u.email||'')} · ${u.role==='coordinator'?'Coordenador e avaliador':'Professor avaliador'}</p></div>${badge(u.role==='coordinator'?'Coordenação':'Avaliador',u.role==='coordinator'?'blue':'gray')}</div>`).join('')}</div><div class="notice">Cadastre as sete contas em Firebase Authentication e associe os respectivos UIDs em Realtime Database → users. O papel de coordenador é definido pelas regras do banco, nunca pela interface.</div><div class="card">${heading('Importar grupos da planilha','44 grupos e 130 alunos incorporados de forma criptografada neste HTML; os dados só são enviados ao Firebase após a importação pelo coordenador.')}<p class="muted tiny">Primeiro cadastre os professores e informe o campo key de cada perfil (alberson, adriana, bruno, helio, wagner, fabio, jose-eduardo). Grupos existentes não serão alterados.</p><button class="btn primary" data-import-roster="1" type="button">Importar grupos protegidos →</button></div>`;}
+function teachersView(){
+ if(!isCoord())return empty('Acesso exclusivo da coordenação');
+ return `${heading('Equipe de professores','Professores autorizados a participar das bancas e registrar avaliações.')}
+ <div class="grid">${stats('Professores',Object.keys(state.users).length,'04')}${stats('Coordenador',Object.values(state.users).filter(u=>u.role==='coordinator').length,'05')}</div>
+ <div class="card">${Object.entries(state.users).map(([id,u])=>`<div class="group-card"><div><h4>${esc(u.name)}</h4><p>${esc(u.email||'')} · ${u.role==='coordinator'?'Coordenador e avaliador':'Professor avaliador'}</p></div>${badge(u.role==='coordinator'?'Coordenação':'Avaliador',u.role==='coordinator'?'blue':'gray')}</div>`).join('')}</div>
+ <div class="card">${heading('Grupos e alunos','Importe a lista de grupos da planilha. Grupos já cadastrados serão preservados.')}
+ <button class="btn primary" data-import-roster="1" type="button">Importar grupos</button></div>
+ <div class="card">${heading('Administração de acesso','A publicação da política de permissões é realizada pelo administrador do ambiente.')}
+ <button class="btn soft" data-copy-policy="1" type="button">Copiar política de acesso</button></div>`;
+}
 function validScheduleStart(start){return Number.isFinite(start)&&start>Date.now()-60000&&new Date(start).getMinutes()%15===0&&new Date(start).getSeconds()===0;}
 function busy(uid,candidate,planned=[]){const occupied=Object.values(state.boards).filter(b=>b.members?.[uid]);return [...occupied,...planned.filter(b=>b.members?.[uid])].some(b=>intervalosConflitam(b,candidate))||chavesOcupacao(candidate,uid).some(key=>state.locks?.[key.split('/')[0]]?.[uid]);}
 function roomKey(room){return Array.from(new TextEncoder().encode(String(room).trim().toLocaleLowerCase('pt-BR'))).map(byte=>byte.toString(16).padStart(2,'0')).join('');}
 function roomLocksFor(board){return chavesOcupacao(board,roomKey(board.room));}
 function roomBusy(room,candidate,planned=[]){const normalized=String(room).trim().toLocaleLowerCase('pt-BR');return [...Object.values(state.boards),...planned].some(b=>b.room?.trim().toLocaleLowerCase('pt-BR')===normalized&&intervalosConflitam(b,candidate))||chavesOcupacao(candidate,roomKey(room)).some(key=>state.roomLocks?.[key.split('/')[0]]?.[roomKey(room)]);}
-function makeBoard(group,startAt,durationMin,room,extra){const members=Object.fromEntries([group.advisorUid,...extra].map(uid=>[uid,true]));return {groupId:group.id,advisorUid:group.advisorUid,advisorName:who(group.advisorUid),members,memberNames:Object.fromEntries(Object.keys(members).map(uid=>[uid,who(uid)])),startAt,durationMin,room,createdBy:state.user.uid,createdAt:Date.now()};}
+function makeBoard(group,startAt,durationMin,room,evaluators){const members=Object.fromEntries(evaluators.map(uid=>[uid,true]));return {groupId:group.id,advisorUid:group.advisorUid,advisorName:who(group.advisorUid),members,memberNames:Object.fromEntries(Object.keys(members).map(uid=>[uid,who(uid)])),startAt,durationMin,room,createdBy:state.user.uid,createdAt:Date.now()};}
 async function createBoards(plan){
  if(!isCoord())throw Error('Apenas o coordenador pode montar bancas.');if(!plan.length)throw Error('Nenhuma banca para gravar.');
  if(plan===state.plan&&state.planUnassigned.length)throw Error('Existem grupos sem encaixe. Ajuste a agenda e refaça o sorteio antes de confirmar.');
@@ -430,7 +433,7 @@ async function createBoards(plan){
   if(!validScheduleStart(b.startAt))throw Error('A data deve ser futura e em intervalos de 15 minutos.');
   if(![30,45,60,90].includes(b.durationMin))throw Error('Duração não permitida.');
   const members=Object.keys(b.members);
-  if(![2,3].includes(members.length)||!b.members[b.advisorUid]||b.advisorUid!==state.groups[b.groupId].advisorUid||members.some(uid=>!state.users[uid]))throw Error(`Composição inválida para ${b.groupId}.`);
+  if(![2,3].includes(members.length)||b.advisorUid!==state.groups[b.groupId].advisorUid||members.some(uid=>!state.users[uid]||!['coordinator','teacher'].includes(state.users[uid].role)))throw Error(`Composição inválida para ${b.groupId}.`);
   for(const uid of members){if(busy(uid,b,planned))throw Error(`${who(uid)} tem uma banca sobreposta ao horário de ${b.groupId}.`);}
   if(roomBusy(b.room,b,planned))throw Error(`A sala ${b.room} já está ocupada nesse horário.`);
   if(plan===state.plan&&state.planMeta){
@@ -469,7 +472,7 @@ function makeLottery(data){
  const teachers=Object.entries(state.users).filter(([,u])=>['coordinator','teacher'].includes(u.role)).map(([uid])=>uid);
  if(teachers.length<size)throw Error(`São necessários ao menos ${size} professores cadastrados. Atualmente: ${teachers.length}.`);
  const dates=[];
- for(let d=0;dates.length<maxDays && d<180;d++){
+ for(let d=0;dates.length<maxDays&&d<180;d++){
   const date=new Date(first);date.setDate(first.getDate()+d);date.setHours(0,0,0,0);
   if(skipWeekends&&[0,6].includes(date.getDay()))continue;
   dates.push(date);
@@ -477,13 +480,12 @@ function makeLottery(data){
  const roomsList=Array.from({length:rooms},(_,i)=>`${prefix} ${String(i+1).padStart(2,'0')}`);
  const existing=Object.values(state.boards);
  const assignedToDay=Object.fromEntries(dates.map(day=>[localDayKey(day.getTime()),existing.filter(b=>localDayKey(b.startAt)===localDayKey(day.getTime())).length]));
- const missing=pending.filter(g=>!teachers.includes(g.advisorUid));
- const ready=pending.filter(g=>teachers.includes(g.advisorUid));
- const advisorDemand={};for(const g of ready)advisorDemand[g.advisorUid]=(advisorDemand[g.advisorUid]||0)+1;
+ const advisorDemand={};for(const g of pending)advisorDemand[g.advisorUid]=(advisorDemand[g.advisorUid]||0)+1;
  const availableByAdvisor={};
  for(const uid of Object.keys(advisorDemand)){
   let count=0;
-  for(const day of dates){if(assignedToDay[localDayKey(day.getTime())]>=perDay)continue;
+  if(teachers.includes(uid))for(const day of dates){
+   if(assignedToDay[localDayKey(day.getTime())]>=perDay)continue;
    for(let minute=startMinutes;minute+durationMin<=endMinutes;minute+=15){
     const at=new Date(day);at.setHours(0,minute,0,0);
     if(validScheduleStart(at.getTime())&&!busy(uid,{startAt:at.getTime(),durationMin}))count++;
@@ -491,13 +493,13 @@ function makeLottery(data){
   }
   availableByAdvisor[uid]=count;
  }
- // Várias tentativas com desempates aleatórios para reduzir o efeito de escolhas gananciosas.
- // Orientador é sempre obrigatório: nunca substituí-lo por um professor aleatório.
+ // Best-effort multi-pass search. First maximize scheduled groups, then advisor attendance.
  let best=null;
- const attempts=Math.min(30,Math.max(8,Math.ceil(ready.length/2)));
+ const attempts=Math.min(60,Math.max(16,Math.ceil(pending.length*1.1)));
  for(let attempt=0;attempt<attempts;attempt++){
-  const plan=[],remaining=embaralharSeguro(ready);
-  const advisorRemaining={...advisorDemand},teacherLoad=Object.fromEntries(teachers.map(uid=>[uid,existing.filter(b=>b.members?.[uid]).length]));
+  const plan=[],remaining=embaralharSeguro(pending);
+  const advisorRemaining={...advisorDemand};
+  const teacherLoad=Object.fromEntries(teachers.map(uid=>[uid,existing.filter(b=>b.members?.[uid]).length]));
   const dayCounts={...assignedToDay};
   for(const day of dates){
    const dayKey=localDayKey(day.getTime());
@@ -509,49 +511,54 @@ function makeLottery(data){
     for(const room of roomsList){
      if(!remaining.length||dayCounts[dayKey]>=perDay)break;
      if(roomBusy(room,candidate,plan))continue;
-     const feasible=[];
-     for(let i=0;i<remaining.length;i++){
-      const g=remaining[i];
-      if(busy(g.advisorUid,candidate,plan))continue;
-      const free=teachers.filter(uid=>uid!==g.advisorUid&&!busy(uid,candidate,plan));
-      if(free.length<size-1)continue;
-      feasible.push({g,i,free});
-     }
-     if(!feasible.length)continue;
+     const free=teachers.filter(uid=>!busy(uid,candidate,plan));
+     if(free.length<size)continue;
+     const feasible=remaining.map((g,i)=>({g,i,withAdvisor:free.includes(g.advisorUid)}));
+     // Give groups with scarce advisor time priority when it is possible to include them.
      feasible.sort((a,b)=>{
-      const pa=advisorRemaining[a.g.advisorUid]/Math.max(1,availableByAdvisor[a.g.advisorUid]);
-      const pb=advisorRemaining[b.g.advisorUid]/Math.max(1,availableByAdvisor[b.g.advisorUid]);
-      return pb-pa || advisorRemaining[b.g.advisorUid]-advisorRemaining[a.g.advisorUid];
+      const scarcity=g=>(advisorRemaining[g.advisorUid]||0)/Math.max(1,availableByAdvisor[g.advisorUid]||0);
+      return Number(b.withAdvisor)-Number(a.withAdvisor)||
+       (b.withAdvisor?scarcity(b.g)-scarcity(a.g):0)||
+       advisorRemaining[b.g.advisorUid]-advisorRemaining[a.g.advisorUid];
      });
-     const chosen=feasible[0];
-     const feasibleAdvisors=new Set(feasible.map(x=>x.g.advisorUid));
-     const extras=embaralharSeguro(chosen.free).sort((a,b)=>
-      Number(feasibleAdvisors.has(a))-Number(feasibleAdvisors.has(b)) ||
-      (advisorRemaining[a]||0)-(advisorRemaining[b]||0) || teacherLoad[a]-teacherLoad[b]
-     ).slice(0,size-1);
-     const board=makeBoard(chosen.g,startAt,durationMin,room,extras);
+     const pool=feasible.slice(0,Math.min(attempt%4===0?4:2,feasible.length));
+     const chosen=embaralharSeguro(pool)[0];
+     // Never schedule a teacher twice in the same time slot; protect other groups' advisors
+     // where possible while balancing overall workloads.
+     const remainingAdvisors=new Set(remaining.filter(g=>g.id!==chosen.g.id).map(g=>g.advisorUid));
+     const order=embaralharSeguro(free).sort((a,b)=>
+      Number(remainingAdvisors.has(a))-Number(remainingAdvisors.has(b)) ||
+      teacherLoad[a]-teacherLoad[b] || (advisorRemaining[a]||0)-(advisorRemaining[b]||0)
+     );
+     const members=chosen.withAdvisor?
+       [chosen.g.advisorUid,...order.filter(uid=>uid!==chosen.g.advisorUid).slice(0,size-1)]:
+       order.slice(0,size);
+     const board=makeBoard(chosen.g,startAt,durationMin,room,members);
      plan.push(board);remaining.splice(chosen.i,1);advisorRemaining[chosen.g.advisorUid]--;
-     for(const uid of Object.keys(board.members))teacherLoad[uid]++;
+     for(const uid of members)teacherLoad[uid]++;
      dayCounts[dayKey]++;
     }
    }
   }
-  if(!best||plan.length>best.plan.length || (plan.length===best.plan.length&&Object.values(dayCounts).filter(n=>n>0).length<best.usedDays)){
-   best={plan,remaining,usedDays:Object.values(dayCounts).filter(n=>n>0).length};
+  const advisorCount=plan.filter(b=>!!b.members[b.advisorUid]).length;
+  const usedDays=dates.filter(day=>plan.some(b=>localDayKey(b.startAt)===localDayKey(day.getTime()))).length;
+  if(!best||plan.length>best.plan.length||
+    (plan.length===best.plan.length&&advisorCount>best.advisorCount)||
+    (plan.length===best.plan.length&&advisorCount===best.advisorCount&&usedDays<best.usedDays)){
+    best={plan,remaining,advisorCount,usedDays};
   }
-  if(plan.length===ready.length)break;
+  if(best.plan.length===pending.length&&best.advisorCount===pending.length)break;
  }
- const unassigned=[...missing.map(g=>({name:g.name,reason:'orientador sem perfil de professor cadastrado'})),...best.remaining.map(g=>({name:g.name,reason:`sem horário com ${who(g.advisorUid)} e ${size-1} avaliador(es) disponíveis na janela escolhida`}))];
+ const unassigned=best.remaining.map(g=>({name:g.name,reason:`sem ${size} professores livres e sala disponível no período escolhido`}));
  const config={className,perDay,maxDays,size,rooms,durationMin,prefix,skipWeekends,dateRaw,startRaw,endRaw};
  return {plan:best.plan,unassigned,config};
 }
-
 async function saveGrade(form){const bid=form.dataset.gradeForm,sid=form.dataset.student;const board=state.boards[bid];if(!board?.members?.[state.user.uid]||state.seals[bid])throw Error('Banca não disponível para avaliação.');const entries=new FormData(form);if(CRITERIOS.some(([key])=>!String(entries.get(key)??'').trim()))throw Error('Preencha todos os critérios.');const scores=Object.fromEntries(CRITERIOS.map(([key])=>[key,Number(String(entries.get(key)).replace(',','.'))]));if(!CRITERIOS.every(([k])=>notaValida(scores[k])))throw Error('Informe quatro notas entre 0 e 10.');await set(ref(db,`grades/${bid}/${state.user.uid}/${sid}`),scores);notice(`Notas de ${state.groups[board.groupId].students[sid]} salvas.`);}
 async function saveDelivery(form){if(!isCoord())throw Error('Acesso restrito.');const bid=form.dataset.deliveryForm,sid=form.dataset.student;if(state.seals[bid])throw Error('Banca já concluída.');const raw=new FormData(form).get('delivery');if(!String(raw).trim())throw Error('Digite uma nota.');const value=Number(String(raw).replace(',','.'));if(!notaValida(value))throw Error('Nota deve estar entre 0 e 10.');await set(ref(db,`deliveries/${bid}/${sid}`),value);notice('Nota de entregas salva.');}
 async function closeBoard(bid){if(!isCoord())throw Error('Acesso restrito.');const b=state.boards[bid],g=groupOf(b);if(!b||!g)throw Error('Banca ou grupo inexistente.');const s=situacao(b,g,boardGrades(bid),state.deliveries[bid]);if(!s.pronta)throw Error(`Não é possível concluir: ${s.pendencias.length} lançamento(s) pendente(s).`);if(state.seals[bid])return;const confirmed=confirm(`Concluir ${g.name}? As notas serão bloqueadas e o relatório poderá ser emitido.`);if(!confirmed)return;await set(ref(db,`seals/${bid}`),{by:state.user.uid,at:Date.now()});notice(`${g.name} concluído. Relatório liberado.`);}
 function reportHtml(ids){let html=`<header><h1>Relatório de Avaliação de TCC</h1><p>Ano letivo: 2026 · Emissão: ${esc(new Date().toLocaleString('pt-BR'))} · Responsável: ${esc(state.profile.name)}</p><p>Critérios por avaliador: apresentação, parte prática, domínio do código e domínio do tempo (0 a 10). Média da banca = média dos avaliadores. Nota final = banca × 0,60 + entregas × 0,40.</p></header>`;
  for(const [index,bid] of ids.entries()){const b=state.boards[bid],g=groupOf(b);if(!b||!g||!state.seals[bid])throw Error('A emissão exige bancas concluídas.');const grades=boardGrades(bid),deliveries=state.deliveries[bid]||{};if(!situacao(b,g,grades,deliveries).pronta)throw Error('Há notas pendentes; relatório cancelado.');
- html+=`<article class="${index?'print-break':''}"><h2>${esc(g.name)} — ${esc(g.title)}</h2><p><b>Turma:</b> ${esc(g.className)} &nbsp; <b>Orientador:</b> ${esc(b.advisorName)} &nbsp; <b>Banca:</b> ${dateStr(b.startAt)}, ${esc(b.room)}</p><p><b>Avaliadores:</b> ${Object.keys(b.members).map(uid=>esc(b.memberNames[uid]||who(uid))).join(' • ')} &nbsp; <b>Responsável pela nota de entregas:</b> ${esc(state.profile.name)}</p>`;
+ html+=`<article class="${index?'print-break':''}"><h2>${esc(g.name)} — ${esc(g.title)}</h2><p><b>Turma:</b> ${esc(g.className)} &nbsp; <b>Orientador:</b> ${esc(b.advisorName)} (${b.members?.[b.advisorUid]?"participa":"não participa"}) &nbsp; <b>Banca:</b> ${dateStr(b.startAt)}, ${esc(b.room)}</p><p><b>Avaliadores:</b> ${Object.keys(b.members).map(uid=>esc(b.memberNames[uid]||who(uid))).join(' • ')} &nbsp; <b>Responsável pela nota de entregas:</b> ${esc(state.profile.name)}</p>`;
  for(const [sid,name] of studentsOf(g)){const r=resultadoAluno(b,sid,grades,deliveries);if(!r)throw Error('Nota incompleta encontrada.');html+=`<h3>Aluno(a): ${esc(name)}</h3><table><thead><tr><th>Professor avaliador</th><th>Apresent.</th><th>Prática</th><th>Código</th><th>Tempo</th><th>Média</th></tr></thead><tbody>${Object.keys(b.members).map(uid=>{const n=grades[uid][sid];return `<tr><td>${esc(b.memberNames[uid]||who(uid))}</td>${CRITERIOS.map(([k])=>`<td>${fmt(n[k])}</td>`).join('')}<td>${fmt(mediaAvaliador(n))}</td></tr>`;}).join('')}</tbody></table><table><thead><tr><th>Média banca (0–10)</th><th>Banca × 60%</th><th>Entregas × 40%</th><th>Nota final (0–10)</th></tr></thead><tbody><tr><td>${fmt(r.banca)}</td><td>${fmt(r.parcelaBanca)}</td><td>${fmt(r.parcelaEntrega)} (entregas: ${fmt(r.entrega)})</td><td><b>${fmt(r.final)}</b></td></tr></tbody></table>`;}
  html+=`<p class="print-footer">Banca concluída em ${dateStr(state.seals[bid].at)}. Registro emitido exclusivamente pela coordenação.</p></article>`;
  }return html;
@@ -585,13 +592,13 @@ async function lerGruposProtegidos(password) {
 }
 async function importarGruposProtegidos() {
   if (!isCoord()) throw Error('A importação é exclusiva da coordenação.');
-  const password=prompt('Informe a senha de importação dos 44 grupos (não é sua senha do Firebase):');
+  const password=prompt('Informe a senha de importação dos 44 grupos (diferente da senha de acesso):');
   if (password===null) return;
   if (!password) throw Error('Informe a senha de importação.');
   const groups=await lerGruposProtegidos(password);
   const uidByKey=Object.fromEntries(Object.entries(state.users).map(([uid,u])=>[u.key,uid]));
   const absent=[...new Set(groups.map(g=>g.advisorKey))].filter(key=>!uidByKey[key]);
-  if (absent.length) throw Error('Cadastre os perfis dos orientadores no Firebase antes da importação. Chaves ausentes: '+absent.join(', '));
+  if (absent.length) throw Error('Cadastre os perfis dos orientadores antes da importação. Chaves ausentes: '+absent.join(', '));
   const snapshot=await get(ref(db,'groups'));
   const existing=snapshot.val()||{};
   const changes={};
@@ -602,17 +609,23 @@ async function importarGruposProtegidos() {
   }
   const count=Object.keys(changes).length;
   if (!count) {notice('Os 44 grupos já estão cadastrados. Nenhum dado foi modificado.');return;}
-  if(!confirm(`Importar ${count} grupo(s) no Firebase? Os existentes não serão alterados.`))return;
+  if(!confirm(`Importar ${count} grupo(s)? Os existentes não serão alterados.`))return;
   await update(ref(db),changes);
   notice(`${count} grupo(s) importado(s) com sucesso.`);
 }
 
+async function copiarPoliticaDeAcesso(){
+ if(!isCoord())throw Error('Ação restrita à coordenação.');
+ const content=document.getElementById('firebase-rules').textContent;
+ try {await navigator.clipboard.writeText(content);notice('Política copiada. O administrador deve publicá-la no ambiente de dados.');}
+ catch {const blob=new Blob([content],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='politica-de-acesso.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);notice('Política baixada. O administrador deve publicá-la no ambiente de dados.');}
+}
 const handle = async cb=>{try{await cb();}catch(err){fail(err);}};
 for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('click',e=>{const el=e.target.closest('[data-route]');if(!el)return;if(el.dataset.route==='sair')signOut(auth).catch(fail);else go(el.dataset.route);});
-$('#view').addEventListener('click',e=>{const el=e.target.closest('button');if(!el)return;if(el.dataset.route)return go(el.dataset.route);if(el.dataset.importRoster)return handle(importarGruposProtegidos);if(el.dataset.openBoard)return go('avaliar',el.dataset.openBoard);if(el.dataset.clearPlan){state.plan=[];state.planMeta=null;state.planUnassigned=[];render();return;}if(el.dataset.commitPlan)return handle(()=>createBoards(state.plan));if(el.dataset.seal)return handle(()=>closeBoard(el.dataset.seal));if(el.dataset.printOne)return handle(()=>printReports([el.dataset.printOne]));if(el.dataset.printAll)return handle(()=>{const selected=Object.entries(state.boards).filter(([,b])=>state.reportFilter==='todas'||groupOf(b)?.className===state.reportFilter).map(([id])=>id);const targetGroups=Object.values(state.groups).filter(g=>state.reportFilter==='todas'||g.className===state.reportFilter);if(!targetGroups.length||selected.length!==targetGroups.length||targetGroups.some(g=>!state.groupBoards[g.id]||!state.seals[state.groupBoards[g.id]]))throw Error('Agende e conclua todos os grupos do filtro antes do consolidado.');printReports(selected);});if(el.dataset.exportCsv)return handle(()=>exportCsv(Object.keys(state.seals).filter(id=>state.seals[id]&&state.boards[id]&&(state.reportFilter==='todas'||groupOf(state.boards[id])?.className===state.reportFilter))));});
+$('#view').addEventListener('click',e=>{const el=e.target.closest('button');if(!el)return;if(el.dataset.route)return go(el.dataset.route);if(el.dataset.importRoster)return handle(importarGruposProtegidos);if(el.dataset.copyPolicy)return handle(copiarPoliticaDeAcesso);if(el.dataset.openBoard)return go('avaliar',el.dataset.openBoard);if(el.dataset.clearPlan){state.plan=[];state.planMeta=null;state.planUnassigned=[];render();return;}if(el.dataset.commitPlan)return handle(()=>createBoards(state.plan));if(el.dataset.seal)return handle(()=>closeBoard(el.dataset.seal));if(el.dataset.printOne)return handle(()=>printReports([el.dataset.printOne]));if(el.dataset.printAll)return handle(()=>{const selected=Object.entries(state.boards).filter(([,b])=>state.reportFilter==='todas'||groupOf(b)?.className===state.reportFilter).map(([id])=>id);const targetGroups=Object.values(state.groups).filter(g=>state.reportFilter==='todas'||g.className===state.reportFilter);if(!targetGroups.length||selected.length!==targetGroups.length||targetGroups.some(g=>!state.groupBoards[g.id]||!state.seals[state.groupBoards[g.id]]))throw Error('Agende e conclua todos os grupos do filtro antes do consolidado.');printReports(selected);});if(el.dataset.exportCsv)return handle(()=>exportCsv(Object.keys(state.seals).filter(id=>state.seals[id]&&state.boards[id]&&(state.reportFilter==='todas'||groupOf(state.boards[id])?.className===state.reportFilter))));});
 $('#view').addEventListener('change',e=>{if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
 $('#view').addEventListener('submit',e=>{e.preventDefault();const f=e.target;handle(async()=>{
- if(f.id==='manual-form'){const d=new FormData(f);const g=state.groups[d.get('groupId')];if(!g||state.groupBoards[g.id])throw Error('Selecione um grupo ainda não agendado.');const startAt=new Date(d.get('date')).getTime(),durationMin=Number(d.get('duration')),size=Number(d.get('size')),room=String(d.get('room')||'').trim();const extra=d.getAll('evaluator');if(extra.length!==size-1||new Set(extra).size!==extra.length)throw Error(`Selecione exatamente ${size-1} professor(es) além do orientador.`);if(!room)throw Error('Informe a sala.');await createBoards([makeBoard(g,startAt,durationMin,room,extra)]);}
+ if(f.id==='manual-form'){const d=new FormData(f);const g=state.groups[d.get('groupId')];if(!g||state.groupBoards[g.id])throw Error('Selecione um grupo ainda não agendado.');const startAt=new Date(d.get('date')).getTime(),durationMin=Number(d.get('duration')),size=Number(d.get('size')),room=String(d.get('room')||'').trim();const evaluators=d.getAll('evaluator');if(evaluators.length!==size||new Set(evaluators).size!==evaluators.length)throw Error(`Selecione exatamente ${size} professores avaliadores.`);if(evaluators.some(uid=>!state.users[uid]))throw Error('Há um professor sem cadastro.');if(!room)throw Error('Informe a sala.');await createBoards([makeBoard(g,startAt,durationMin,room,evaluators)]);}
  else if(f.id==='lottery-form'){const result=makeLottery(new FormData(f));state.plan=result.plan;state.planMeta=result.config;state.planUnassigned=result.unassigned;render();notice(result.unassigned.length?`${result.plan.length} bancas encaixadas; ${result.unassigned.length} grupo(s) sem horário. Ajuste as condições antes de confirmar.`:'Sorteio completo! Revise a agenda e confirme as bancas.',!!result.unassigned.length);}
  else if(f.dataset.gradeForm)await saveGrade(f);
  else if(f.dataset.deliveryForm)await saveDelivery(f);
@@ -620,11 +633,5 @@ $('#view').addEventListener('submit',e=>{e.preventDefault();const f=e.target;han
 
 
 </script>
-<script>
-document.getElementById("copy-rules").addEventListener("click", async () => {
- const contents=document.getElementById("firebase-rules").textContent;
- try { await navigator.clipboard.writeText(contents); alert("Regras copiadas. Cole no Realtime Database → Regras e publique."); }
- catch { const blob=new Blob([contents],{type:"application/json"});const u=URL.createObjectURL(blob);const a=document.createElement("a");a.href=u;a.download="regras-firebase.json";document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),2000);alert("Regras baixadas. Copie o conteúdo para o Firebase Console."); }
-});
-</script>
+
 </body></html>
