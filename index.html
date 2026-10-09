@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="pt-BR"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#014996"><meta name="description" content="Gestão de bancas e avaliação individual de TCC, com sorteio e agenda multidiária.">
+<meta name="theme-color" content="#014996"><meta name="description" content="Gestão Univap de professores, bancas e avaliação individual de TCC, com sorteio e PDF da agenda.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>Avaliação de TCC | Universidade do Vale do Paraíba</title><style>
 /* Sistema de avaliacao de TCC — identidade cromatica baseada no manual Univap 2025.
@@ -21,6 +21,8 @@
 @media print{@page{size:A4;margin:13mm}body{background:#fff;color:#151515;font:10pt Arial,sans-serif}#app-view,#login-view,#toast{display:none!important}#print-root{display:block!important}#print-root h1{font-size:20pt;margin:0 0 6px;color:#014996}#print-root h2{font-size:13pt;border-bottom:2px solid #014996;padding-bottom:5px}#print-root h3{font-size:10pt;margin:12px 0 5px}#print-root p{font-size:9pt}#print-root table{width:100%;border-collapse:collapse;font-size:8pt;margin:10px 0 18px;table-layout:fixed}#print-root th,#print-root td{border:1px solid #b7b7b7;padding:5px;overflow-wrap:anywhere;text-align:left}#print-root th{background:#eeeeee}#print-root article{break-inside:avoid-page;page-break-inside:avoid}.print-break{break-before:page}.print-footer{margin-top:25px;font-size:8pt;color:#555}.setup-guide{display:none}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 
+.btn.danger{color:#aa2534;border-color:#eab8bb;background:#fff2f3}.btn.danger:hover:not(:disabled){background:#ffe4e7;border-color:#c66772}.teacher-list{display:grid;gap:10px}.teacher-admin-note{margin:0 0 18px;line-height:1.6;font-size:.82rem;color:var(--cinza)}.teacher-archive{margin-top:20px}.teacher-archive summary{color:var(--azul);font-size:.85rem;font-weight:700;cursor:pointer}.teacher-archive .teacher-list{margin-top:14px}.policy-guide{line-height:1.7;font-size:.82rem;color:var(--cinza)}.policy-guide summary{font-weight:700;color:var(--azul);cursor:pointer}.policy-guide ol{padding-left:20px}.policy-guide code{overflow-wrap:anywhere;color:var(--azul-escuro)}
+@media(max-width:770px){.mobile-nav{overflow-x:auto;justify-content:flex-start}.mobile-nav button{flex:1 0 64px;min-width:64px;max-width:110px}}
 </style>
 </head><body>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -31,6 +33,34 @@
     <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" placeholder="Sua senha" required minlength="6">
     <button type="submit" class="btn primary full" id="login-button">Entrar no sistema <span>→</span></button><button type="button" id="reset-password" class="link-button">Esqueci minha senha</button>
     <p class="tiny">Os acessos são criados pela administração. Não existe cadastro público.</p>
+    <p id="login-status" class="notice hidden" role="alert"></p>
+    <details id="access-help" class="setup-guide">
+      <summary>Ajuda para liberar o acesso</summary>
+      <div class="setup-body">
+        <p>E-mail e senha são verificados antes das permissões do sistema. Se a conta entrar, mas o acesso for negado, a administração precisa conferir o cadastro e as regras no Firebase.</p>
+        <div id="access-account" class="setup-keys hidden">
+          <strong>Conta autenticada</strong>
+          <p>E-mail: <span id="access-email"></span><br>UID: <code id="access-uid"></code></p>
+          <div class="row"><button type="button" id="copy-access-uid" class="btn">Copiar UID</button><button type="button" id="retry-access" class="btn primary">Verificar acesso novamente</button><button type="button" id="switch-access-account" class="btn">Trocar conta</button></div>
+        </div>
+        <p><strong>Para liberar o Prof. Alberson:</strong></p>
+        <ol>
+          <li>No Console do Firebase, abra o projeto <strong>avaliadortcc</strong> e confirme a conta dele em <strong>Authentication → Usuários</strong>. Copie o UID dessa conta.</li>
+          <li>Em <strong>Realtime Database → Regras</strong>, publique a política deste arquivo. Use o banco <code>avaliadortcc-default-rtdb</code>, que está conectado ao sistema.</li>
+          <li>Em <strong>Realtime Database → Dados → users → UID da conta do Alberson</strong>, confira os campos abaixo. Use o UID, não o nome nem o e-mail, como chave do perfil. Preserve os outros professores e os dados existentes.</li>
+        </ol>
+        <pre>{
+  "name": "Prof. Alberson",
+  "email": "E-MAIL DA CONTA DO ALBERSON",
+  "role": "coordinator",
+  "key": "alberson",
+  "active": true
+}</pre>
+        <p>Esse perfil é exclusivo da conta do Alberson e deve ser configurado pela administração no Console. Os demais professores usam <code>role: "teacher"</code>. Atualizar o HTML não publica as regras nem altera o perfil no banco.</p>
+        <button type="button" id="login-copy-policy" class="btn soft">Copiar política de acesso</button>
+        <p class="tiny">Depois de publicar as regras e conferir o perfil, clique em <strong>Verificar acesso novamente</strong> ou entre com a conta do Alberson.</p>
+      </div>
+    </details>
 </form>
 </section>
 <div id="app-view" class="app-shell hidden">
@@ -46,16 +76,47 @@
     ".read": false,
     ".write": false,
     "users": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$uid": {
         ".read": "auth !== null && auth.uid === $uid",
-        ".write": false
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('key').val() === 'alberson' && auth.uid !== $uid && (!data.exists() || data.child('role').val() === 'teacher') && newData.exists() && newData.child('role').val() === 'teacher' && (!data.exists() || (newData.child('email').val() === data.child('email').val() && newData.child('key').val() === data.child('key').val()))",
+        ".validate": "newData.hasChildren(['name','email','role','key','active']) && newData.child('role').val() === 'teacher' && newData.child('key').val() !== 'alberson'",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 254"
+        },
+        "key": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60"
+        },
+        "role": {
+          ".validate": "newData.val() === 'teacher'"
+        },
+        "active": {
+          ".validate": "newData.isBoolean()"
+        },
+        "createdBy": {
+          ".validate": "newData.isString() && (data.exists() ? newData.val() === data.val() : newData.val() === auth.uid)"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && (data.exists() ? newData.val() === data.val() : newData.val() <= now + 60000)"
+        },
+        "disabledBy": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "disabledAt": {
+          ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     },
     "groups": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).exists()",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).exists()",
       "$groupId": {
-        ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
         ".validate": "newData.hasChildren(['id','name','className','title','advisorUid','students']) && newData.child('id').val() === $groupId && root.child('users').child(newData.child('advisorUid').val()).exists()",
         "id": {
           ".validate": "newData.isString()"
@@ -83,9 +144,9 @@
       }
     },
     "boards": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).exists()",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).exists()",
       "$bid": {
-        ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
         ".validate": "newData.hasChildren(['groupId','advisorUid','advisorName','members','memberNames','startAt','durationMin','room','createdBy','createdAt']) && root.child('groups').child(newData.child('groupId').val()).exists() && newData.child('advisorUid').val() === root.child('groups').child(newData.child('groupId').val()).child('advisorUid').val() && newData.child('members').hasChildren() && newData.child('createdBy').val() === auth.uid && newData.child('durationMin').val() % 15 === 0 && newData.child('startAt').val() % 900000 === 0 && newData.child('startAt').val() > now - 60000",
         "groupId": {
           ".validate": "newData.isString()"
@@ -98,12 +159,12 @@
         },
         "members": {
           "$uid": {
-            ".validate": "newData.val() === true && root.child('users').child($uid).exists()"
+            ".validate": "newData.val() === true && root.child('users').child($uid).exists() && root.child('users').child($uid).child('active').val() !== false && (root.child('users').child($uid).child('role').val() === 'teacher' || root.child('users').child($uid).child('role').val() === 'coordinator')"
           }
         },
         "memberNames": {
           "$uid": {
-            ".validate": "newData.isString() && root.child('users').child($uid).exists()"
+            ".validate": "newData.isString() && root.child('users').child($uid).exists() && root.child('users').child($uid).child('active').val() !== false && (root.child('users').child($uid).child('role').val() === 'teacher' || root.child('users').child($uid).child('role').val() === 'coordinator')"
           }
         },
         "startAt": {
@@ -127,37 +188,37 @@
       }
     },
     "groupBoards": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$groupId": {
-        ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('groups').child($groupId).exists() && !data.exists() && newData.exists()",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('groups').child($groupId).exists() && !data.exists() && newData.exists()",
         ".validate": "newData.isString()"
       }
     },
     "roomLocks": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$slice": {
         "$roomKey": {
-          ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
+          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
           ".validate": "newData.isString()"
         }
       }
     },
     "locks": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$slice": {
         "$uid": {
-          ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child($uid).exists() && !data.exists() && newData.exists()",
+          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child($uid).exists() && !data.exists() && newData.exists()",
           ".validate": "newData.isString()"
         }
       }
     },
     "grades": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$bid": {
         "$uid": {
-          ".read": "auth !== null && auth.uid === $uid && root.child('boards').child($bid).child('members').child($uid).val() === true",
+          ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && auth.uid === $uid && root.child('boards').child($bid).child('members').child($uid).val() === true",
           "$sid": {
-            ".write": "auth !== null && auth.uid === $uid && root.child('boards').child($bid).child('members').child($uid).val() === true && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('students').child($sid).exists() && !root.child('seals').child($bid).exists() && newData.exists()",
+            ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && auth.uid === $uid && root.child('boards').child($bid).child('members').child($uid).val() === true && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('students').child($sid).exists() && !root.child('seals').child($bid).exists() && newData.exists()",
             ".validate": "newData.hasChildren(['presentation','practice','code','time'])",
             "presentation": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10"
@@ -179,19 +240,19 @@
       }
     },
     "deliveries": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$bid": {
         "$sid": {
-          ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('students').child($sid).exists() && !root.child('seals').child($bid).exists() && newData.exists()",
+          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('students').child($sid).exists() && !root.child('seals').child($bid).exists() && newData.exists()",
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10"
         }
       }
     },
     "seals": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$bid": {
-        ".read": "auth !== null && root.child('boards').child($bid).child('members').child(auth.uid).val() === true",
-        ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('boards').child($bid).exists() && !data.exists() && newData.exists()",
+        ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).child('members').child(auth.uid).val() === true",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('boards').child($bid).exists() && !data.exists() && newData.exists()",
         ".validate": "newData.hasChildren(['by','at']) && newData.child('by').val() === auth.uid",
         "by": {
           ".validate": "newData.isString()"
@@ -205,7 +266,8 @@
       }
     }
   }
-}</script>
+}
+</script>
 <script type="module">
 // Configuração pública do app Firebase (não é uma chave administrativa).
 // A segurança das notas depende das regras do Realtime Database.
@@ -275,8 +337,8 @@ function embaralharSeguro(lista, randomInt = max => {
 }
 const fmt = value => Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
+import { getAuth, initializeAuth, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, deleteUser } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 
 
@@ -286,14 +348,19 @@ const auth = getAuth(app), db = getDatabase(app);
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const ROSTER_PROTEGIDO = JSON.parse(document.getElementById('roster-criptografado').textContent);
-const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], unsubs:[], teacherSubs:new Map() };
-const isCoord = () => state.profile?.role === 'coordinator';
+const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, unsubs:[], teacherSubs:new Map() };
+const isActiveTeacher = profile => !!profile && ['coordinator','teacher'].includes(profile.role) && profile.active !== false;
+const activeTeachers = () => Object.entries(state.users).filter(([,profile])=>isActiveTeacher(profile));
+const isCoord = () => state.profile?.role === 'coordinator' && state.profile.active !== false;
+const canManageTeachers = () => isCoord() && state.profile.key === 'alberson';
 const groupOf = board => state.groups[board?.groupId];
 const who = uid => state.users[uid]?.name || Object.values(state.boards).flatMap(b => Object.entries(b.memberNames || {})).find(([id]) => id === uid)?.[1] || uid;
 const dateStr = ms => new Date(ms).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'});
 const boardGrades = id => isCoord() ? (state.grades[id] || {}) : ({[state.user.uid]:state.grades[id]?.[state.user.uid] || {}});
 const notice = (message, error=false) => {let box=$('#toast');box.textContent=message;box.className=(error?'error ':'')+'show';clearTimeout(notice.timer);notice.timer=setTimeout(()=>box.className='',5500);};
-const fail = error => {console.error(error);notice(({ 'PERMISSION_DENIED':'Acesso negado. Solicite a atualização de suas permissões à coordenação.', 'auth/invalid-credential':'E-mail ou senha incorretos.', 'auth/too-many-requests':'Muitas tentativas. Tente novamente mais tarde.' })[error?.code] || (/firebase/i.test(error?.message || '') ? 'Não foi possível concluir a operação. Verifique sua conexão ou procure a coordenação.' : error?.message) || 'Não foi possível concluir a operação.', true);};
+const isPermissionDenied = error => /permission[\s_-]*denied/i.test(`${error?.code || ''} ${error?.message || ''}`);
+const errorMessage = error => isPermissionDenied(error) ? 'Acesso negado pelo banco. A administração precisa conferir as regras do Firebase e o perfil em users/UID.' : ({ 'auth/invalid-credential':'E-mail ou senha incorretos.', 'auth/wrong-password':'E-mail ou senha incorretos.', 'auth/user-not-found':'E-mail ou senha incorretos.', 'auth/user-disabled':'Esta conta foi desativada no Firebase Authentication. Procure a administração.', 'auth/too-many-requests':'Muitas tentativas. Tente novamente mais tarde.', 'auth/email-already-in-use':'Este e-mail já possui uma conta. Reative o professor removido ou escolha Vincular conta existente e informe o UID do Firebase.', 'auth/weak-password':'Use uma senha com pelo menos 8 caracteres, respeitando a política de senhas do projeto.', 'auth/password-does-not-meet-requirements':'A senha não atende à política do projeto Firebase.', 'auth/invalid-email':'Informe um e-mail válido.', 'auth/network-request-failed':'Falha de conexão. Verifique a internet e tente novamente.', 'auth/operation-not-allowed':'Ative o acesso por e-mail e senha no Firebase Authentication.', 'auth/unauthorized-domain':'O domínio desta página precisa ser autorizado no Firebase Authentication.' })[error?.code] || (/firebase/i.test(error?.message || '') ? 'Não foi possível concluir a operação. Verifique sua conexão ou procure a coordenação.' : error?.message) || 'Não foi possível concluir a operação.';
+const fail = error => {console.error(error);notice(errorMessage(error),true);};
 const activeBoards = () => Object.entries(state.boards).filter(([,b])=>isCoord() || b.members?.[state.user.uid]);
 const studentsOf = group => Object.entries(group?.students || {});
 const badge = (text,kind='gray')=>`<span class="chip ${kind}">${esc(text)}</span>`;
@@ -301,39 +368,88 @@ const empty = (title, subtitle='')=>`<div class="empty"><i>◇</i><strong>${esc(
 const heading=(title,sub,action='')=>`<div class="section-heading"><div><h3>${esc(title)}</h3><p>${esc(sub)}</p></div>${action}</div>`;
 const stats = (label,n,icon)=>`<div class="stat"><div class="stat-label">${esc(label)}<span class="stat-icon">${icon}</span></div><strong>${esc(n)}</strong></div>`;
 
-$('#login-form').addEventListener('submit', async e => {e.preventDefault();const b=$('#login-button');b.disabled=true;try{await signInWithEmailAndPassword(auth,$('#email').value.trim(),$('#password').value);}catch(err){fail(err);}finally{b.disabled=false;}});
+let accessRevision=0;
+function showLogin(){ $('#login-view').classList.remove('hidden');$('#app-view').classList.add('hidden'); }
+function showAccessAccount(user){
+ $('#access-account').classList.toggle('hidden',!user);
+ $('#access-email').textContent=user?.email || 'Confira o e-mail em Authentication → Usuários.';
+ $('#access-uid').textContent=user?.uid || '';
+}
+function showAccessProblem(message,user=auth.currentUser){
+ showLogin();showAccessAccount(user);$('#login-status').textContent=message;$('#login-status').classList.remove('hidden');
+ $('#access-help').open=true;notice(message,true);
+}
+function resetAppData(){
+ for(const key of ['users','groups','boards','groupBoards','locks','roomLocks','grades','deliveries','seals'])state[key]={};
+ state.plan=[];state.planMeta=null;state.planUnassigned=[];state.selectedBoard='';
+}
+function dataReadFailed(error,revision){
+ if(revision!==accessRevision)return;
+ console.error(error);++accessRevision;clearListeners();state.user=null;state.profile=null;resetAppData();
+ showAccessProblem(isPermissionDenied(error)?'A conta foi autenticada, mas o Firebase bloqueou os dados do sistema. Publique a política completa e confira o perfil desta conta.':errorMessage(error));
+}
+$('#login-form').addEventListener('submit', async e => {
+ e.preventDefault();const b=$('#login-button');b.disabled=true;$('#login-status').classList.add('hidden');
+ try{await signInWithEmailAndPassword(auth,$('#email').value.trim(),$('#password').value);$('#password').value='';}
+ catch(err){console.error(err);const message=errorMessage(err);$('#login-status').textContent=message;$('#login-status').classList.remove('hidden');notice(message,true);}
+ finally{b.disabled=false;}
+});
 $('#reset-password').addEventListener('click',async()=>{const email=$('#email').value.trim();if(!email){notice('Informe seu e-mail primeiro.',true);return;}try{await sendPasswordResetEmail(auth,email);notice('Se o e-mail estiver cadastrado, você receberá instruções.');}catch(e){fail(e);}});
 $('#logout').addEventListener('click',()=>signOut(auth).catch(fail));
+$('#login-copy-policy').addEventListener('click',()=>copiarPoliticaDeAcesso().catch(fail));
+$('#copy-access-uid').addEventListener('click',async()=>{
+ const uid=auth.currentUser?.uid;if(!uid)return;
+ try{await navigator.clipboard.writeText(uid);notice('UID copiado. Confira se esta é a conta do Alberson.');}
+ catch{notice('Não foi possível copiar automaticamente. Selecione o UID exibido e copie.',true);}
+});
+$('#retry-access').addEventListener('click',async()=>{
+ const button=$('#retry-access');button.disabled=true;
+ try{await verificarAcesso(auth.currentUser);}finally{button.disabled=false;}
+});
+$('#switch-access-account').addEventListener('click',()=>signOut(auth).catch(fail));
 function clearListeners(){state.unsubs.forEach(unsub=>unsub());state.unsubs=[];state.teacherSubs.forEach(unsubs=>unsubs.forEach(fn=>fn()));state.teacherSubs.clear();}
-function listen(path, key, allow=true){if(!allow)return;state.unsubs.push(onValue(ref(db,path),snap=>{const next=snap.val()||{};if(state.plan.length && ['groups','users','boards','groupBoards','locks','roomLocks'].includes(key) && JSON.stringify(next)!==JSON.stringify(state[key])){state.plan=[];state.planMeta=null;state.planUnassigned=[];notice('A agenda foi atualizada. Gere novamente o sorteio para evitar conflitos.',true);}state[key]=next;if(key==='boards'&&!isCoord())syncTeacherSubs();render();},fail));}
+function listen(path, key, allow=true){if(!allow)return;const revision=accessRevision;state.unsubs.push(onValue(ref(db,path),snap=>{if(revision!==accessRevision)return;const next=snap.val()||{};if(state.plan.length && ['groups','users','boards','groupBoards','locks','roomLocks'].includes(key) && JSON.stringify(next)!==JSON.stringify(state[key])){state.plan=[];state.planMeta=null;state.planUnassigned=[];notice('A agenda foi atualizada. Gere novamente o sorteio para evitar conflitos.',true);}state[key]=next;if(key==='boards'&&!isCoord())syncTeacherSubs();render();},error=>dataReadFailed(error,revision)));}
 function syncTeacherSubs(){if(!state.user||isCoord())return;const uid=state.user.uid;for(const [bid,board] of activeBoards()){
  if(state.teacherSubs.has(bid))continue;
- const subs=[onValue(ref(db,`grades/${bid}/${uid}`),s=>{state.grades[bid]={[uid]:s.val()||{}};render();},fail),onValue(ref(db,`seals/${bid}`),s=>{state.seals[bid]=s.val()||null;render();},fail)];state.teacherSubs.set(bid,subs);
+ const revision=accessRevision,subs=[onValue(ref(db,`grades/${bid}/${uid}`),s=>{if(revision!==accessRevision)return;state.grades[bid]={[uid]:s.val()||{}};render();},error=>dataReadFailed(error,revision)),onValue(ref(db,`seals/${bid}`),s=>{if(revision!==accessRevision)return;state.seals[bid]=s.val()||null;render();},error=>dataReadFailed(error,revision))];state.teacherSubs.set(bid,subs);
 }}
-onAuthStateChanged(auth,async user=>{
- clearListeners();state.user=null;state.profile=null;
- if(!user){$('#login-view').classList.remove('hidden');$('#app-view').classList.add('hidden');return;}
+async function verificarAcesso(user){
+ const revision=++accessRevision;clearListeners();state.user=null;state.profile=null;resetAppData();showLogin();showAccessAccount(user);
+ if(!user)return;
+ $('#login-status').classList.add('hidden');
  try{
-  const snap=await get(ref(db,`users/${user.uid}`));if(!snap.exists()||!['coordinator','teacher'].includes(snap.val().role)){await signOut(auth);notice('Usuário sem perfil autorizado. Procure o coordenador.',true);return;}
-  state.user=user;state.profile=snap.val();state.users={};state.groups={};state.boards={};state.groupBoards={};state.grades={};state.deliveries={};state.seals={};state.roomLocks={};state.plan=[];state.planMeta=null;state.planUnassigned=[];
+  const snap=await get(ref(db,`users/${user.uid}`));if(revision!==accessRevision || auth.currentUser?.uid!==user.uid)return;
+  if(!snap.exists()){showAccessProblem('E-mail e senha confirmados. Falta cadastrar o perfil em users/'+user.uid+'. Peça à administração para vincular o UID desta conta.',user);return;}
+  const profile=snap.val();
+  if(profile.active===false){await signOut(auth);showAccessProblem('Seu acesso foi removido. Peça à coordenação para reativar o professor.',null);return;}
+  if(!isActiveTeacher(profile)){showAccessProblem('O perfil desta conta não tem um papel válido. A administração deve conferir role no Firebase: coordinator para o Alberson ou teacher para os demais professores.',user);return;}
+  if(typeof profile.name!=='string'||!profile.name.trim()){showAccessProblem('O perfil desta conta está sem nome. Peça à administração para completar o campo name no Firebase.',user);return;}
+  state.user=user;state.profile=profile;
   $('#login-view').classList.add('hidden');$('#app-view').classList.remove('hidden');state.route='inicio';
   $('#side-name').textContent=state.profile.name;$('#side-role').textContent=isCoord()?'Coordenação':'Professor avaliador';$('#side-avatar').textContent=state.profile.name.slice(0,1);$('#top-initials').textContent=state.profile.name.slice(0,1);
+  state.unsubs.push(onValue(ref(db,`users/${user.uid}`),current=>{
+   if(revision!==accessRevision)return;const next=current.val();
+   if(!isActiveTeacher(next)){signOut(auth).then(()=>showAccessProblem('Seu acesso foi removido pela coordenação.',null)).catch(fail);return;}
+   if(next.role!==state.profile.role||next.key!==state.profile.key||typeof next.name!=='string'||!next.name.trim()){verificarAcesso(auth.currentUser);return;}
+   state.profile=next;render();
+  },error=>dataReadFailed(error,revision)));
   listen('groups','groups');listen('boards','boards');listen('users','users',isCoord());listen('groupBoards','groupBoards',isCoord());listen('locks','locks',isCoord());listen('roomLocks','roomLocks',isCoord());listen('grades','grades',isCoord());listen('deliveries','deliveries',isCoord());listen('seals','seals',isCoord());render();
- }catch(err){fail(err);await signOut(auth);}
-});
+ }catch(err){if(revision!==accessRevision)return;dataReadFailed(err,revision);}
+}
+onAuthStateChanged(auth,verificarAcesso);
 const navItems=()=>isCoord()? [['inicio','01','Visão geral'],['bancas','02','Bancas'],['sortear','03','Sorteio'],['entregas','04','Entregas'],['relatorios','05','Relatórios'],['professores','06','Professores']] : [['inicio','01','Início'],['bancas','02','Minhas bancas'],['avaliar','03','Avaliar']];
 function go(route,board=''){if(board)state.selectedBoard=board;state.route=route;render();$('#view').focus({preventScroll:true});window.scrollTo({top:0,behavior:'smooth'});}
 function render(){if(!state.user)return;const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'))state.route='inicio';
  const pageTitles={inicio:'Visão geral',bancas:'Bancas de avaliação',sortear:'Sorteio de bancas',entregas:'Notas de entregas',relatorios:'Relatórios finais',professores:'Professores',avaliar:'Avaliação individual'};
  $('#page-title').textContent=pageTitles[state.route];$('#page-eyebrow').textContent=isCoord()?'COORDENAÇÃO • TCC 2026':'CORPO DOCENTE • TCC 2026';
  $('#desktop-nav').innerHTML=routes.map(([r,i,t])=>`<button type="button" class="${state.route===r?'active':''}" data-route="${r}"><span class="nav-ico">${i}</span>${t}</button>`).join('');
- $('#mobile-nav').innerHTML=[...routes.filter(([r])=>r!=='professores'),['sair','—','Sair']].map(([r,i,t])=>`<button type="button" class="${state.route===r?'active':''}" data-route="${r}"><span class="nav-ico">${i}</span>${t}</button>`).join('');
+ $('#mobile-nav').innerHTML=[...routes,['sair','—','Sair']].map(([r,i,t])=>`<button type="button" class="${state.route===r?'active':''}" data-route="${r}"><span class="nav-ico">${i}</span>${t}</button>`).join('');
  const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,professores:teachersView};$('#view').innerHTML=views[state.route]?.()||'';
 }
 function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,b])=>{const g=groupOf(b);return g&&isCoord()&&situacao(b,g,boardGrades(id),state.deliveries[id]).pronta;});
  const completed=isCoord()?ready.length:boards.filter(([id,b])=>{const g=groupOf(b);return g&&studentsOf(g).every(([sid])=>mediaAvaliador(state.grades[id]?.[state.user.uid]?.[sid])!==null);}).length;
  return `<div class="hero"><div><span class="pill">ANO ACADÊMICO 2026</span><h2>Olá, ${esc(state.profile.name.split(' ').slice(0,2).join(' '))}</h2><p>${isCoord()?'Organize as bancas, acompanhe cada avaliação e emita os relatórios finais.':'Suas bancas e avaliações individuais estão reunidas em um só lugar.'}</p></div><button class="btn" data-route="${isCoord()?'sortear':'bancas'}">${isCoord()?'Organizar bancas':'Minhas bancas'} →</button></div>
- <div class="grid">${stats(isCoord()?'Grupos importados':'Bancas atribuídas',isCoord()?Object.keys(state.groups).length:boards.length,'01')}${stats('Bancas agendadas',boards.length,'02')}${stats(isCoord()?'Prontas para concluir':'Minhas bancas avaliadas',completed,'03')}${stats(isCoord()?'Professores ativos':'Alunos para avaliar',isCoord()?Object.keys(state.users).length:boards.reduce((s,[,b])=>s+studentsOf(groupOf(b)).length,0),'04')}</div>
+ <div class="grid">${stats(isCoord()?'Grupos importados':'Bancas atribuídas',isCoord()?Object.keys(state.groups).length:boards.length,'01')}${stats('Bancas agendadas',boards.length,'02')}${stats(isCoord()?'Prontas para concluir':'Minhas bancas avaliadas',completed,'03')}${stats(isCoord()?'Professores ativos':'Alunos para avaliar',isCoord()?activeTeachers().length:boards.reduce((s,[,b])=>s+studentsOf(groupOf(b)).length,0),'04')}</div>
  ${isCoord() && !Object.keys(state.groups).length ? '<div class="notice">Nenhum grupo cadastrado. Acesse Professores e importe os grupos da planilha usando a senha de importação fornecida separadamente.</div>' : ''}<section class="card">${heading('Próximas bancas',isCoord()?'Acompanhe as bancas criadas e o andamento das notas.':'Somente as bancas das quais você participa.',`<button class="btn soft" data-route="bancas">Ver todas →</button>`)}${boardList(boards.slice().sort((a,b)=>a[1].startAt-b[1].startAt).slice(0,5))}</section>`;
 }
 function boardStatus(bid,b){if(state.seals[bid])return badge('Concluída','green');if(!isCoord())return badge('Agendada','blue');const g=groupOf(b);if(g&&situacao(b,g,boardGrades(bid),state.deliveries[bid]).pronta)return badge('Notas completas','green');return badge('Em avaliação','orange');}
@@ -341,7 +457,7 @@ function boardList(boards){if(!boards.length)return empty('Nenhuma banca por aqu
 function boardsView(){let arr=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);
  if(state.filter!=='todas')arr=arr.filter(([,b])=>groupOf(b)?.className===state.filter);
  const all=Object.values(state.groups);return `${heading(isCoord()?'Agenda de bancas':'Suas bancas',`${arr.length} banca(s) encontrada(s).`,isCoord()?'<button class="btn primary" data-route="sortear">+ Nova banca</button>':'')}
- <div class="toolbar"><select id="filter-class" class="filter"><option value="todas">Todas as turmas</option>${[...new Set(all.map(g=>g.className))].sort().map(c=>`<option ${state.filter===c?'selected':''} value="${esc(c)}">Turma ${esc(c)}</option>`).join('')}</select></div>${boardList(arr)}`;
+ <div class="toolbar"><select id="filter-class" class="filter" aria-label="Filtrar bancas por turma"><option value="todas">Todas as turmas</option>${[...new Set(all.map(g=>g.className))].sort().map(c=>`<option ${state.filter===c?'selected':''} value="${esc(c)}">Turma ${esc(c)}</option>`).join('')}</select>${isCoord()?`<button class="btn soft" data-pdf-agenda="1" ${!arr.length?'disabled':''}>Baixar PDF da agenda</button>`:''}</div>${boardList(arr)}`;
 }
 const opts=(items,selected='')=>items.map(([v,text])=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(text)}</option>`).join('');
 function localDayKey(at){const d=new Date(at);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
@@ -349,7 +465,7 @@ function hourLabel(at){return new Date(at).toLocaleTimeString('pt-BR',{hour:'2-d
 function lotteryView(){
  if(!isCoord())return empty('Acesso exclusivo da coordenação');
  const pending=Object.values(state.groups).filter(g=>!state.groupBoards[g.id]);
- const teachers=Object.entries(state.users).filter(([,u])=>['coordinator','teacher'].includes(u.role));
+ const teachers=activeTeachers();
  const classes=[...new Set(pending.map(g=>g.className))].sort();
  const meta=state.planMeta, unassigned=state.planUnassigned;
  const days=state.plan.length?Object.entries(state.plan.reduce((acc,b)=>{const k=localDayKey(b.startAt);acc[k]=(acc[k]||0)+1;return acc;},{})).sort(([a],[b])=>a.localeCompare(b)):[];
@@ -365,7 +481,7 @@ function lotteryView(){
  <form id="lottery-form" class="form-grid">
  <div class="field"><label for="lot-class">Turmas incluídas</label><select id="lot-class" name="className" required>${opts([['todas','Todas as turmas'],...classes.map(c=>[c,`Turma ${c}`])],'todas')}</select></div>
  <div class="field"><label for="lot-count">Máximo de bancas por dia</label><input id="lot-count" type="number" name="perDay" min="1" max="200" step="1" value="6" required><small>Inclui as bancas existentes nos mesmos dias.</small></div>
- <div class="field"><label for="lot-date">Primeiro dia do sorteio</label><input id="lot-date" type="date" name="date" required></div>
+ <div class="field"><label for="lot-date">Primeiro dia do sorteio</label><input id="lot-date" type="date" name="date" value="${esc(meta?.dateRaw||localDayKey(Date.now()))}" required></div>
  <div class="field"><label for="lot-days">Dias letivos disponíveis</label><input id="lot-days" name="maxDays" type="number" min="1" max="120" step="1" value="30" required><small>Distribui os grupos pelos dias disponíveis.</small></div>
  <div class="field"><label for="lot-start">Início das atividades</label><input id="lot-start" name="dayStart" type="time" step="900" value="08:00" required></div>
  <div class="field"><label for="lot-end">Término das atividades</label><input id="lot-end" name="dayEnd" type="time" step="900" value="22:00" required></div>
@@ -380,7 +496,7 @@ function lotteryView(){
  ${days.length?`<div class="schedule-days">${days.map(([day,n])=>`<span><b>${esc(day.split('-').reverse().join('/'))}</b> · ${n} nova(s)</span>`).join('')}</div>`:''}
  ${unassigned.length?`<div class="schedule-warning"><h4>Há grupos sem horário</h4><p class="muted tiny">Amplie os dias ou horários, aumente as salas ou reduza o tamanho das bancas para tentar novamente.</p><ul>${unassigned.map(item=>`<li>${esc(item.name)} — ${esc(item.reason)}</li>`).join('')}</ul></div>`:`<div class="notice good">Todos os grupos selecionados foram distribuídos. ${advisorCount} de ${state.plan.length} bancas terão o orientador presente, sem conflitos de professores ou salas.</div>`}
  ${state.plan.length?`<div class="table-scroll"><table class="data-table"><thead><tr><th>Data e horário</th><th>Grupo / turma</th><th>Orientador</th><th>Participação</th><th>Avaliadores</th><th>Sala</th></tr></thead><tbody>${state.plan.slice().sort((a,b)=>a.startAt-b.startAt||a.room.localeCompare(b.room)).map(b=>`<tr><td><b>${dateStr(b.startAt)}</b></td><td>${esc(state.groups[b.groupId]?.name)}<br><small>${esc(state.groups[b.groupId]?.className)}</small></td><td>${esc(b.advisorName)}</td><td>${b.members[b.advisorUid]?badge('Participa','green'):badge('Não participa','orange')}</td><td>${Object.keys(b.members).map(uid=>esc(who(uid))).join(' · ')}</td><td>${esc(b.room)}</td></tr>`).join('')}</tbody></table></div>`:''}
- <div class="schedule-plan-actions"><button class="btn primary" data-commit-plan="1" ${unassigned.length||!state.plan.length?'disabled':''}>Confirmar ${state.plan.length} bancas</button><button class="btn soft" data-clear-plan="1">Descartar prévia</button></div>
+ <div class="schedule-plan-actions"><button class="btn primary" data-commit-plan="1" ${unassigned.length||!state.plan.length?'disabled':''}>Confirmar ${state.plan.length} bancas</button><button class="btn soft" data-pdf-plan="1" ${!state.plan.length?'disabled':''}>Baixar PDF do sorteio</button><button class="btn soft" data-clear-plan="1">Descartar prévia</button></div>
  <p class="muted tiny">Revise a escala antes de confirmar. Nenhuma banca será salva antes da confirmação. Se houver atualização da agenda, gere uma nova prévia.</p>`:''}</div>`;
 }
 function manualMemberPicker(){
@@ -388,7 +504,7 @@ function manualMemberPicker(){
  if(!p)return;
  if(!g){p.innerHTML='<p class="muted tiny">Selecione um grupo para escolher os professores.</p>';return;}
  const previouslySelected=new Set([...p.querySelectorAll('input[name="evaluator"]:checked')].map(input=>input.value));
- const teachers=Object.entries(state.users).filter(([,u])=>['coordinator','teacher'].includes(u.role));
+ const teachers=activeTeachers();
  const advisorIsTeacher=teachers.some(([uid])=>uid===g.advisorUid);
  p.innerHTML=`<p class="muted tiny">Orientador: <b>${esc(who(g.advisorUid))}</b>. Selecione 2 ou 3 avaliadores, preferencialmente incluindo o orientador. A ausência dele não impede a criação da banca.</p><div class="check-list">${teachers.map(([uid,u])=>`<label class="check-tag"><input type="checkbox" name="evaluator" value="${esc(uid)}" ${previouslySelected.has(uid)||(uid===g.advisorUid&&!previouslySelected.size)?'checked':''}>${esc(u.name)} ${uid===g.advisorUid?'<small>· orientador</small>':''}</label>`).join('')}</div>${!advisorIsTeacher?'<p class="muted tiny">O orientador não está entre os professores cadastrados e não poderá ser incluído nesta banca.</p>':''}`;
 }
@@ -409,13 +525,88 @@ function reportsView(){if(!isCoord())return empty('Acesso exclusivo da coordena�
 }
 function teachersView(){
  if(!isCoord())return empty('Acesso exclusivo da coordenação');
+ const active=activeTeachers().sort(([,a],[,b])=>a.name.localeCompare(b.name,'pt-BR'));
+ const removed=Object.entries(state.users).filter(([,u])=>u.active===false).sort(([,a],[,b])=>a.name.localeCompare(b.name,'pt-BR'));
+ const manager=canManageTeachers();
+ const teacherRow=([uid,u])=>`<article class="group-card"><div><h4>${esc(u.name)}</h4><p>${esc(u.email||'')} · ${u.role==='coordinator'?'Coordenador e avaliador':'Professor avaliador'}</p><p class="tiny">${openTeacherBoards(uid).length} banca(s) em aberto · Identificador: ${esc(u.key||'—')}</p></div><div class="row">${badge(u.active===false?'Acesso removido':u.role==='coordinator'?'Coordenação':'Avaliador',u.active===false?'orange':u.role==='coordinator'?'blue':'gray')}${manager&&u.role==='teacher'&&uid!==state.user.uid?`<button class="btn ${u.active===false?'soft':'danger'}" type="button" data-${u.active===false?'restore':'remove'}-teacher="${esc(uid)}" ${state.teacherBusy?'disabled':''}>${u.active===false?'Reativar professor':'Remover professor'}</button>`:''}</div></article>`;
  return `${heading('Equipe de professores','Professores autorizados a participar das bancas e registrar avaliações.')}
- <div class="grid">${stats('Professores',Object.keys(state.users).length,'04')}${stats('Coordenador',Object.values(state.users).filter(u=>u.role==='coordinator').length,'05')}</div>
- <div class="card">${Object.entries(state.users).map(([id,u])=>`<div class="group-card"><div><h4>${esc(u.name)}</h4><p>${esc(u.email||'')} · ${u.role==='coordinator'?'Coordenador e avaliador':'Professor avaliador'}</p></div>${badge(u.role==='coordinator'?'Coordenação':'Avaliador',u.role==='coordinator'?'blue':'gray')}</div>`).join('')}</div>
+ <div class="grid">${stats('Docentes ativos',active.length,'04')}${stats('Coordenação',active.filter(([,u])=>u.role==='coordinator').length,'05')}${stats('Acessos removidos',removed.length,'06')}</div>
+ ${manager?`<section class="card">${heading('Adicionar professor','Cadastre uma nova conta ou vincule um acesso já existente.')}
+ <form id="teacher-form" class="form-grid" autocomplete="off">
+ <div class="field"><label for="teacher-name">Nome do professor</label><input id="teacher-name" name="name" maxlength="120" placeholder="Nome completo" required></div>
+ <div class="field"><label for="teacher-email">E-mail de acesso</label><input id="teacher-email" name="email" type="email" maxlength="254" placeholder="professor@univap.br" required></div>
+ <div class="field"><label for="teacher-key">Identificador do professor</label><input id="teacher-key" name="key" pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="60" placeholder="Ex.: bruno, helio, jose-eduardo" required><small>Use o identificador da planilha para associar o orientador.</small></div>
+ <div class="field"><label for="teacher-method">Tipo de cadastro</label><select id="teacher-method" name="method"><option value="new">Criar nova conta</option><option value="existing">Vincular conta existente</option></select></div>
+ <div class="field wide" id="teacher-password-field"><label for="teacher-password">Senha inicial</label><input id="teacher-password" name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Pelo menos 8 caracteres" required><small>Informe a senha ao professor. Ela não será gravada na lista de perfis.</small></div>
+ <div class="field wide hidden" id="teacher-uid-field"><label for="teacher-uid">UID da conta existente</label><input id="teacher-uid" name="uid" maxlength="128" disabled placeholder="Copie de Firebase Authentication → Usuários"><small>Use o UID da conta do mesmo e-mail acima.</small></div>
+ <div class="wide row"><button class="btn primary" type="submit" ${state.teacherBusy?'disabled':''}>Adicionar professor</button><span class="tiny">A sessão do Alberson permanece aberta durante o cadastro.</span></div>
+ </form></section>`:'<div class="notice">O cadastro e a remoção de professores são exclusivos do coordenador Alberson.</div>'}
+ <section class="card">${heading('Professores ativos','Apenas os docentes ativos entram nos próximos sorteios.')}<p class="teacher-admin-note">A remoção encerra o acesso e preserva os registros anteriores. Professores com bancas em aberto precisam concluir as avaliações antes da remoção.</p><div class="teacher-list">${active.map(teacherRow).join('')||empty('Nenhum professor ativo')}</div>
+ ${removed.length?`<details class="teacher-archive"><summary>Professores removidos (${removed.length})</summary><div class="teacher-list">${removed.map(teacherRow).join('')}</div></details>`:''}</section>
  <div class="card">${heading('Grupos e alunos','Importe a lista de grupos da planilha. Grupos já cadastrados serão preservados.')}
  <button class="btn primary" data-import-roster="1" type="button">Importar grupos</button></div>
- <div class="card">${heading('Administração de acesso','A publicação da política de permissões é realizada pelo administrador do ambiente.')}
- <button class="btn soft" data-copy-policy="1" type="button">Copiar política de acesso</button></div>`;
+ <div class="card">${heading('Configuração de permissões','Aplique uma vez a política atualizada para habilitar a gestão de professores.')}
+ <button class="btn soft" data-copy-policy="1" type="button">Copiar política de acesso</button>
+ <details class="policy-guide"><summary>Como aplicar no Firebase</summary><ol><li>No projeto <code>avaliadortcc</code>, abra <b>Realtime Database → Regras</b>.</li><li>Cole a política copiada acima e clique em <b>Publicar</b>.</li><li>Em <b>Dados → users → UID do Alberson</b>, confirme <code>role: "coordinator"</code> e <code>key: "alberson"</code>.</li><li>Em <b>Authentication → Método de login</b>, mantenha <b>E-mail/senha</b> habilitado.</li></ol><p>A política está incluída neste mesmo index.html. Não é necessário criar outro arquivo.</p></details></div>`;
+}
+function openTeacherBoards(uid){return Object.entries(state.boards).filter(([id,b])=>b.members?.[uid]&&!state.seals[id]);}
+function teacherRegistrationMethod(){
+ const existing=$('#teacher-method')?.value==='existing';
+ $('#teacher-password-field')?.classList.toggle('hidden',existing);$('#teacher-uid-field')?.classList.toggle('hidden',!existing);
+ const password=$('#teacher-password'),uid=$('#teacher-uid');
+ if(password){password.disabled=existing;password.required=!existing;if(existing)password.value='';}
+ if(uid){uid.disabled=!existing;uid.required=existing;}
+}
+function teacherIdentity(data){
+ const name=String(data.get('name')||'').trim(),email=String(data.get('email')||'').trim().toLowerCase(),key=String(data.get('key')||'').trim();
+ if(!name||name.length>120)throw Error('Informe um nome de até 120 caracteres.');
+ if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)throw Error('Informe um e-mail válido.');
+ if(!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(key)||key.length>60||key==='alberson')throw Error('Informe um identificador único em letras minúsculas, sem acentos ou espaços.');
+ const duplicate=Object.entries(state.users).find(([,u])=>u.key===key||u.email?.toLowerCase()===email);
+ if(duplicate)throw Error(duplicate[1].active===false?'Este professor foi removido. Use Reativar professor para recuperar o acesso.':'Já existe um professor com este e-mail ou identificador.');
+ return {name,email,key,role:'teacher',active:true,createdBy:state.user.uid,createdAt:Date.now()};
+}
+async function addTeacher(form){
+ if(!canManageTeachers())throw Error('Somente o Alberson pode cadastrar professores.');
+ if(state.teacherBusy)throw Error('Aguarde o cadastro em andamento.');
+ const data=new FormData(form),profile=teacherIdentity(data),existing=data.get('method')==='existing';
+ const password=String(data.get('password')||'');let uid=String(data.get('uid')||'').trim();
+ if(existing&&(!uid||uid.length>128||/[.#$\[\]\/\s]/.test(uid)||state.users[uid]))throw Error('Informe um UID válido que ainda não esteja cadastrado.');
+ if(!existing&&(password.length<8||password.length>128))throw Error('Informe uma senha inicial de 8 a 128 caracteres.');
+ state.teacherBusy=true;form.querySelector('button[type="submit"]').disabled=true;
+ let secondary,secondaryAuth,created,saved=false;
+ try{
+  if(!existing){
+   secondary=initializeApp(firebaseConfig,`cadastro-${crypto.randomUUID()}`);
+   secondaryAuth=initializeAuth(secondary,{persistence:inMemoryPersistence});
+   created=(await createUserWithEmailAndPassword(secondaryAuth,profile.email,password)).user;uid=created.uid;
+  }
+  // A sessão principal do coordenador grava o perfil; a conta criada não ganha privilégios.
+  await set(ref(db,`users/${uid}`),profile);saved=true;
+  state.users[uid]=profile;notice(`${profile.name} adicionado. O professor já pode acessar o sistema.`);
+ }catch(error){
+  if(created&&!saved){try{await deleteUser(created);}catch{throw Error('O perfil não foi salvo e a conta de acesso não pôde ser desfeita. Verifique as regras e vincule o UID dessa conta pelo Firebase Authentication.');}}
+  throw error;
+ }finally{
+  if(secondaryAuth)await signOut(secondaryAuth).catch(()=>{});
+  if(secondary)await deleteApp(secondary).catch(()=>{});
+  state.teacherBusy=false;render();
+ }
+}
+async function changeTeacherAccess(uid,active){
+ if(!canManageTeachers())throw Error('Somente o Alberson pode remover ou reativar professores.');
+ if(state.teacherBusy)throw Error('Aguarde a operação em andamento.');
+ const profile=state.users[uid];
+ if(!profile||profile.role!=='teacher'||uid===state.user.uid)throw Error('O acesso da coordenação não pode ser removido.');
+ if(!active&&openTeacherBoards(uid).length)throw Error(`${profile.name} possui bancas em aberto. Conclua as bancas antes de remover o acesso.`);
+ if((profile.active!==false)===active)return;
+ if(!active&&!confirm(`Remover ${profile.name}? O acesso será encerrado, mas o histórico das avaliações será preservado.`))return;
+ state.teacherBusy=true;
+ try{
+  const changes={active,disabledBy:active?null:state.user.uid,disabledAt:active?null:Date.now()};
+  await update(ref(db,`users/${uid}`),changes);state.users[uid]={...profile,...changes};
+  notice(`${profile.name}: ${active?'acesso reativado':'professor removido'}.`);
+ }finally{state.teacherBusy=false;render();}
 }
 function validScheduleStart(start){return Number.isFinite(start)&&start>Date.now()-60000&&new Date(start).getMinutes()%15===0&&new Date(start).getSeconds()===0;}
 function busy(uid,candidate,planned=[]){const occupied=Object.values(state.boards).filter(b=>b.members?.[uid]);return [...occupied,...planned.filter(b=>b.members?.[uid])].some(b=>intervalosConflitam(b,candidate))||chavesOcupacao(candidate,uid).some(key=>state.locks?.[key.split('/')[0]]?.[uid]);}
@@ -433,7 +624,7 @@ async function createBoards(plan){
   if(!validScheduleStart(b.startAt))throw Error('A data deve ser futura e em intervalos de 15 minutos.');
   if(![30,45,60,90].includes(b.durationMin))throw Error('Duração não permitida.');
   const members=Object.keys(b.members);
-  if(![2,3].includes(members.length)||b.advisorUid!==state.groups[b.groupId].advisorUid||members.some(uid=>!state.users[uid]||!['coordinator','teacher'].includes(state.users[uid].role)))throw Error(`Composição inválida para ${b.groupId}.`);
+  if(![2,3].includes(members.length)||b.advisorUid!==state.groups[b.groupId].advisorUid||members.some(uid=>!isActiveTeacher(state.users[uid])))throw Error(`Composição inválida para ${b.groupId}.`);
   for(const uid of members){if(busy(uid,b,planned))throw Error(`${who(uid)} tem uma banca sobreposta ao horário de ${b.groupId}.`);}
   if(roomBusy(b.room,b,planned))throw Error(`A sala ${b.room} já está ocupada nesse horário.`);
   if(plan===state.plan&&state.planMeta){
@@ -469,7 +660,7 @@ function makeLottery(data){
  if(startMinutes%15||endMinutes%15||startMinutes<0||endMinutes>24*60||endMinutes-startMinutes<durationMin)throw Error('A janela diária deve comportar a duração de uma banca e usar intervalos de 15 minutos.');
  const first=new Date(`${dateRaw}T00:00:00`);
  if(!Number.isFinite(first.getTime())||localDayKey(first.getTime())!==dateRaw)throw Error('Data inicial inválida.');
- const teachers=Object.entries(state.users).filter(([,u])=>['coordinator','teacher'].includes(u.role)).map(([uid])=>uid);
+ const teachers=activeTeachers().map(([uid])=>uid);
  if(teachers.length<size)throw Error(`São necessários ao menos ${size} professores cadastrados. Atualmente: ${teachers.length}.`);
  const dates=[];
  for(let d=0;dates.length<maxDays&&d<180;d++){
@@ -564,6 +755,145 @@ function reportHtml(ids){let html=`<header><h1>Relatório de Avaliação de TCC<
  }return html;
 }
 function printReports(ids){if(!isCoord())throw Error('Acesso restrito.');$('#print-root').innerHTML=reportHtml(ids);$('#print-root').setAttribute('aria-hidden','false');window.print();}
+
+// PDF nativo: texto selecionável, fontes padrão e paginação, sem arquivo ou CDN adicional.
+const PDF_WINANSI={'€':128,'‚':130,'ƒ':131,'„':132,'…':133,'†':134,'‡':135,'ˆ':136,'‰':137,'Š':138,'‹':139,'Œ':140,'Ž':142,'‘':145,'’':146,'“':147,'”':148,'•':149,'–':150,'—':151,'˜':152,'™':153,'š':154,'›':155,'œ':156,'ž':158,'Ÿ':159};
+function pdfText(value){
+ return Array.from(String(value??'')).map(ch=>{
+  const n=ch.codePointAt(0);
+  if(n<32||(n>=127&&n<=159))return ' ';
+  if(n<=255||PDF_WINANSI[ch])return ch;
+  const normalized=ch.normalize('NFKD').replace(/[\u0300-\u036f]/g,'');
+  return /^[\x20-\x7e]+$/.test(normalized)?normalized:'?';
+ }).join('');
+}
+function pdfLiteral(value){
+ return '('+Array.from(pdfText(value)).map(ch=>{
+  const n=PDF_WINANSI[ch]||ch.charCodeAt(0);
+  if(ch==='('||ch===')'||ch==='\\')return '\\'+ch;
+  return n>=128?'\\'+n.toString(8).padStart(3,'0'):ch;
+ }).join('')+')';
+}
+class SchedulePdf{
+ constructor(preview,issued,responsible){
+  this.width=595.28;this.height=841.89;this.margin=40;this.bottom=795;this.pages=[];this.preview=preview;
+  this.issued=issued;this.responsible=responsible;this.measure=document.createElement('canvas').getContext('2d');this.newPage();
+ }
+ color(hex){return hex.replace('#','').match(/../g).map(v=>(parseInt(v,16)/255).toFixed(4)).join(' ');}
+ rect(x,top,width,height,fill){this.pages.at(-1).push(`${this.color(fill)} rg ${x.toFixed(2)} ${(this.height-top-height).toFixed(2)} ${width.toFixed(2)} ${height.toFixed(2)} re f`);}
+ text(value,x,top,size=10,bold=false,color='#22354c'){
+  this.pages.at(-1).push(`BT /${bold?'F2':'F1'} ${size} Tf ${this.color(color)} rg 1 0 0 1 ${x.toFixed(2)} ${(this.height-top-size).toFixed(2)} Tm ${pdfLiteral(value)} Tj ET`);
+ }
+ wrap(value,width,size=10,bold=false){
+  this.measure.font=`${bold?'bold ':''}${size}px Arial`;
+  const result=[];
+  for(const paragraph of String(value??'').split(/\r?\n/)){
+   let line='';
+   for(const word of pdfText(paragraph).split(/\s+/).filter(Boolean)){
+    const candidate=line?`${line} ${word}`:word;
+    if(this.measure.measureText(candidate).width<=width){line=candidate;continue;}
+    if(line){result.push(line);line='';}
+    for(const character of word){
+     if(line&&this.measure.measureText(line+character).width>width){result.push(line);line='';}
+     line+=character;
+    }
+   }
+   result.push(line||' ');
+  }
+  return result;
+ }
+ newPage(){
+  this.pages.push([]);this.rect(0,0,this.width,6,'#e0001a');this.rect(0,6,this.width,83,'#014996');
+  this.text('UNIVERSIDADE DO VALE DO PARAÍBA',this.margin,20,10,true,'#ffffff');
+  this.text(this.preview?'Sorteio de bancas · Prévia':'Agenda de bancas confirmadas',this.margin,43,19,true,'#ffffff');
+  this.text('Sistema de Avaliação de TCC · 2026',this.margin,69,9,false,'#ffffff');
+  const responsible=this.wrap(`Emissão: ${this.issued} · Responsável: ${this.responsible}`,this.width-2*this.margin,9);
+  responsible.forEach((line,i)=>this.text(line,this.margin,102+i*12,9,false,'#60738a'));
+  this.y=109+responsible.length*12;
+ }
+ ensure(height){if(this.y+height>this.bottom)this.newPage();}
+ paragraph(value,size=10,bold=false,color='#22354c',gap=6){
+  const lines=this.wrap(value,this.width-2*this.margin-20,size,bold);
+  for(const line of lines){this.ensure(size+5);this.text(line,this.margin+10,this.y,size,bold,color);this.y+=size+5;}
+  this.y+=gap;
+ }
+ finish(){
+  const count=this.pages.length;
+  this.pages.forEach((page,i)=>{
+   page.push(`${this.color('#dbe3ed')} rg 40 31.89 515.28 0.75 re f`);
+   page.push(`BT /F1 8 Tf ${this.color('#60738a')} rg 1 0 0 1 40 19.89 Tm ${pdfLiteral(this.preview?'PRÉVIA - sujeita à confirmação pela coordenação':'Agenda confirmada - Univap')} Tj ET`);
+   page.push(`BT /F1 8 Tf ${this.color('#60738a')} rg 1 0 0 1 482 19.89 Tm ${pdfLiteral(`Página ${i+1} de ${count}`)} Tj ET`);
+  });
+  const objects=[];
+  objects[1]='<< /Type /Catalog /Pages 2 0 R >>';
+  objects[2]=`<< /Type /Pages /Count ${count} /Kids [${this.pages.map((_,i)=>`${6+i*2} 0 R`).join(' ')}] >>`;
+  objects[3]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>';
+  objects[4]='<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>';
+  this.pages.forEach((page,i)=>{
+   const streamId=5+i*2,pageId=6+i*2,content=page.join('\n')+'\n';
+   objects[streamId]=`<< /Length ${content.length} >>\nstream\n${content}endstream`;
+   objects[pageId]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${this.width} ${this.height}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${streamId} 0 R >>`;
+  });
+  const infoId=5+count*2;
+  objects[infoId]=`<< /Title ${pdfLiteral(this.preview?'Sorteio de bancas - Prévia Univap':'Agenda de bancas - Univap')} /Author ${pdfLiteral(this.responsible)} /Creator (Sistema de Avaliacao de TCC - Univap) >>`;
+  // Todos os comandos são ASCII; os acentos usam escapes octais WinAnsi.
+  let body='%PDF-1.4\n% Univap TCC\n';const offsets=[0];
+  for(let i=1;i<objects.length;i++){offsets[i]=body.length;body+=`${i} 0 obj\n${objects[i]}\nendobj\n`;}
+  const xref=body.length;
+  body+=`xref\n0 ${objects.length}\n0000000000 65535 f \n`;
+  for(let i=1;i<objects.length;i++)body+=`${String(offsets[i]).padStart(10,'0')} 00000 n \n`;
+  body+=`trailer\n<< /Size ${objects.length} /Root 1 0 R /Info ${infoId} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  return new Blob([new TextEncoder().encode(body)],{type:'application/pdf'});
+ }
+}
+function buildSchedulePdf(boards,{preview=false,unassigned=[],className='todas'}={},groups=state.groups,responsible=state.profile?.name||'Coordenação'){
+ if(!boards.length)throw Error('Não há bancas para gerar o PDF.');
+ const sorted=boards.slice().sort((a,b)=>a.startAt-b.startAt||a.room.localeCompare(b.room,'pt-BR'));
+ const days=new Set(sorted.map(b=>localDayKey(b.startAt)));
+ const pdf=new SchedulePdf(preview,new Date().toLocaleString('pt-BR'),responsible);
+ pdf.paragraph(`Turma: ${className==='todas'?'Todas as turmas':className} · ${sorted.length} banca(s) · ${days.size} dia(s)`,11,true,'#014996',8);
+ pdf.paragraph(preview?'Esta escala é uma prévia. As bancas serão agendadas somente após a confirmação no sistema.':'Escala de bancas já confirmadas no sistema. As notas de avaliação não fazem parte desta agenda.',9,false,'#60738a',12);
+ if(unassigned.length)pdf.paragraph(`ATENÇÃO: ${unassigned.length} grupo(s) ainda sem horário. A escala está incompleta.`,10,true,'#aa2534',10);
+ let lastDay='';
+ sorted.forEach((b,index)=>{
+  const g=groups[b.groupId]||{},day=localDayKey(b.startAt);
+  const blocks=[
+   [`${String(index+1).padStart(2,'0')} · ${g.name||b.groupId}`,12,true,'#014996'],
+   [`Projeto: ${g.title||'Não informado'}`,10,true,'#22354c'],
+   [`Data: ${dateStr(b.startAt)} · Término: ${hourLabel(b.startAt+b.durationMin*60000)} · Duração: ${b.durationMin} min`,10,false,'#22354c'],
+   [`Turma: ${g.className||'TCC'} · Sala / link: ${b.room}`,10,false,'#22354c'],
+   [`Orientador: ${b.advisorName||who(b.advisorUid)} (${b.members?.[b.advisorUid]?'participa da banca':'não participa da banca'})`,10,false,'#22354c'],
+   [`Avaliadores: ${Object.keys(b.members||{}).map(uid=>b.memberNames?.[uid]||who(uid)).join(' · ')}`,10,false,'#22354c'],
+   [`Alunos: ${Object.values(g.students||{}).join(' · ')||'Não informados'}`,10,false,'#60738a']
+  ];
+  const estimated=blocks.reduce((sum,[value,size,bold])=>sum+pdf.wrap(value,pdf.width-2*pdf.margin-20,size,bold).length*(size+5)+6,0)+20;
+  // Mantém os grupos comuns na mesma página; grupos muito longos podem continuar na seguinte.
+  if(estimated<pdf.bottom-150)pdf.ensure(estimated+(day!==lastDay?34:0));
+  if(day!==lastDay){
+   pdf.ensure(34);pdf.rect(pdf.margin,pdf.y,pdf.width-2*pdf.margin,24,'#eaf3fb');
+   pdf.text(new Date(b.startAt).toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'2-digit',year:'numeric'}),pdf.margin+10,pdf.y+5,11,true,'#014996');
+   pdf.y+=34;lastDay=day;
+  }
+  for(const [value,size,bold,color] of blocks)pdf.paragraph(value,size,bold,color);
+  pdf.ensure(9);pdf.rect(pdf.margin,pdf.y,pdf.width-2*pdf.margin,.7,'#dbe3ed');pdf.y+=17;
+ });
+ if(unassigned.length){
+  pdf.ensure(35);pdf.paragraph('Grupos ainda sem horário',12,true,'#aa2534',8);
+  unassigned.forEach(item=>pdf.paragraph(`${item.name}: ${item.reason}`,10,false,'#22354c'));
+ }
+ return pdf.finish();
+}
+function downloadBlob(blob,filename){
+ const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;
+ document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
+}
+function exportSchedulePdf(preview){
+ if(!isCoord())throw Error('Somente a coordenação pode exportar a escala.');
+ const boards=preview?state.plan:Object.values(state.boards).filter(b=>state.filter==='todas'||groupOf(b)?.className===state.filter);
+ const options=preview?{preview:true,unassigned:state.planUnassigned,className:state.planMeta?.className||'todas'}:{className:state.filter};
+ downloadBlob(buildSchedulePdf(boards,options),`${preview?'sorteio':'agenda'}_bancas_univap_${localDayKey(Date.now())}.pdf`);
+ notice('PDF gerado. Verifique os downloads do navegador.');
+}
 function exportCsv(ids){if(!isCoord())throw Error('Acesso restrito.');const csv=[['Turma','Grupo','Projeto','Orientador','Aluno','Professor avaliador','Apresentação','Parte prática','Domínio do código','Domínio do tempo','Média avaliador','Média banca','Entregas','Parcela banca 60%','Parcela entregas 40%','Nota final']];
  for(const bid of ids){if(!state.seals[bid])throw Error('Banca não concluída.');const b=state.boards[bid],g=groupOf(b),gr=boardGrades(bid),ds=state.deliveries[bid]||{};if(!situacao(b,g,gr,ds).pronta)throw Error('Notas incompletas.');for(const [sid,name] of studentsOf(g)){const r=resultadoAluno(b,sid,gr,ds);for(const uid of Object.keys(b.members)){const n=gr[uid][sid];csv.push([g.className,g.name,g.title,b.advisorName,name,b.memberNames[uid],...CRITERIOS.map(([k])=>fmt(n[k])),fmt(mediaAvaliador(n)),fmt(r.banca),fmt(r.entrega),fmt(r.parcelaBanca),fmt(r.parcelaEntrega),fmt(r.final)]);}}}
  const content='\ufeff'+csv.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='relatorio_tcc_2026.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
@@ -615,18 +945,39 @@ async function importarGruposProtegidos() {
 }
 
 async function copiarPoliticaDeAcesso(){
- if(!isCoord())throw Error('Ação restrita à coordenação.');
  const content=document.getElementById('firebase-rules').textContent;
- try {await navigator.clipboard.writeText(content);notice('Política copiada. O administrador deve publicá-la no ambiente de dados.');}
- catch {const blob=new Blob([content],{type:'application/json'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='politica-de-acesso.json';a.click();setTimeout(()=>URL.revokeObjectURL(url),2000);notice('Política baixada. O administrador deve publicá-la no ambiente de dados.');}
+ try {await navigator.clipboard.writeText(content);notice('Política copiada. Publique em Firebase → Realtime Database → Regras.');}
+ catch {downloadBlob(new Blob([content],{type:'application/json'}),'politica-de-acesso.json');notice('Política baixada. Publique em Firebase → Realtime Database → Regras.');}
 }
 const handle = async cb=>{try{await cb();}catch(err){fail(err);}};
 for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('click',e=>{const el=e.target.closest('[data-route]');if(!el)return;if(el.dataset.route==='sair')signOut(auth).catch(fail);else go(el.dataset.route);});
-$('#view').addEventListener('click',e=>{const el=e.target.closest('button');if(!el)return;if(el.dataset.route)return go(el.dataset.route);if(el.dataset.importRoster)return handle(importarGruposProtegidos);if(el.dataset.copyPolicy)return handle(copiarPoliticaDeAcesso);if(el.dataset.openBoard)return go('avaliar',el.dataset.openBoard);if(el.dataset.clearPlan){state.plan=[];state.planMeta=null;state.planUnassigned=[];render();return;}if(el.dataset.commitPlan)return handle(()=>createBoards(state.plan));if(el.dataset.seal)return handle(()=>closeBoard(el.dataset.seal));if(el.dataset.printOne)return handle(()=>printReports([el.dataset.printOne]));if(el.dataset.printAll)return handle(()=>{const selected=Object.entries(state.boards).filter(([,b])=>state.reportFilter==='todas'||groupOf(b)?.className===state.reportFilter).map(([id])=>id);const targetGroups=Object.values(state.groups).filter(g=>state.reportFilter==='todas'||g.className===state.reportFilter);if(!targetGroups.length||selected.length!==targetGroups.length||targetGroups.some(g=>!state.groupBoards[g.id]||!state.seals[state.groupBoards[g.id]]))throw Error('Agende e conclua todos os grupos do filtro antes do consolidado.');printReports(selected);});if(el.dataset.exportCsv)return handle(()=>exportCsv(Object.keys(state.seals).filter(id=>state.seals[id]&&state.boards[id]&&(state.reportFilter==='todas'||groupOf(state.boards[id])?.className===state.reportFilter))));});
-$('#view').addEventListener('change',e=>{if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
+$('#view').addEventListener('click',e=>{
+ const el=e.target.closest('button');if(!el||el.disabled)return;
+ if(el.dataset.route)return go(el.dataset.route);
+ if(el.dataset.importRoster)return handle(importarGruposProtegidos);
+ if(el.dataset.copyPolicy)return handle(copiarPoliticaDeAcesso);
+ if(el.dataset.removeTeacher)return handle(()=>changeTeacherAccess(el.dataset.removeTeacher,false));
+ if(el.dataset.restoreTeacher)return handle(()=>changeTeacherAccess(el.dataset.restoreTeacher,true));
+ if(el.dataset.pdfPlan)return handle(()=>exportSchedulePdf(true));
+ if(el.dataset.pdfAgenda)return handle(()=>exportSchedulePdf(false));
+ if(el.dataset.openBoard)return go('avaliar',el.dataset.openBoard);
+ if(el.dataset.clearPlan){state.plan=[];state.planMeta=null;state.planUnassigned=[];render();return;}
+ if(el.dataset.commitPlan)return handle(()=>createBoards(state.plan));
+ if(el.dataset.seal)return handle(()=>closeBoard(el.dataset.seal));
+ if(el.dataset.printOne)return handle(()=>printReports([el.dataset.printOne]));
+ if(el.dataset.printAll)return handle(()=>{
+  const selected=Object.entries(state.boards).filter(([,b])=>state.reportFilter==='todas'||groupOf(b)?.className===state.reportFilter).map(([id])=>id);
+  const targetGroups=Object.values(state.groups).filter(g=>state.reportFilter==='todas'||g.className===state.reportFilter);
+  if(!targetGroups.length||selected.length!==targetGroups.length||targetGroups.some(g=>!state.groupBoards[g.id]||!state.seals[state.groupBoards[g.id]]))throw Error('Agende e conclua todos os grupos do filtro antes do consolidado.');
+  printReports(selected);
+ });
+ if(el.dataset.exportCsv)return handle(()=>exportCsv(Object.keys(state.seals).filter(id=>state.seals[id]&&state.boards[id]&&(state.reportFilter==='todas'||groupOf(state.boards[id])?.className===state.reportFilter))));
+});
+$('#view').addEventListener('change',e=>{if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='teacher-method')teacherRegistrationMethod();if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
 $('#view').addEventListener('submit',e=>{e.preventDefault();const f=e.target;handle(async()=>{
  if(f.id==='manual-form'){const d=new FormData(f);const g=state.groups[d.get('groupId')];if(!g||state.groupBoards[g.id])throw Error('Selecione um grupo ainda não agendado.');const startAt=new Date(d.get('date')).getTime(),durationMin=Number(d.get('duration')),size=Number(d.get('size')),room=String(d.get('room')||'').trim();const evaluators=d.getAll('evaluator');if(evaluators.length!==size||new Set(evaluators).size!==evaluators.length)throw Error(`Selecione exatamente ${size} professores avaliadores.`);if(evaluators.some(uid=>!state.users[uid]))throw Error('Há um professor sem cadastro.');if(!room)throw Error('Informe a sala.');await createBoards([makeBoard(g,startAt,durationMin,room,evaluators)]);}
- else if(f.id==='lottery-form'){const result=makeLottery(new FormData(f));state.plan=result.plan;state.planMeta=result.config;state.planUnassigned=result.unassigned;render();notice(result.unassigned.length?`${result.plan.length} bancas encaixadas; ${result.unassigned.length} grupo(s) sem horário. Ajuste as condições antes de confirmar.`:'Sorteio completo! Revise a agenda e confirme as bancas.',!!result.unassigned.length);}
+ else if(f.id==='lottery-form'){if(!isCoord())throw Error('Sorteio exclusivo da coordenação.');const result=makeLottery(new FormData(f));state.plan=result.plan;state.planMeta=result.config;state.planUnassigned=result.unassigned;render();notice(result.unassigned.length?`${result.plan.length} bancas encaixadas; ${result.unassigned.length} grupo(s) sem horário. Ajuste as condições antes de confirmar.`:'Sorteio completo! Baixe o PDF da prévia ou confirme as bancas.',!!result.unassigned.length);}
+ else if(f.id==='teacher-form')await addTeacher(f);
  else if(f.dataset.gradeForm)await saveGrade(f);
  else if(f.dataset.deliveryForm)await saveDelivery(f);
  });});
@@ -635,3 +986,4 @@ $('#view').addEventListener('submit',e=>{e.preventDefault();const f=e.target;han
 </script>
 
 </body></html>
+
