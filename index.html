@@ -2,35 +2,374 @@
 <html lang="pt-BR"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#014996"><meta name="description" content="Gestão Univap de professores, bancas e avaliação individual de TCC, com sorteio e PDF da agenda.">
+<meta name="color-scheme" content="light">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>Avaliação de TCC | Universidade do Vale do Paraíba</title><style>
-/* Sistema de avaliacao de TCC — identidade cromatica baseada no manual Univap 2025.
-   Nao reproduz nem altera o logotipo oficial. */
-:root{--azul:#014996;--azul-escuro:#073b78;--azul-profundo:#092c58;--azul-claro:#eaf3fb;--vermelho:#e0001a;--borda:#dbe3ed;--texto:#22354c;--cinza:#60738a;--fundo:#f5f7fa;--branco:#fff;--sucesso:#137a58;font-family:Arial,Helvetica,sans-serif;color:var(--texto);background:var(--fundo);font-synthesis:none}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-width:320px}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.48;cursor:not-allowed}input,select,textarea{outline:none}input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid #3984c7;outline-offset:2px}a{color:var(--azul)}.hidden{display:none!important}.muted{color:var(--cinza)}.tiny{font-size:.78rem;line-height:1.55;color:var(--cinza)}.eyebrow,.side-heading{font-size:.68rem;letter-spacing:.115em;font-weight:700;color:var(--cinza);text-transform:uppercase;margin:0}.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}.space{justify-content:space-between}
-/* Entrada institucional */
-.auth-page{min-height:100vh;display:grid;grid-template-columns:minmax(330px,.95fr) minmax(470px,1.05fr);background:#fff}.auth-deco{position:relative;overflow:hidden;background:var(--azul);color:#fff;padding:clamp(38px,7vw,100px);display:flex;flex-direction:column;justify-content:center;align-items:flex-start}.auth-deco:before{content:"";position:absolute;top:0;left:0;right:0;height:7px;background:var(--vermelho)}.pill{border:1px solid #ffffff66;padding:8px 12px;color:#fff;font-size:.72rem;font-weight:700;letter-spacing:.07em;border-radius:3px}.brand-mark{display:none}.auth-deco h1{font-size:clamp(2.35rem,4.5vw,4.5rem);font-weight:700;line-height:1.12;letter-spacing:-.045em;max-width:680px;margin:24px 0}.auth-deco h1 em{font-style:normal;color:#fff}.auth-deco p{line-height:1.7;color:#dae8f7;font-size:1rem;max-width:520px;margin:0}.auth-stats{display:flex;gap:10px;flex-wrap:wrap;margin-top:44px}.auth-stats span{border:1px solid #ffffff4a;padding:10px 12px;font-size:.8rem;background:#ffffff0a}.auth-card{width:min(440px,calc(100% - 46px));margin:auto;padding:54px 12px}.logo{display:flex;align-items:center;gap:12px;font-size:.91rem;line-height:1.25;font-weight:700;letter-spacing:0}.logo small{display:block;font-size:.69rem;font-weight:400;letter-spacing:0;margin-top:4px;line-height:1.25;color:var(--cinza)}.sidebar .logo small{font-size:.65rem}.logo span{display:grid;place-items:center;border:1px solid #ffffff78;color:#fff;min-width:43px;height:43px;font-size:.75rem;font-weight:800;border-radius:3px;background:#ffffff10;letter-spacing:.035em}.auth-card .logo{color:var(--azul);margin-bottom:70px}.auth-card .logo span{background:var(--azul);color:#fff;border:0}.auth-card h2{font-size:1.85rem;line-height:1.17;letter-spacing:-.025em;color:var(--azul-profundo);margin:11px 0 9px}.auth-card>.muted{font-size:.88rem;line-height:1.65}.auth-card>label{display:block;font-weight:700;font-size:.83rem;margin:24px 0 8px}.auth-card input,.field input,.field select,.field textarea{border:1px solid #bfcdda;background:#fff;border-radius:5px;width:100%;min-height:46px;color:var(--texto);padding:11px 13px}.auth-card input::placeholder,.field input::placeholder{color:#8b9aad}.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;border:1px solid #b8c7d8;background:#fff;color:var(--azul);min-height:41px;padding:10px 15px;border-radius:5px;font-size:.81rem;font-weight:700;line-height:1.35;transition:background .13s,border-color .13s}.btn:hover:not(:disabled){background:#f0f5fa;border-color:#87a8c8}.btn.primary,.btn.dark{background:var(--azul);border-color:var(--azul);color:#fff}.btn.primary:hover:not(:disabled),.btn.dark:hover:not(:disabled){background:var(--azul-escuro)}.btn.soft{background:var(--azul-claro);border-color:#c6dced;color:var(--azul-escuro)}.btn.full{width:100%;margin-top:27px;justify-content:space-between;padding:13px 16px;min-height:49px}.link-button{border:0;background:transparent;font-size:.83rem;font-weight:700;color:var(--azul);display:block;margin:20px auto 25px}.auth-card>.tiny{margin-top:14px}.setup-guide{margin-top:25px;border:1px solid var(--borda);background:#f7f9fc;padding:14px;font-size:.8rem;line-height:1.65;border-radius:5px}.setup-guide summary{font-weight:700;color:var(--azul);cursor:pointer}.setup-body{margin-top:12px}.setup-body pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#e8eef5;padding:10px;border-radius:4px;font-size:.72rem}.setup-keys{background:#fff;border:1px solid var(--borda);padding:10px}
-/* Navegacao / cabecalho */
-.app-shell{display:grid;grid-template-columns:252px minmax(0,1fr);min-height:100vh}.sidebar{position:sticky;top:0;align-self:start;height:100vh;display:flex;flex-direction:column;background:#fff;border-right:1px solid var(--borda);padding:27px 15px 17px}.sidebar:before{content:"";height:5px;position:absolute;inset:0 0 auto;background:var(--vermelho)}.sidebar .logo{color:var(--azul-profundo);padding:15px 12px 26px;border-bottom:1px solid var(--borda);margin-bottom:24px}.sidebar .logo span{color:#fff;background:var(--azul);border-color:var(--azul)}.side-heading{padding:0 14px;margin-bottom:8px}.sidebar nav button{border:0;width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:transparent;color:#486078;padding:12px 14px;border-radius:4px;font-size:.84rem;font-weight:600;margin:3px 0;border-left:3px solid transparent}.sidebar nav button:hover{background:#f2f6fa;color:var(--azul)}.sidebar nav button.active{border-left-color:var(--vermelho);background:var(--azul-claro);color:var(--azul-escuro);font-weight:700}.nav-ico{font-size:.69rem;font-weight:800;width:24px;flex-shrink:0;text-align:left;color:#8197b0}.sidebar nav button.active .nav-ico{color:var(--azul)}.side-foot{margin-top:auto;display:flex;align-items:center;gap:10px;border-top:1px solid var(--borda);padding:18px 4px 2px;min-width:0}.avatar{display:grid;place-items:center;flex-shrink:0;width:36px;height:36px;background:var(--azul-claro);border:1px solid #c8dced;color:var(--azul);font-weight:700;font-size:.84rem;border-radius:50%}.side-foot strong{display:block;font-size:.78rem;overflow-wrap:anywhere}.side-foot small{display:block;color:var(--cinza);font-size:.73rem;margin-top:4px}.icon-btn{margin-left:auto;border:1px solid var(--borda);background:white;color:var(--azul);min-width:34px;height:34px;border-radius:4px;font-size:1rem}.main-column{min-width:0}.topbar{min-height:100px;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:19px clamp(20px,3vw,48px);background:#fff;border-bottom:1px solid var(--borda)}.topbar h1{font-size:1.54rem;letter-spacing:-.025em;line-height:1.3;margin:7px 0 0;color:var(--azul-profundo)}.top-right{display:flex;align-items:center;gap:9px;font-size:.76rem;font-weight:600;color:var(--cinza)}.top-right .avatar{margin-left:10px}.live-dot{width:8px;height:8px;border-radius:50%;background:#1b9269}.mobile-nav{display:none}#view{max-width:1410px;padding:29px clamp(20px,3vw,48px) 80px;margin:0 auto}
-/* Conteudo */
-.hero{display:flex;justify-content:space-between;align-items:center;gap:28px;background:#fff;border:1px solid var(--borda);border-left:5px solid var(--azul);padding:29px 30px;margin-bottom:19px;border-radius:4px}.hero .pill{border:0;padding:0;color:var(--azul);font-size:.67rem}.hero h2{font-size:clamp(1.35rem,2.5vw,1.9rem);font-weight:700;color:var(--azul-profundo);letter-spacing:-.03em;margin:9px 0 8px}.hero p{font-size:.86rem;line-height:1.6;color:var(--cinza);margin:0;max-width:690px}.hero .btn{background:var(--azul);border-color:var(--azul);color:#fff;flex-shrink:0}.hero .btn:hover{background:var(--azul-escuro)}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}.stat,.card{background:#fff;border:1px solid var(--borda);border-radius:5px;box-shadow:0 2px 8px #17355906}.stat{padding:20px;min-height:118px}.stat .stat-label{font-size:.78rem;display:flex;justify-content:space-between;align-items:center;gap:7px;color:var(--cinza);line-height:1.4}.stat strong{display:block;font-size:2rem;color:var(--azul-profundo);margin-top:12px;letter-spacing:-.045em}.stat-icon{font-size:.8rem!important;color:var(--azul)!important;font-weight:700}.card{padding:22px;margin-top:19px}.card h3,.section-heading h3{font-size:1.03rem;letter-spacing:-.01em;color:var(--azul-profundo);margin:0;line-height:1.5}.section-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:19px;flex-wrap:wrap}.section-heading p{color:var(--cinza);font-size:.8rem;margin:5px 0 0;line-height:1.5}.toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 17px}.field{display:flex;flex-direction:column;gap:7px;min-width:0}.field label{font-size:.78rem;font-weight:700;color:#3e536c}.field input,.field select,.field textarea{font-size:.85rem;min-height:42px;padding:10px}.field small{font-size:.74rem;color:var(--cinza)}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.form-grid .wide{grid-column:1/-1}.filter{border:1px solid #bfcdda;border-radius:5px;background:#fff;color:var(--texto);font-size:.82rem;min-height:42px;padding:10px 12px;max-width:100%}.group-list{display:grid;gap:10px}.group-card{display:flex;align-items:center;justify-content:space-between;gap:20px;border:1px solid var(--borda);border-radius:4px;background:#fff;padding:17px}.group-card h4{color:var(--azul-profundo);font-size:.92rem;line-height:1.45;font-weight:700;margin:8px 0 6px}.group-card p{font-size:.79rem;line-height:1.55;color:var(--cinza);margin:4px 0}.chip{display:inline-block;border-radius:3px;background:var(--azul-claro);color:var(--azul);font-size:.7rem;font-weight:700;padding:5px 8px}.chip.green{background:#eaf5f0;color:#146847}.chip.orange{background:#fff4df;color:#855b15}.chip.gray{background:#eff2f5;color:#516378}.chip.blue{background:var(--azul-claro);color:var(--azul)}.empty{text-align:center;padding:48px 18px;color:var(--cinza)}.empty i{display:block;font-size:1.9rem;font-style:normal;margin-bottom:12px}.empty strong{display:block;color:var(--azul-profundo);margin-bottom:7px}.tabs{display:flex;gap:4px;overflow-x:auto;border-bottom:1px solid var(--borda);margin-bottom:18px}.tabs button{font-size:.81rem;font-weight:700;white-space:nowrap;color:var(--cinza);padding:12px 13px;background:transparent;border:0;border-bottom:3px solid transparent}.tabs button.selected{color:var(--azul);border-bottom-color:var(--vermelho)}.student{border:1px solid var(--borda);border-radius:4px;margin:12px 0;padding:17px}.student h4{font-size:.9rem;color:var(--azul-profundo);margin:0 0 5px}.student p{font-size:.78rem;color:var(--cinza);margin:0 0 14px}.grade-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:11px}.grade-grid .field input{text-align:center;font-weight:700}.grade-foot{margin-top:15px;padding-top:14px;border-top:1px solid var(--borda);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px}.grade-foot strong{color:var(--azul)}.board-details{display:grid;gap:9px;font-size:.8rem;color:var(--cinza);line-height:1.5}.board-details b{color:var(--texto)}.step-list{display:grid;gap:12px}.step-row{display:flex;gap:10px;align-items:center;border:1px solid var(--borda);padding:12px;font-size:.83rem}.step-number{min-width:28px;height:28px;display:grid;place-items:center;background:var(--azul-claro);color:var(--azul);font-size:.75rem;font-weight:700}.table-scroll{overflow-x:auto}.data-table{border-collapse:collapse;min-width:690px;width:100%;font-size:.82rem}.data-table th{text-align:left;background:#eff4fa;color:var(--azul-profundo);padding:12px 10px;white-space:nowrap}.data-table td{padding:12px 10px;vertical-align:top;border-bottom:1px solid var(--borda)}.data-table td strong{display:block;color:var(--azul-profundo)}.data-table small{color:var(--cinza)}.check-list{display:flex;gap:8px;flex-wrap:wrap}.check-tag{display:flex;align-items:center;gap:7px;font-size:.79rem;border:1px solid var(--borda);background:white;padding:9px}.notice{border:1px solid #e7d7b3;background:#fff9ec;color:#675021;font-size:.81rem;line-height:1.55;padding:13px 15px;margin:13px 0;border-left:3px solid #e5ad3d}.notice.good{border-color:#bcdccd;background:#edf8f1;color:#1e6048;border-left-color:#27966a}.notice.error{border-color:#eab8bb;background:#fff2f3;color:#aa2534;border-left-color:var(--vermelho)}.badge-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}.preview-row{display:grid;grid-template-columns:1.3fr 1fr 1.5fr auto;gap:11px;align-items:center;font-size:.79rem;padding:13px;border-bottom:1px solid var(--borda)}.preview-row span{color:var(--cinza)}#toast{position:fixed;z-index:100;right:18px;top:18px;max-width:min(440px,calc(100% - 36px));background:var(--azul-profundo);color:#fff;padding:13px 16px;font-size:.84rem;line-height:1.5;border-radius:4px;border-left:4px solid #8abbea;box-shadow:0 9px 28px #1235582b;opacity:0;transform:translateY(-15px);pointer-events:none;transition:opacity .15s,transform .15s}#toast.show{opacity:1;transform:none}#toast.error{background:#8c2632;border-left-color:#f09ba4}#print-root{display:none}
-.schedule-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin:17px 0}.schedule-summary>div{border:1px solid var(--borda);background:var(--azul-claro);padding:14px;border-radius:4px}.schedule-summary strong{display:block;color:var(--azul-profundo);font-size:1.5rem;margin-bottom:4px}.schedule-summary span{font-size:.77rem;color:var(--cinza)}.schedule-days{display:flex;flex-wrap:wrap;gap:7px;margin:10px 0 18px}.schedule-days span{border:1px solid var(--borda);background:#fff;padding:7px 10px;border-radius:3px;font-size:.77rem}.schedule-warning{border:1px solid #d9b8a2;background:#fff9f2;padding:16px;margin:15px 0;border-left:4px solid #b46b22}.schedule-warning h4{color:#764318;margin:0 0 7px}.schedule-warning ul{margin:8px 0;padding-left:20px;line-height:1.6;font-size:.81rem}.schedule-plan-actions{display:flex;flex-wrap:wrap;gap:9px;margin-top:18px}@media(max-width:770px){.schedule-summary{grid-template-columns:1fr 1fr 1fr;gap:6px}.schedule-summary>div{padding:10px}.schedule-summary strong{font-size:1.2rem}.schedule-summary span{font-size:.66rem}}
-@media(max-width:1100px){.grid{grid-template-columns:repeat(2,minmax(0,1fr))}.grade-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
-@media(max-width:770px){.auth-page{display:block;min-height:100vh}.auth-deco{min-height:190px;padding:28px 24px 29px}.auth-deco h1{font-size:1.85rem;line-height:1.2;margin:16px 0 10px}.auth-deco p{font-size:.78rem}.auth-stats{display:none}.auth-card{width:min(460px,calc(100% - 36px));padding:29px 0 65px}.auth-card .logo{margin-bottom:32px}.app-shell{display:block}.sidebar{display:none}.topbar{min-height:85px;padding:15px 18px;border-top:5px solid var(--vermelho)}.topbar h1{font-size:1.27rem}.top-right .online-label,.top-right .live-dot{display:none}#view{padding:18px 15px 105px}.mobile-nav{position:fixed;z-index:40;bottom:0;left:0;right:0;display:flex;justify-content:space-around;gap:1px;padding:6px 5px calc(7px + env(safe-area-inset-bottom));border-top:1px solid var(--borda);background:#fff;box-shadow:0 -3px 12px #13345311}.mobile-nav button{display:flex;flex-direction:column;align-items:center;gap:4px;margin:0;padding:6px 4px;min-width:48px;max-width:100px;flex:1;border:0;background:transparent;border-top:2px solid transparent;border-radius:0;color:#667a90;font-size:.62rem;font-weight:600}.mobile-nav button .nav-ico{font-size:.65rem}.mobile-nav button.active{border-top-color:var(--vermelho);background:var(--azul-claro);color:var(--azul-escuro)}.hero{display:block;padding:22px}.hero .btn{margin-top:18px}.form-grid{grid-template-columns:1fr}.grid{gap:10px}.stat{min-height:100px;padding:15px}.stat strong{font-size:1.7rem}.card{padding:17px;margin-top:15px}.group-card{align-items:flex-start;flex-direction:column}.group-card>.btn{width:100%}.preview-row{grid-template-columns:1fr 1fr}.grade-grid{gap:9px}.grade-grid .field label{font-size:.71rem}}
-@media(max-width:370px){.grade-grid{grid-template-columns:1fr 1fr}.grid{grid-template-columns:1fr 1fr}.stat .stat-label{font-size:.71rem}.tabs button{padding:10px}}
-@media print{@page{size:A4;margin:13mm}body{background:#fff;color:#151515;font:10pt Arial,sans-serif}#app-view,#login-view,#toast{display:none!important}#print-root{display:block!important}#print-root h1{font-size:20pt;margin:0 0 6px;color:#014996}#print-root h2{font-size:13pt;border-bottom:2px solid #014996;padding-bottom:5px}#print-root h3{font-size:10pt;margin:12px 0 5px}#print-root p{font-size:9pt}#print-root table{width:100%;border-collapse:collapse;font-size:8pt;margin:10px 0 18px;table-layout:fixed}#print-root th,#print-root td{border:1px solid #b7b7b7;padding:5px;overflow-wrap:anywhere;text-align:left}#print-root th{background:#eeeeee}#print-root article{break-inside:avoid-page;page-break-inside:avoid}.print-break{break-before:page}.print-footer{margin-top:25px;font-size:8pt;color:#555}.setup-guide{display:none}}
-@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+/* Mobile first. Cores institucionais Univap; todos os recursos ficam neste HTML. */
+:root{
+  --azul:#014996;--azul-escuro:#073b78;--azul-profundo:#092c58;
+  --azul-claro:#eaf3fb;--vermelho:#e0001a;--borda:#dce5ef;
+  --texto:#22354c;--cinza:#5c7087;--fundo:#f3f6fb;--branco:#fff;
+  --sucesso:#137a58;--raio:20px;--nav-height:76px;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
+  color:var(--texto);background:var(--fundo);font-synthesis:none;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:100px;-webkit-text-size-adjust:100%}
+body{margin:0;min-width:320px;line-height:1.5}
+body.menu-open{overflow:hidden}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+button:disabled{opacity:.48;cursor:not-allowed}
+input,select,textarea{max-width:100%;min-width:0}
+input:focus,select:focus,textarea:focus,button:focus-visible,a:focus-visible,summary:focus-visible{
+  outline:3px solid #3984c7;outline-offset:3px;
+}
+a{color:var(--azul)}
+.hidden{display:none!important}
+.muted{color:var(--cinza)}
+.tiny{font-size:.81rem;line-height:1.6;color:var(--cinza)}
+.eyebrow,.side-heading{font-size:.66rem;letter-spacing:.1em;font-weight:750;color:var(--cinza);text-transform:uppercase;margin:0}
+.row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;min-width:0}
+.row>div{min-width:0}
+.space{justify-content:space-between}
+.ui-icon{width:22px;height:22px;flex-shrink:0;vertical-align:middle;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:9px;
+  min-height:48px;max-width:100%;padding:12px 16px;border:1px solid #c9d7e6;
+  border-radius:12px;background:#fff;color:var(--azul);font-size:.88rem;
+  font-weight:700;line-height:1.4;text-align:center;transition:background .15s,transform .15s;
+}
+.btn:active:not(:disabled){transform:translateY(1px)}
+.btn.primary,.btn.dark{background:var(--azul);border-color:var(--azul);color:#fff}
+.btn.soft{background:var(--azul-claro);border-color:#d2e4f4;color:var(--azul-escuro)}
+.btn.danger{color:#a92335;border-color:#edc5cb;background:#fff3f5}
+.btn.full{width:100%;margin-top:24px;min-height:54px;justify-content:space-between;padding:14px 18px}
+.btn .ui-icon{width:20px;height:20px}
+.icon-btn{display:grid;place-items:center;flex-shrink:0;width:44px;height:44px;padding:0;border:1px solid var(--borda);background:#fff;color:var(--azul);border-radius:12px}
 
-.btn.danger{color:#aa2534;border-color:#eab8bb;background:#fff2f3}.btn.danger:hover:not(:disabled){background:#ffe4e7;border-color:#c66772}.teacher-list{display:grid;gap:10px}.teacher-admin-note{margin:0 0 18px;line-height:1.6;font-size:.82rem;color:var(--cinza)}.teacher-archive{margin-top:20px}.teacher-archive summary{color:var(--azul);font-size:.85rem;font-weight:700;cursor:pointer}.teacher-archive .teacher-list{margin-top:14px}.policy-guide{line-height:1.7;font-size:.82rem;color:var(--cinza)}.policy-guide summary{font-weight:700;color:var(--azul);cursor:pointer}.policy-guide ol{padding-left:20px}.policy-guide code{overflow-wrap:anywhere;color:var(--azul-escuro)}
-@media(max-width:770px){.mobile-nav{overflow-x:auto;justify-content:flex-start}.mobile-nav button{flex:1 0 64px;min-width:64px;max-width:110px}}
+/* Entrada: cabeçalho compacto e cartão sobreposto. */
+.auth-page{display:flex;flex-direction:column;min-height:100vh;min-height:100svh;background:var(--fundo)}
+.auth-deco{position:relative;overflow:hidden;background:var(--azul);color:#fff;padding:calc(28px + env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) 48px max(24px,env(safe-area-inset-left))}
+.auth-deco:before{content:"";position:absolute;inset:0 0 auto;height:5px;background:var(--vermelho)}
+.auth-deco:after{content:"";position:absolute;width:210px;height:210px;right:-100px;bottom:-120px;border:34px solid #ffffff0b;border-radius:50%;pointer-events:none}
+.pill{display:inline-flex;align-items:center;gap:7px;font-size:.68rem;font-weight:700;letter-spacing:.065em;line-height:1.5}
+.auth-deco>.pill{padding:7px 10px;border:1px solid #ffffff3b;border-radius:8px;background:#ffffff0b;letter-spacing:.035em}
+.brand-mark{display:none}
+.auth-deco h1{font-size:clamp(1.8rem,7.2vw,2.4rem);font-weight:750;line-height:1.18;letter-spacing:-.04em;margin:22px 0 12px}
+.auth-deco h1 em{font-style:normal;color:#d6e8fa}
+.auth-deco p{color:#e0ecf9;font-size:.88rem;line-height:1.65;margin:0;max-width:480px}
+.auth-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:24px}
+.auth-stats span{font-size:.72rem;color:#e8f1fc;padding-left:9px;border-left:2px solid #ffffff5c}
+.auth-card{position:relative;z-index:1;width:calc(100% - 32px);max-width:460px;margin:-28px auto 32px;padding:25px 20px;background:#fff;border:1px solid #e2eaf3;border-radius:24px;box-shadow:0 16px 40px #183d6a10}
+.logo{display:flex;align-items:center;gap:11px;font-size:.84rem;line-height:1.3;font-weight:750;color:var(--azul-profundo)}
+.logo span{display:grid;place-items:center;flex-shrink:0;width:42px;height:42px;background:var(--azul);color:#fff;border-radius:12px;font-size:.77rem;letter-spacing:.02em}
+.logo small{display:block;margin-top:4px;font-size:.69rem;font-weight:400;color:var(--cinza);line-height:1.4}
+.auth-card .logo{margin-bottom:26px}
+.auth-card h2{color:var(--azul-profundo);font-size:1.6rem;letter-spacing:-.035em;line-height:1.25;margin:9px 0 8px}
+.auth-card>.muted{font-size:.88rem;line-height:1.65;margin:0 0 22px}
+.auth-card>label{display:block;color:#3e536c;font-size:.86rem;font-weight:650;margin:20px 0 8px}
+.auth-card input,.field input,.field select,.field textarea,.filter{
+  border:1px solid #c8d6e5;background:#fff;border-radius:12px;width:100%;
+  min-height:52px;color:var(--texto);padding:13px 14px;font-size:16px;line-height:1.4;
+}
+.auth-card input::placeholder,.field input::placeholder{color:#8193a8;opacity:1}
+.password-wrap{position:relative}
+.password-wrap input{padding-right:56px}
+.password-toggle{position:absolute;right:4px;top:4px;display:grid;place-items:center;width:44px;height:44px;border:0;background:transparent;color:var(--cinza);border-radius:10px}
+.link-button{display:block;min-height:44px;padding:10px 14px;margin:8px auto 4px;border:0;background:transparent;color:var(--azul);font-size:.85rem;font-weight:650}
+.auth-card>.tiny{text-align:center;font-size:.75rem;margin:12px 0 0}
+.setup-guide{margin-top:22px;border:1px solid var(--borda);background:#f7f9fc;border-radius:14px;font-size:.8rem;line-height:1.7}
+.setup-guide summary{padding:13px 14px;min-height:48px;color:var(--azul);font-weight:700;cursor:pointer}
+.setup-body{padding:0 14px 16px;overflow-wrap:anywhere}
+.setup-body p:first-child{margin-top:0}
+.setup-body ol{padding-left:20px}
+.setup-body li{margin:10px 0}
+.setup-body pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#e8eef5;padding:12px;border-radius:10px;font-size:.72rem}
+.setup-keys{background:#fff;border:1px solid var(--borda);padding:12px;border-radius:12px}
+.setup-keys .row{display:grid;grid-template-columns:1fr;gap:8px}
+.setup-guide:not([open]) .setup-body{display:none}
+.setup-body>.btn{width:100%}
+
+/* Aplicação: navegação inferior com cinco alvos de toque. */
+.app-shell{min-height:100vh;min-height:100svh}
+.sidebar{display:none}
+.main-column{min-width:0}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:84px;padding:calc(14px + env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) 14px max(20px,env(safe-area-inset-left));background:#fff;border-bottom:1px solid #e4ebf3;box-shadow:0 2px 12px #123b6705}
+.topbar:before{content:"";position:absolute;inset:0 0 auto;height:3px;background:var(--vermelho)}
+.topbar>div:first-child{min-width:0}
+.topbar h1{color:var(--azul-profundo);font-size:1.3rem;letter-spacing:-.03em;line-height:1.25;margin:5px 0 0}
+.top-right{display:flex;align-items:center;gap:10px;flex-shrink:0;color:var(--cinza);font-size:.8rem}
+.top-right .online-label,.top-right .live-dot{display:none}
+.avatar{display:grid;place-items:center;flex-shrink:0;width:42px;height:42px;border:1px solid #cfe0f1;background:var(--azul-claro);color:var(--azul);font-size:.92rem;font-weight:750;border-radius:14px}
+button.avatar{width:44px;height:44px;padding:0}
+#view{width:100%;max-width:1440px;min-width:0;margin:0 auto;padding:20px max(16px,env(safe-area-inset-right)) calc(var(--nav-height) + env(safe-area-inset-bottom) + 30px) max(16px,env(safe-area-inset-left))}
+#view:focus{outline:none}
+.mobile-nav{position:fixed;z-index:30;inset:auto 0 0;display:flex;align-items:stretch;gap:2px;min-height:var(--nav-height);padding:7px max(6px,env(safe-area-inset-right)) calc(7px + env(safe-area-inset-bottom)) max(6px,env(safe-area-inset-left));background:#fff;border-top:1px solid #e0e8f2;box-shadow:0 -6px 24px #153a6608}
+.mobile-nav button{position:relative;display:flex;flex:1 1 0;min-width:0;min-height:60px;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:6px 2px;border:0;border-radius:12px;background:transparent;color:#657b94;font-size:.66rem;font-weight:650;line-height:1.25}
+.mobile-nav button .nav-ico{display:grid;place-items:center;width:30px;height:27px}
+.mobile-nav button.active{background:var(--azul-claro);color:var(--azul)}
+.mobile-nav button.active:before{content:"";position:absolute;top:0;width:19px;height:3px;background:var(--vermelho);border-radius:0 0 5px 5px}
+.mobile-nav .ui-icon{width:23px;height:23px}
+.mobile-menu{position:fixed;inset:auto 0 0;width:100%;max-width:560px;max-height:calc(100dvh - 32px);margin:0 auto;border:0;border-radius:26px 26px 0 0;background:#fff;color:var(--texto);padding:0;box-shadow:0 -15px 70px #092c5833;overscroll-behavior:contain;overflow-y:auto}
+.mobile-menu::backdrop{background:#092c5880;backdrop-filter:blur(3px)}
+.menu-content{padding:12px 22px calc(22px + env(safe-area-inset-bottom))}
+.menu-grip{width:38px;height:4px;border-radius:4px;background:#cfdae6;margin:0 auto 18px}
+.menu-header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}
+.menu-header h2{margin:0;font-size:1.2rem;color:var(--azul-profundo);letter-spacing:-.025em}
+.menu-profile{display:flex;align-items:center;gap:12px;padding:16px;background:var(--fundo);border:1px solid var(--borda);border-radius:16px;margin-bottom:14px}
+.menu-profile>div{min-width:0}
+.menu-profile strong{display:block;font-size:.9rem;color:var(--azul-profundo);overflow-wrap:anywhere}
+.menu-profile small{display:block;margin-top:3px;font-size:.77rem;color:var(--cinza);overflow-wrap:anywhere}
+.menu-links{display:grid;gap:8px}
+.menu-links button{display:flex;align-items:center;gap:12px;min-height:64px;width:100%;padding:10px 12px;background:#fff;border:1px solid var(--borda);border-radius:14px;color:var(--azul);text-align:left}
+.menu-links button>span{display:grid;gap:3px;min-width:0;flex:1}
+.menu-links b{font-size:.89rem}
+.menu-links small{font-size:.75rem;color:var(--cinza);line-height:1.4}
+.menu-links button.active{background:var(--azul-claro);border-color:#b6d3ef}
+.menu-links button.menu-logout{color:#a92335;margin-top:5px}
+
+/* Cartões, campos e ações. */
+.hero{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:20px;background:var(--azul);border:1px solid var(--azul);color:#fff;border-radius:22px;padding:25px 22px;margin-bottom:18px;box-shadow:0 8px 24px #01499614}
+.hero:after{content:"";position:absolute;right:-65px;top:-65px;width:175px;height:175px;border:24px solid #ffffff08;border-radius:50%;pointer-events:none}
+.hero>div,.hero>.btn{position:relative;z-index:1}
+.hero .pill{color:#d6e8fa;font-size:.66rem}
+.hero h2{font-size:1.6rem;line-height:1.25;font-weight:750;letter-spacing:-.035em;margin:10px 0 9px;color:#fff;overflow-wrap:anywhere}
+.hero p{font-size:.88rem;line-height:1.65;color:#e3edf8;max-width:670px;margin:0}
+.hero .btn{width:100%;background:#fff;border-color:#fff;color:var(--azul);justify-content:space-between}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.grid.three>.stat:last-child{grid-column:1/-1}
+.stat,.card{min-width:0;background:#fff;border:1px solid var(--borda);border-radius:var(--raio);box-shadow:0 4px 14px #163d6604}
+.stat{padding:17px 15px;min-height:126px}
+.stat-label{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;color:var(--cinza);font-size:.77rem;line-height:1.45}
+.stat-icon{display:grid;place-items:center;flex-shrink:0;width:27px;height:27px;background:var(--azul-claro);color:var(--azul);border-radius:8px}
+.stat-icon .ui-icon{width:17px;height:17px}
+.stat strong{display:block;margin-top:12px;font-size:2rem;line-height:1.2;color:var(--azul-profundo);letter-spacing:-.045em;font-weight:750}
+.card{padding:20px 17px;margin-top:20px}
+.card h3,.section-heading h3{margin:0;color:var(--azul-profundo);font-size:1.11rem;font-weight:750;letter-spacing:-.02em;line-height:1.35}
+.section-heading{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-bottom:20px;min-width:0}
+.section-heading>div{min-width:0}
+.section-heading p{color:var(--cinza);font-size:.84rem;line-height:1.6;margin:7px 0 0;overflow-wrap:anywhere}
+.section-heading>.btn{width:100%}
+.toolbar{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin:0 0 18px}
+.field{display:flex;flex-direction:column;gap:8px;min-width:0}
+.field label{font-size:.84rem;font-weight:650;color:#3e536c;line-height:1.5}
+.field small{font-size:.76rem;line-height:1.6;color:var(--cinza)}
+.form-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
+.form-grid .wide{grid-column:1/-1}
+.form-grid>.wide.row{display:flex;flex-direction:column;align-items:stretch;gap:10px}
+.filter{width:100%;max-width:100%}
+.group-list,.teacher-list{display:grid;gap:12px}
+.group-card{display:flex;flex-direction:column;align-items:stretch;gap:16px;padding:18px 16px;border:1px solid var(--borda);border-radius:16px;background:#fff;min-width:0}
+.group-card>div{min-width:0}
+.group-card h4{color:var(--azul-profundo);font-size:.96rem;font-weight:700;line-height:1.5;margin:8px 0 5px;overflow-wrap:anywhere}
+.group-card p{font-size:.82rem;color:var(--cinza);line-height:1.65;margin:5px 0;overflow-wrap:anywhere}
+.group-card>.btn{width:100%}
+.group-card>.row{width:100%;gap:10px}
+.group-card>.row>.btn{flex:1}
+.board-card h4{font-size:1.03rem}
+.board-card .project-name{margin:0 0 14px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.board-info{display:grid;gap:7px;font-size:.8rem;color:var(--texto);margin-bottom:12px}
+.board-info span{display:flex;align-items:flex-start;gap:8px}
+.board-info .ui-icon{width:17px;height:17px;margin-top:2px;color:var(--azul)}
+.board-card .board-team{padding-top:12px;border-top:1px solid #e6edf5;font-size:.77rem;margin:0}
+.chip{display:inline-flex;align-items:center;max-width:100%;border-radius:7px;background:var(--azul-claro);color:var(--azul);font-size:.69rem;font-weight:700;line-height:1.4;padding:6px 9px}
+.chip.green{background:#eaf6f0;color:#146847}
+.chip.orange{background:#fff3db;color:#7f5613}
+.chip.gray{background:#eef2f6;color:#52677e}
+.chip.blue{background:var(--azul-claro);color:var(--azul)}
+.empty{text-align:center;padding:38px 16px;color:var(--cinza);font-size:.88rem;line-height:1.6}
+.empty i{display:grid;place-items:center;margin:0 auto 16px;width:52px;height:52px;background:var(--azul-claro);border-radius:16px;color:var(--azul);font-size:1.9rem;font-style:normal}
+.empty strong{display:block;color:var(--azul-profundo);font-size:1rem;margin-bottom:6px}
+.tabs{display:flex;gap:5px;margin-bottom:24px;padding:5px;background:#eef3f9;border:1px solid var(--borda);border-radius:13px}
+.tabs button{flex:1;min-width:0;min-height:46px;border:0;padding:10px 8px;background:transparent;border-radius:9px;color:var(--cinza);font-size:.83rem;line-height:1.4;font-weight:700}
+.tabs button.selected{background:#fff;color:var(--azul);box-shadow:0 2px 7px #173b6510}
+.student{min-width:0;border:1px solid var(--borda);border-radius:16px;background:#fff;margin:14px 0;padding:18px 15px}
+.student h4{font-size:.98rem;color:var(--azul-profundo);line-height:1.5;margin:0 0 6px;overflow-wrap:anywhere}
+.student p{font-size:.8rem;line-height:1.6;color:var(--cinza);margin:0 0 18px;overflow-wrap:anywhere}
+.grade-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 12px}
+.grade-grid .field label{font-size:.79rem;min-height:38px}
+.grade-grid .field input{text-align:center;font-size:1.1rem;font-weight:700}
+.grade-foot{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-top:20px;padding-top:18px;border-top:1px solid var(--borda)}
+.grade-foot strong{color:var(--azul)}
+.delivery-row{flex-direction:column;align-items:stretch;gap:10px}
+.delivery-controls{flex-wrap:nowrap}
+.delivery-controls input{flex:1;min-width:0}
+.delivery-controls .btn{min-width:90px}
+.board-details{display:grid;gap:12px;min-width:0;font-size:.85rem;line-height:1.65;color:var(--cinza);overflow-wrap:anywhere}
+.board-details b{color:var(--texto)}
+.step-list{display:grid;gap:12px}
+.step-row{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid var(--borda);border-radius:12px;font-size:.86rem}
+.step-number{display:grid;place-items:center;flex-shrink:0;width:32px;height:32px;background:var(--azul-claro);color:var(--azul);border-radius:10px;font-size:.8rem;font-weight:700}
+.check-list{display:grid;grid-template-columns:1fr;gap:9px}
+.check-tag,.check-option{display:flex;align-items:center;gap:10px;min-height:48px;padding:13px 12px;border:1px solid var(--borda);border-radius:12px;background:#fff;font-size:.84rem;line-height:1.5;cursor:pointer}
+.check-tag:has(input:checked){background:var(--azul-claro);border-color:#a9cbed;color:var(--azul-escuro)}
+.check-option{background:#f5f8fc}
+.check-tag input,.check-option input{accent-color:var(--azul);flex-shrink:0;width:20px;height:20px;min-height:20px;margin:0}
+.notice{border:1px solid #ead8b4;border-left:4px solid #d99b2a;background:#fffaef;color:#6b501b;padding:15px 14px;margin:16px 0;border-radius:12px;font-size:.83rem;line-height:1.65;overflow-wrap:anywhere}
+.notice.good{border-color:#c7e1d3;border-left-color:#27966a;background:#eff9f3;color:#1e6048}
+.notice.error{border-color:#edc5cb;border-left-color:var(--vermelho);background:#fff3f5;color:#a92335}
+.badge-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+.preview-row{display:grid;grid-template-columns:1fr;gap:10px;padding:14px;border-bottom:1px solid var(--borda);font-size:.83rem}
+.preview-row span{color:var(--cinza)}
+.teacher-admin-note{margin:0 0 18px;font-size:.83rem;line-height:1.7;color:var(--cinza)}
+.teacher-archive{margin-top:24px}
+.teacher-archive summary,.policy-guide summary{min-height:44px;padding:10px 0;color:var(--azul);font-size:.86rem;font-weight:700;cursor:pointer}
+.teacher-archive .teacher-list{margin-top:12px}
+.policy-guide{font-size:.83rem;line-height:1.8;color:var(--cinza);overflow-wrap:anywhere;margin-top:12px}
+.policy-guide ol{padding-left:20px}
+.policy-guide code{color:var(--azul-escuro);overflow-wrap:anywhere}
+.schedule-summary{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:24px 0 18px}
+.schedule-summary>div{padding:14px 10px;background:var(--azul-claro);border:1px solid #d7e5f3;border-radius:13px;min-width:0}
+.schedule-summary strong{display:block;color:var(--azul-profundo);font-size:1.5rem;line-height:1.2;margin-bottom:7px}
+.schedule-summary span{display:block;font-size:.7rem;line-height:1.5;color:var(--cinza)}
+.schedule-days{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 20px}
+.schedule-days span{padding:8px 10px;border:1px solid var(--borda);border-radius:9px;background:#fff;font-size:.76rem}
+.schedule-warning{padding:18px 15px;background:#fff9f2;border:1px solid #e4cbb9;border-left:4px solid #b46b22;border-radius:14px;margin:18px 0}
+.schedule-warning h4{color:#764318;font-size:.97rem;margin:0 0 8px}
+.schedule-warning ul{margin:10px 0 0;padding-left:20px;font-size:.83rem;line-height:1.7}
+.schedule-plan-actions{display:grid;grid-template-columns:1fr;gap:10px;margin:22px 0 14px}
+
+/* Prévia: cartões no celular e tabela a partir do tablet. */
+.table-scroll{min-width:0}
+.data-table{border-collapse:separate;border-spacing:0;width:100%;font-size:.82rem}
+.data-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
+.data-table tbody{display:grid;gap:14px}
+.data-table tr{display:block;border:1px solid var(--borda);border-radius:15px;padding:0 14px 8px;background:#fff;overflow:hidden}
+.data-table td{display:grid;grid-template-columns:92px minmax(0,1fr);gap:12px;align-items:start;padding:11px 0;border-bottom:1px solid #e9eef5;overflow-wrap:anywhere;line-height:1.6}
+.data-table td:before{content:attr(data-label);font-size:.75rem;font-weight:650;color:var(--cinza)}
+.data-table td:first-child{display:block;margin:0 -14px 5px;padding:13px 14px;background:var(--azul-claro);color:var(--azul-profundo);font-size:.91rem}
+.data-table td:first-child:before{display:none}
+.data-table td:last-child{border-bottom:0}
+.data-table td strong{display:block;color:var(--azul-profundo)}
+.data-table small{color:var(--cinza)}
+#toast{position:fixed;z-index:100;left:16px;right:16px;bottom:calc(var(--nav-height) + env(safe-area-inset-bottom) + 14px);max-width:460px;margin:0 auto;background:var(--azul-profundo);color:#fff;padding:14px 16px;font-size:.85rem;line-height:1.6;border-radius:14px;border-left:4px solid #8abbea;box-shadow:0 9px 28px #12355829;opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .15s,transform .15s}
+#toast.show{opacity:1;transform:none}
+#toast.error{background:#8c2632;border-left-color:#f09ba4}
+#print-root{display:none}
+
+@media(min-width:480px){
+  .auth-deco{padding-right:max(32px,env(safe-area-inset-right));padding-left:max(32px,env(safe-area-inset-left))}
+  .auth-card{padding:32px}
+  #view{padding-left:max(24px,env(safe-area-inset-left));padding-right:max(24px,env(safe-area-inset-right))}
+  .card{padding:24px}
+  .stat{padding:20px}
+  .check-list{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .board-info{display:flex;gap:18px;flex-wrap:wrap}
+  .mobile-nav{padding-right:max(20px,env(safe-area-inset-right));padding-left:max(20px,env(safe-area-inset-left))}
+  .schedule-summary span{font-size:.8rem}
+  .schedule-summary>div{padding:18px}
+}
+@media(min-width:640px){
+  .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+  .form-grid>.wide.row{flex-direction:row;align-items:center}
+  .form-grid>.wide.row>.btn{width:auto}
+  .grid.three{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .grid.three>.stat:last-child{grid-column:auto}
+  .hero{flex-direction:row;align-items:center;justify-content:space-between;padding:30px}
+  .hero .btn{width:auto;flex-shrink:0}
+  .hero h2{font-size:1.9rem}
+  .section-heading{flex-direction:row;align-items:center;justify-content:space-between}
+  .section-heading>.btn{width:auto;flex-shrink:0}
+  .toolbar{flex-direction:row;align-items:center;flex-wrap:wrap}
+  .toolbar>.filter{width:auto;min-width:200px}
+  .group-card{flex-direction:row;align-items:center;justify-content:space-between;padding:20px}
+  .group-card>.btn,.group-card>.row{width:auto;flex-shrink:0}
+  .group-card>.row>.btn{flex:none}
+  .board-card>.btn{align-self:center}
+  .student{padding:22px}
+  .grade-foot{flex-direction:row;align-items:center;justify-content:space-between}
+  .delivery-row{flex-direction:row;align-items:center}
+  .schedule-plan-actions{display:flex;flex-wrap:wrap}
+  .preview-row{grid-template-columns:1.3fr 1fr 1.5fr auto}
+}
+@media(min-width:768px){
+  .topbar{padding-left:max(30px,env(safe-area-inset-left));padding-right:max(30px,env(safe-area-inset-right))}
+  #view{padding:28px max(30px,env(safe-area-inset-right)) calc(var(--nav-height) + env(safe-area-inset-bottom) + 30px) max(30px,env(safe-area-inset-left))}
+  .grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .grade-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
+  .table-scroll{overflow-x:auto;border:1px solid var(--borda);border-radius:14px}
+  .data-table{border-collapse:collapse;min-width:680px}
+  .data-table thead{position:static;width:auto;height:auto;overflow:visible;clip-path:none;display:table-header-group}
+  .data-table tbody{display:table-row-group}
+  .data-table tr{display:table-row;border:0;padding:0;border-radius:0;overflow:visible}
+  .data-table th{background:#eef4fb;color:var(--azul-profundo);text-align:left;padding:14px 12px;font-size:.77rem;white-space:nowrap}
+  .data-table td,.data-table td:first-child{display:table-cell;padding:15px 12px;margin:0;background:#fff;font-size:.82rem;vertical-align:top;border-bottom:1px solid var(--borda)}
+  .data-table td:before{display:none}
+}
+@media(min-width:1024px){
+  .auth-page{display:grid;grid-template-columns:minmax(0,1fr) minmax(470px,1fr);background:#fff}
+  .auth-deco{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:64px clamp(40px,6vw,100px);min-height:100vh}
+  .auth-deco h1{font-size:clamp(2.8rem,4.2vw,4.4rem);line-height:1.13;margin:30px 0 22px}
+  .auth-deco p{font-size:1rem;max-width:460px}
+  .auth-stats{margin-top:38px;gap:24px}
+  .auth-stats span{font-size:.82rem}
+  .auth-card{width:min(480px,calc(100% - 64px));max-width:none;margin:auto;padding:44px 30px;border:0;box-shadow:none}
+  .auth-card .logo{margin-bottom:44px}
+  .auth-card h2{font-size:1.9rem}
+  .app-shell{display:grid;grid-template-columns:252px minmax(0,1fr)}
+  .sidebar{position:sticky;top:0;align-self:start;display:flex;flex-direction:column;height:100vh;height:100dvh;padding:28px 16px 18px;background:#fff;border-right:1px solid var(--borda)}
+  .sidebar:before{content:"";position:absolute;inset:0 0 auto;height:4px;background:var(--vermelho)}
+  .sidebar .logo{padding:10px 12px 26px;margin-bottom:26px;border-bottom:1px solid var(--borda)}
+  .sidebar .logo small{font-size:.65rem}
+  .side-heading{padding:0 14px;margin-bottom:10px}
+  .sidebar nav button{display:flex;align-items:center;gap:12px;width:100%;min-height:49px;text-align:left;padding:12px 14px;margin:4px 0;border:0;border-radius:12px;background:transparent;color:#536b84;font-size:.88rem;font-weight:650}
+  .sidebar nav button.active{background:var(--azul-claro);color:var(--azul);box-shadow:inset 3px 0 var(--vermelho)}
+  .sidebar .nav-ico{display:grid;place-items:center;width:24px;color:#7591af}
+  .sidebar nav button.active .nav-ico{color:var(--azul)}
+  .side-foot{display:flex;align-items:center;gap:10px;margin-top:auto;padding:20px 2px 0;border-top:1px solid var(--borda);min-width:0}
+  .side-foot>.avatar{width:36px;height:36px;border-radius:12px}
+  .side-foot>div{min-width:0}
+  .side-foot strong{display:block;font-size:.77rem;overflow-wrap:anywhere;line-height:1.4}
+  .side-foot small{display:block;margin-top:4px;font-size:.7rem;color:var(--cinza)}
+  .side-foot .icon-btn{margin-left:auto;width:36px;height:44px;flex-shrink:0}
+  .topbar{min-height:92px;padding:20px 36px;box-shadow:none}
+  .topbar:before{display:none}
+  .topbar h1{font-size:1.5rem}
+  .top-right .online-label,.top-right .live-dot{display:block}
+  .live-dot{width:7px;height:7px;background:#219572;border-radius:50%}
+  #view{padding:30px 36px 60px}
+  .mobile-nav{display:none}
+  .mobile-menu{inset:0;max-width:440px;margin:auto;max-height:calc(100dvh - 80px);border-radius:24px}
+  .menu-content{padding:24px}
+  .menu-grip{display:none}
+  #toast{left:auto;right:28px;bottom:28px;max-width:460px;margin:0}
+}
+@media(hover:hover){
+  .btn:hover:not(:disabled){background:#f1f6fc;border-color:#9bbada}
+  .btn.primary:hover:not(:disabled),.btn.dark:hover:not(:disabled){background:var(--azul-escuro);border-color:var(--azul-escuro)}
+  .btn.danger:hover:not(:disabled){background:#ffe7eb;border-color:#d08995}
+  .hero .btn:hover{background:#edf4fc;border-color:#edf4fc}
+  .sidebar nav button:hover,.menu-links button:hover{background:#f1f6fc;color:var(--azul)}
+}
+@media(prefers-reduced-motion:reduce){
+  *,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+@media print{
+  @page{size:A4;margin:13mm}
+  body{background:#fff;color:#151515;font:10pt Arial,sans-serif}
+  #app-view,#login-view,#toast,#mobile-menu{display:none!important}
+  #print-root{display:block!important}
+  #print-root h1{font-size:20pt;margin:0 0 6px;color:#014996}
+  #print-root h2{font-size:13pt;border-bottom:2px solid #014996;padding-bottom:5px}
+  #print-root h3{font-size:10pt;margin:12px 0 5px}
+  #print-root p{font-size:9pt}
+  #print-root table{width:100%;border-collapse:collapse;font-size:8pt;margin:10px 0 18px;table-layout:fixed}
+  #print-root th,#print-root td{border:1px solid #b7b7b7;padding:5px;overflow-wrap:anywhere;text-align:left}
+  #print-root th{background:#eee}
+  #print-root article{break-inside:avoid-page;page-break-inside:avoid}
+  .print-break{break-before:page}
+  .print-footer{margin-top:25px;font-size:8pt;color:#555}
+}
+
 </style>
 </head><body>
 <div id="toast" role="status" aria-live="polite"></div>
 <section id="login-view" class="auth-page">
-  <div class="auth-deco"><span class="pill">UNIVERSIDADE DO VALE DO PARAÍBA · 2026</span><div class="brand-mark">TCC</div><h1>Avaliação de<br><em>Trabalhos de Conclusão de Curso</em></h1><p>Sistema de apoio à coordenação, às bancas examinadoras e ao registro individual das avaliações.</p><div class="auth-stats"><span>60% banca</span><span>40% entregas</span><span>100% individual</span></div></div>
-  <form id="login-form" class="auth-card"><div class="logo"><span>TCC</span><div>Sistema de Avaliação<small>Universidade do Vale do Paraíba</small></div></div><p class="eyebrow">ÁREA RESTRITA</p><h2>Acesso dos professores</h2><p class="muted">Acesso exclusivo aos professores cadastrados.</p>
-    <label for="email">E-mail institucional</label><input id="email" type="email" autocomplete="username" placeholder="professor@univap.br" required>
-    <label for="password">Senha</label><input id="password" type="password" autocomplete="current-password" placeholder="Sua senha" required minlength="6">
+  <div class="auth-deco"><span class="pill">UNIVAP · TRABALHOS DE CONCLUSÃO DE CURSO</span><h1>Bancas e avaliações.<br><em>Em um só lugar.</em></h1><p>Organize as bancas, registre notas e acompanhe cada avaliação.</p><div class="auth-stats"><span>60% banca</span><span>40% entregas</span><span>Notas individuais</span></div></div>
+  <form id="login-form" class="auth-card"><div class="logo"><span>TCC</span><div>Sistema de Avaliação<small>Universidade do Vale do Paraíba</small></div></div><p class="eyebrow">ACESSO DOS PROFESSORES</p><h2>Acesse sua conta</h2><p class="muted">Use seu e-mail e senha para entrar.</p>
+    <label for="email">E-mail institucional</label><input id="email" type="email" inputmode="email" enterkeyhint="next" autocapitalize="none" spellcheck="false" autocomplete="username" placeholder="professor@univap.br" required>
+    <label for="password">Senha</label><div class="password-wrap"><input id="password" type="password" enterkeyhint="go" autocomplete="current-password" placeholder="Sua senha" required minlength="6"><button type="button" id="toggle-password" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
     <button type="submit" class="btn primary full" id="login-button">Entrar no sistema <span>→</span></button><button type="button" id="reset-password" class="link-button">Esqueci minha senha</button>
     <p class="tiny">Os acessos são criados pela administração. Não existe cadastro público.</p>
     <p id="login-status" class="notice hidden" role="alert"></p>
@@ -64,11 +403,12 @@
 </form>
 </section>
 <div id="app-view" class="app-shell hidden">
-  <aside class="sidebar"><div class="logo"><span>TCC</span><div>Sistema de Avaliação<small>Universidade do Vale do Paraíba</small></div></div><p class="side-heading">SISTEMA DE AVALIAÇÃO</p><nav id="desktop-nav" aria-label="Navegação principal"></nav><div class="side-foot"><div class="avatar" id="side-avatar">P</div><div><strong id="side-name">Professor</strong><small id="side-role">Avaliador</small></div><button type="button" id="logout" class="icon-btn" title="Sair" aria-label="Sair">↪</button></div></aside>
-  <div class="main-column"><header class="topbar"><div><p class="eyebrow" id="page-eyebrow">PAINEL</p><h1 id="page-title">Visão geral</h1></div><div class="top-right"><span class="live-dot"></span><span class="online-label">Ambiente de avaliação</span><span id="top-initials" class="avatar">P</span></div></header>
+  <aside class="sidebar"><div class="logo"><span>TCC</span><div>Sistema de Avaliação<small>Universidade do Vale do Paraíba</small></div></div><p class="side-heading">SISTEMA DE AVALIAÇÃO</p><nav id="desktop-nav" aria-label="Navegação principal"></nav><div class="side-foot"><div class="avatar" id="side-avatar">P</div><div><strong id="side-name">Professor</strong><small id="side-role">Avaliador</small></div><button type="button" id="logout" class="icon-btn" title="Sair" aria-label="Sair"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M9 12h12m-4-4 4 4-4 4"/></svg></button></div></aside>
+  <div class="main-column"><header class="topbar"><div><p class="eyebrow" id="page-eyebrow">PAINEL</p><h1 id="page-title">Visão geral</h1></div><div class="top-right"><span class="live-dot"></span><span class="online-label">Ambiente de avaliação</span><button type="button" id="top-initials" class="avatar" aria-label="Abrir menu da conta" aria-haspopup="dialog" aria-controls="mobile-menu">P</button></div></header>
     <main id="view" tabindex="-1"></main>
   </div><nav id="mobile-nav" class="mobile-nav" aria-label="Navegação mobile"></nav>
 </div>
+<dialog id="mobile-menu" class="mobile-menu" aria-labelledby="mobile-menu-title"></dialog>
 <section id="print-root" aria-hidden="true"></section>
 <script type="application/json" id="roster-criptografado">{"salt":"YkpWDmCVpVfVIe39F2gKQQ==","iv":"ycNQJ1EKZxyo5RzB","data":"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","iterations":210000}</script>
 <script type="application/json" id="firebase-rules">{
@@ -347,6 +687,25 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app), db = getDatabase(app);
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const initials = name => String(name||'').replace(/^Prof\.?\s+/i,'').trim().split(/\s+/).slice(0,2).map(part=>part[0]||'').join('').toLocaleUpperCase('pt-BR')||'P';
+const ICON_PATHS={
+ inicio:'<path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1Z"/>',
+ bancas:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h2m4 0h2"/>',
+ sortear:'<path d="M3 7h3c5 0 7 10 12 10h3m-4-4 4 4-4 4M3 17h3c2 0 4-2 5-4m2-2c1-2 3-4 5-4h3m-4-4 4 4-4 4"/>',
+ professores:'<circle cx="9" cy="7" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2m1-17a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5v2"/>',
+ entregas:'<rect x="5" y="5" width="14" height="16" rx="2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m8 14 3 3 5-6"/>',
+ relatorios:'<path d="M4 3v18h17M8 16v-4m5 4V7m5 9v-6"/>',
+ avaliar:'<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M14 5l5 5M10 14l-1 4 4-1L22 8a2 2 0 0 0-4-4Z"/>',
+ mais:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
+ sair:'<path d="M9 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M9 12h12m-4-4 4 4-4 4"/>',
+ seta:'<path d="M4 12h16m-6-6 6 6-6 6"/>',
+ fechar:'<path d="m6 6 12 12M18 6 6 18"/>',
+ olho:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/>',
+ ocultar:'<path d="m3 3 18 18M10 5a13 13 0 0 1 2 0c6.5 0 10 7 10 7a19 19 0 0 1-3 4M6 6a20 20 0 0 0-4 6s3.5 7 10 7a12 12 0 0 0 5-1M10 10a3 3 0 0 0 4 4"/>',
+ sala:'<path d="M4 21h16M6 21V4l12-1v18M14 12h1"/>',
+ pdf:'<path d="M7 3h7l4 4v6M14 3v5h4M6 21h12M12 11v7m-3-3 3 3 3-3"/>'
+};
+const icon=name=>`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name]||ICON_PATHS.bancas}</svg>`;
 const ROSTER_PROTEGIDO = JSON.parse(document.getElementById('roster-criptografado').textContent);
 const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, unsubs:[], teacherSubs:new Map() };
 const isActiveTeacher = profile => !!profile && ['coordinator','teacher'].includes(profile.role) && profile.active !== false;
@@ -366,10 +725,10 @@ const studentsOf = group => Object.entries(group?.students || {});
 const badge = (text,kind='gray')=>`<span class="chip ${kind}">${esc(text)}</span>`;
 const empty = (title, subtitle='')=>`<div class="empty"><i>◇</i><strong>${esc(title)}</strong><div>${esc(subtitle)}</div></div>`;
 const heading=(title,sub,action='')=>`<div class="section-heading"><div><h3>${esc(title)}</h3><p>${esc(sub)}</p></div>${action}</div>`;
-const stats = (label,n,icon)=>`<div class="stat"><div class="stat-label">${esc(label)}<span class="stat-icon">${icon}</span></div><strong>${esc(n)}</strong></div>`;
+const stats = (label,n,code)=>`<div class="stat"><div class="stat-label"><span>${esc(label)}</span><span class="stat-icon">${icon(({'01':'entregas','02':'bancas','03':'relatorios','04':'professores','05':'professores','06':'sair'})[code])}</span></div><strong>${esc(n)}</strong></div>`;
 
 let accessRevision=0;
-function showLogin(){ $('#login-view').classList.remove('hidden');$('#app-view').classList.add('hidden'); }
+function showLogin(){ closeMobileMenu();$('#login-view').classList.remove('hidden');$('#app-view').classList.add('hidden'); }
 function showAccessAccount(user){
  $('#access-account').classList.toggle('hidden',!user);
  $('#access-email').textContent=user?.email || 'Confira o e-mail em Authentication → Usuários.';
@@ -395,7 +754,19 @@ $('#login-form').addEventListener('submit', async e => {
  finally{b.disabled=false;}
 });
 $('#reset-password').addEventListener('click',async()=>{const email=$('#email').value.trim();if(!email){notice('Informe seu e-mail primeiro.',true);return;}try{await sendPasswordResetEmail(auth,email);notice('Se o e-mail estiver cadastrado, você receberá instruções.');}catch(e){fail(e);}});
+$('#toggle-password').addEventListener('click',()=>{
+ const password=$('#password'),button=$('#toggle-password'),visible=password.type==='password';
+ password.type=visible?'text':'password';button.setAttribute('aria-pressed',String(visible));button.setAttribute('aria-label',visible?'Ocultar senha':'Mostrar senha');button.innerHTML=icon(visible?'ocultar':'olho');
+});
 $('#logout').addEventListener('click',()=>signOut(auth).catch(fail));
+$('#top-initials').addEventListener('click',openMobileMenu);
+$('#mobile-menu').addEventListener('close',()=>document.body.classList.remove('menu-open'));
+$('#mobile-menu').addEventListener('click',e=>{
+ const button=e.target.closest('button');
+ if(e.target===$('#mobile-menu')||button?.dataset.closeMenu!==undefined)return closeMobileMenu();
+ if(!button?.dataset.route)return;
+ if(button.dataset.route==='sair'){closeMobileMenu();signOut(auth).catch(fail);}else go(button.dataset.route);
+});
 $('#login-copy-policy').addEventListener('click',()=>copiarPoliticaDeAcesso().catch(fail));
 $('#copy-access-uid').addEventListener('click',async()=>{
  const uid=auth.currentUser?.uid;if(!uid)return;
@@ -426,7 +797,7 @@ async function verificarAcesso(user){
   if(typeof profile.name!=='string'||!profile.name.trim()){showAccessProblem('O perfil desta conta está sem nome. Peça à administração para completar o campo name no Firebase.',user);return;}
   state.user=user;state.profile=profile;
   $('#login-view').classList.add('hidden');$('#app-view').classList.remove('hidden');state.route='inicio';
-  $('#side-name').textContent=state.profile.name;$('#side-role').textContent=isCoord()?'Coordenação':'Professor avaliador';$('#side-avatar').textContent=state.profile.name.slice(0,1);$('#top-initials').textContent=state.profile.name.slice(0,1);
+  $('#side-name').textContent=state.profile.name;$('#side-role').textContent=isCoord()?'Coordenação':'Professor avaliador';$('#side-avatar').textContent=initials(state.profile.name);$('#top-initials').textContent=initials(state.profile.name);
   state.unsubs.push(onValue(ref(db,`users/${user.uid}`),current=>{
    if(revision!==accessRevision)return;const next=current.val();
    if(!isActiveTeacher(next)){signOut(auth).then(()=>showAccessProblem('Seu acesso foi removido pela coordenação.',null)).catch(fail);return;}
@@ -438,22 +809,32 @@ async function verificarAcesso(user){
 }
 onAuthStateChanged(auth,verificarAcesso);
 const navItems=()=>isCoord()? [['inicio','01','Visão geral'],['bancas','02','Bancas'],['sortear','03','Sorteio'],['entregas','04','Entregas'],['relatorios','05','Relatórios'],['professores','06','Professores']] : [['inicio','01','Início'],['bancas','02','Minhas bancas'],['avaliar','03','Avaliar']];
-function go(route,board=''){if(board)state.selectedBoard=board;state.route=route;render();$('#view').focus({preventScroll:true});window.scrollTo({top:0,behavior:'smooth'});}
+function closeMobileMenu(){const menu=$('#mobile-menu');if(menu.open)menu.close();document.body.classList.remove('menu-open');}
+function openMobileMenu(){
+ if(!state.user)return;const menu=$('#mobile-menu');if(menu.open)return;
+ const extra=isCoord()?[['entregas','Entregas','Lançar a nota dos 40%'],['relatorios','Relatórios','Concluir bancas e emitir os PDFs']]:[];
+ menu.innerHTML=`<div class="menu-content"><div class="menu-grip" aria-hidden="true"></div><div class="menu-header"><h2 id="mobile-menu-title">Sua conta e outras áreas</h2><button type="button" class="icon-btn" data-close-menu="1" aria-label="Fechar menu" autofocus>${icon('fechar')}</button></div><div class="menu-profile"><span class="avatar" aria-hidden="true">${esc(initials(state.profile.name))}</span><div><strong>${esc(state.profile.name)}</strong><small>${isCoord()?'Coordenação':'Professor avaliador'}</small><small>${esc(state.profile.email||state.user.email||'')}</small></div></div><nav class="menu-links" aria-label="Outras áreas">${extra.map(([route,label,description])=>`<button type="button" data-route="${route}" class="${state.route===route?'active':''}" ${state.route===route?'aria-current="page"':''}>${icon(route)}<span><b>${label}</b><small>${description}</small></span>${icon('seta')}</button>`).join('')}<button type="button" data-route="sair" class="menu-logout">${icon('sair')}<span><b>Sair da conta</b><small>Encerrar esta sessão no dispositivo</small></span></button></nav></div>`;
+ menu.showModal();document.body.classList.add('menu-open');
+}
+function go(route,board=''){closeMobileMenu();if(board)state.selectedBoard=board;state.route=route;render();$('#view').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
 function render(){if(!state.user)return;const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'))state.route='inicio';
  const pageTitles={inicio:'Visão geral',bancas:'Bancas de avaliação',sortear:'Sorteio de bancas',entregas:'Notas de entregas',relatorios:'Relatórios finais',professores:'Professores',avaliar:'Avaliação individual'};
  $('#page-title').textContent=pageTitles[state.route];$('#page-eyebrow').textContent=isCoord()?'COORDENAÇÃO • TCC 2026':'CORPO DOCENTE • TCC 2026';
- $('#desktop-nav').innerHTML=routes.map(([r,i,t])=>`<button type="button" class="${state.route===r?'active':''}" data-route="${r}"><span class="nav-ico">${i}</span>${t}</button>`).join('');
- $('#mobile-nav').innerHTML=[...routes,['sair','—','Sair']].map(([r,i,t])=>`<button type="button" class="${state.route===r?'active':''}" data-route="${r}"><span class="nav-ico">${i}</span>${t}</button>`).join('');
+ const active=route=>state.route===route||(route==='bancas'&&state.route==='avaliar'&&isCoord());
+ const navButton=(route,label)=>`<button type="button" class="${active(route)?'active':''}" data-route="${route}" ${active(route)?'aria-current="page"':''}><span class="nav-ico">${icon(route)}</span><span>${label}</span></button>`;
+ $('#desktop-nav').innerHTML=routes.map(([route,,label])=>navButton(route,label)).join('');
+ const primary=isCoord()?[['inicio','Início'],['bancas','Bancas'],['sortear','Sorteio'],['professores','Equipe']]:[['inicio','Início'],['bancas','Bancas'],['avaliar','Avaliar']];
+ $('#mobile-nav').innerHTML=primary.map(([route,label])=>navButton(route,label)).join('')+(isCoord()?`<button type="button" data-open-menu="1" class="${['entregas','relatorios'].includes(state.route)?'active':''}" aria-label="Mais áreas e opções da conta" aria-haspopup="dialog" aria-controls="mobile-menu"><span class="nav-ico">${icon('mais')}</span><span>Mais</span></button>`:navButton('sair','Sair'));
  const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,professores:teachersView};$('#view').innerHTML=views[state.route]?.()||'';
 }
 function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,b])=>{const g=groupOf(b);return g&&isCoord()&&situacao(b,g,boardGrades(id),state.deliveries[id]).pronta;});
  const completed=isCoord()?ready.length:boards.filter(([id,b])=>{const g=groupOf(b);return g&&studentsOf(g).every(([sid])=>mediaAvaliador(state.grades[id]?.[state.user.uid]?.[sid])!==null);}).length;
- return `<div class="hero"><div><span class="pill">ANO ACADÊMICO 2026</span><h2>Olá, ${esc(state.profile.name.split(' ').slice(0,2).join(' '))}</h2><p>${isCoord()?'Organize as bancas, acompanhe cada avaliação e emita os relatórios finais.':'Suas bancas e avaliações individuais estão reunidas em um só lugar.'}</p></div><button class="btn" data-route="${isCoord()?'sortear':'bancas'}">${isCoord()?'Organizar bancas':'Minhas bancas'} →</button></div>
+ return `<div class="hero"><div><span class="pill">UNIVAP · ANO ACADÊMICO 2026</span><h2>Olá, ${esc(state.profile.name.replace(/^Prof\.?\s+/i,'').split(' ')[0])}</h2><p>${isCoord()?'Organize as bancas, acompanhe cada avaliação e emita os relatórios finais.':'Suas bancas e avaliações individuais estão reunidas em um só lugar.'}</p></div><button class="btn" data-route="${isCoord()?'sortear':'bancas'}">${isCoord()?'Organizar bancas':'Minhas bancas'} ${icon('seta')}</button></div>
  <div class="grid">${stats(isCoord()?'Grupos importados':'Bancas atribuídas',isCoord()?Object.keys(state.groups).length:boards.length,'01')}${stats('Bancas agendadas',boards.length,'02')}${stats(isCoord()?'Prontas para concluir':'Minhas bancas avaliadas',completed,'03')}${stats(isCoord()?'Professores ativos':'Alunos para avaliar',isCoord()?activeTeachers().length:boards.reduce((s,[,b])=>s+studentsOf(groupOf(b)).length,0),'04')}</div>
  ${isCoord() && !Object.keys(state.groups).length ? '<div class="notice">Nenhum grupo cadastrado. Acesse Professores e importe os grupos da planilha usando a senha de importação fornecida separadamente.</div>' : ''}<section class="card">${heading('Próximas bancas',isCoord()?'Acompanhe as bancas criadas e o andamento das notas.':'Somente as bancas das quais você participa.',`<button class="btn soft" data-route="bancas">Ver todas →</button>`)}${boardList(boards.slice().sort((a,b)=>a[1].startAt-b[1].startAt).slice(0,5))}</section>`;
 }
 function boardStatus(bid,b){if(state.seals[bid])return badge('Concluída','green');if(!isCoord())return badge('Agendada','blue');const g=groupOf(b);if(g&&situacao(b,g,boardGrades(bid),state.deliveries[bid]).pronta)return badge('Notas completas','green');return badge('Em avaliação','orange');}
-function boardList(boards){if(!boards.length)return empty('Nenhuma banca por aqui','Crie uma banca ou aguarde a atribuição da coordenação.');return `<div class="group-list">${boards.map(([id,b])=>{const g=groupOf(b);return `<article class="group-card"><div><div class="row">${badge(g?.className||'TCC','blue')}${boardStatus(id,b)}<span class="muted tiny">${dateStr(b.startAt)} · ${esc(b.room)}</span></div><h4>${esc(g?.name||b.groupId)} — ${esc(g?.title||'')}</h4><p>Orientador: ${esc(b.advisorName)} ${b.members?.[b.advisorUid]?'(participa da banca)':'(não participa da banca)'} · ${Object.keys(b.members||{}).length} avaliadores · ${studentsOf(g).length} alunos</p></div><button class="btn soft" data-open-board="${esc(id)}">${isCoord()?'Detalhes':'Avaliar'} →</button></article>`;}).join('')}</div>`;}
+function boardList(boards){if(!boards.length)return empty('Nenhuma banca por aqui','Crie uma banca ou aguarde a atribuição da coordenação.');return `<div class="group-list">${boards.map(([id,b])=>{const g=groupOf(b);return `<article class="group-card board-card"><div><div class="row">${badge(g?.className||'TCC','blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||b.groupId)}</h4><p class="project-name">${esc(g?.title||'')}</p><div class="board-info"><span>${icon('bancas')}${dateStr(b.startAt)}</span><span>${icon('sala')}${esc(b.room)}</span></div><p class="board-team">Orientador: ${esc(b.advisorName)} ${b.members?.[b.advisorUid]?'(participa)':'(não participa)'}<br>${Object.keys(b.members||{}).length} avaliadores · ${studentsOf(g).length} alunos</p></div><button class="btn soft" data-open-board="${esc(id)}">${isCoord()?'Ver detalhes':'Avaliar grupo'} ${icon('seta')}</button></article>`;}).join('')}</div>`;}
 function boardsView(){let arr=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);
  if(state.filter!=='todas')arr=arr.filter(([,b])=>groupOf(b)?.className===state.filter);
  const all=Object.values(state.groups);return `${heading(isCoord()?'Agenda de bancas':'Suas bancas',`${arr.length} banca(s) encontrada(s).`,isCoord()?'<button class="btn primary" data-route="sortear">+ Nova banca</button>':'')}
@@ -473,9 +854,9 @@ function lotteryView(){
  return `<div class="notice">O orientador tem prioridade na composição, mas a participação não é obrigatória. As bancas podem ocorrer simultaneamente sem conflito de professores ou salas. O limite diário inclui as bancas já agendadas.</div>
  <div class="card">${heading('Montagem manual','Escolha o grupo, a data, a sala e 2 ou 3 professores.')}<form id="manual-form" class="form-grid">
  <div class="field wide"><label for="manual-group">Grupo / projeto</label><select id="manual-group" name="groupId" required><option value="">Selecione um grupo</option>${opts(pending.map(g=>[g.id,`${g.name} — ${g.title}`]))}</select></div>
- <div class="field"><label>Data e horário</label><input type="datetime-local" name="date" step="900" required></div><div class="field"><label>Sala / link</label><input name="room" maxlength="80" placeholder="Sala 01" required></div>
- <div class="field"><label>Duração</label><select name="duration">${opts([['30','30 minutos'],['45','45 minutos'],['60','60 minutos'],['90','90 minutos']],'60')}</select></div>
- <div class="field"><label>Professores na banca</label><select name="size">${opts([['2','2 professores'],['3','3 professores']],'3')}</select></div>
+ <div class="field"><label for="manual-date">Data e horário</label><input id="manual-date" type="datetime-local" name="date" step="900" required></div><div class="field"><label for="manual-room">Sala / link</label><input id="manual-room" name="room" maxlength="80" placeholder="Sala 01" required></div>
+ <div class="field"><label for="manual-duration">Duração</label><select id="manual-duration" name="duration">${opts([['30','30 minutos'],['45','45 minutos'],['60','60 minutos'],['90','90 minutos']],'60')}</select></div>
+ <div class="field"><label for="manual-size">Professores na banca</label><select id="manual-size" name="size">${opts([['2','2 professores'],['3','3 professores']],'3')}</select></div>
  <div class="wide" id="manual-members"><p class="muted tiny">Selecione um grupo para escolher os avaliadores.</p></div><div class="wide row"><button class="btn primary" type="submit" ${!pending.length?'disabled':''}>Criar banca</button></div></form></div>
  <div class="card">${heading('Sorteio automático','Configure a capacidade diária e o período. O sistema priorizará o orientador e organizará todas as bancas possíveis sem conflitos.')}
  <form id="lottery-form" class="form-grid">
@@ -485,18 +866,18 @@ function lotteryView(){
  <div class="field"><label for="lot-days">Dias letivos disponíveis</label><input id="lot-days" name="maxDays" type="number" min="1" max="120" step="1" value="30" required><small>Distribui os grupos pelos dias disponíveis.</small></div>
  <div class="field"><label for="lot-start">Início das atividades</label><input id="lot-start" name="dayStart" type="time" step="900" value="08:00" required></div>
  <div class="field"><label for="lot-end">Término das atividades</label><input id="lot-end" name="dayEnd" type="time" step="900" value="22:00" required></div>
- <div class="field"><label>Duração de cada banca</label><select name="duration">${opts([['30','30 minutos'],['45','45 minutos'],['60','60 minutos'],['90','90 minutos']],'60')}</select></div>
- <div class="field"><label>Salas simultâneas</label><select name="rooms">${opts([['1','1 sala'],['2','2 salas'],['3','3 salas'],['4','4 salas'],['5','5 salas'],['6','6 salas']],'2')}</select></div>
- <div class="field"><label>Professores por banca</label><select name="size">${opts([['2','2 professores'],['3','3 professores']],'3')}</select></div>
- <div class="field"><label>Identificação das salas</label><input name="roomPrefix" value="Sala" maxlength="40" required></div>
- <label class="field wide" style="flex-direction:row;align-items:center;gap:10px"><input type="checkbox" name="skipWeekends" checked style="min-height:auto;width:18px;height:18px">Não sortear aos sábados e domingos</label>
+ <div class="field"><label for="lot-duration">Duração de cada banca</label><select id="lot-duration" name="duration">${opts([['30','30 minutos'],['45','45 minutos'],['60','60 minutos'],['90','90 minutos']],'60')}</select></div>
+ <div class="field"><label for="lot-rooms">Salas simultâneas</label><select id="lot-rooms" name="rooms">${opts([['1','1 sala'],['2','2 salas'],['3','3 salas'],['4','4 salas'],['5','5 salas'],['6','6 salas']],'2')}</select></div>
+ <div class="field"><label for="lot-size">Professores por banca</label><select id="lot-size" name="size">${opts([['2','2 professores'],['3','3 professores']],'3')}</select></div>
+ <div class="field"><label for="lot-prefix">Identificação das salas</label><input id="lot-prefix" name="roomPrefix" value="Sala" maxlength="40" required></div>
+ <label class="check-option wide"><input type="checkbox" name="skipWeekends" checked>Não sortear aos sábados e domingos</label>
  <div class="wide row"><button class="btn dark" type="submit" ${!pending.length?'disabled':''}>Gerar escala automática</button><span class="muted tiny">${pending.length} grupos pendentes · ${teachers.length} professores cadastrados</span></div>
  </form>
  ${meta?`<div class="schedule-summary"><div><strong>${state.plan.length}</strong><span>Bancas organizadas</span></div><div><strong>${advisorCount}</strong><span>Com orientador presente</span></div><div><strong>${unassigned.length}</strong><span>Grupos sem horário</span></div></div>
  ${days.length?`<div class="schedule-days">${days.map(([day,n])=>`<span><b>${esc(day.split('-').reverse().join('/'))}</b> · ${n} nova(s)</span>`).join('')}</div>`:''}
  ${unassigned.length?`<div class="schedule-warning"><h4>Há grupos sem horário</h4><p class="muted tiny">Amplie os dias ou horários, aumente as salas ou reduza o tamanho das bancas para tentar novamente.</p><ul>${unassigned.map(item=>`<li>${esc(item.name)} — ${esc(item.reason)}</li>`).join('')}</ul></div>`:`<div class="notice good">Todos os grupos selecionados foram distribuídos. ${advisorCount} de ${state.plan.length} bancas terão o orientador presente, sem conflitos de professores ou salas.</div>`}
- ${state.plan.length?`<div class="table-scroll"><table class="data-table"><thead><tr><th>Data e horário</th><th>Grupo / turma</th><th>Orientador</th><th>Participação</th><th>Avaliadores</th><th>Sala</th></tr></thead><tbody>${state.plan.slice().sort((a,b)=>a.startAt-b.startAt||a.room.localeCompare(b.room)).map(b=>`<tr><td><b>${dateStr(b.startAt)}</b></td><td>${esc(state.groups[b.groupId]?.name)}<br><small>${esc(state.groups[b.groupId]?.className)}</small></td><td>${esc(b.advisorName)}</td><td>${b.members[b.advisorUid]?badge('Participa','green'):badge('Não participa','orange')}</td><td>${Object.keys(b.members).map(uid=>esc(who(uid))).join(' · ')}</td><td>${esc(b.room)}</td></tr>`).join('')}</tbody></table></div>`:''}
- <div class="schedule-plan-actions"><button class="btn primary" data-commit-plan="1" ${unassigned.length||!state.plan.length?'disabled':''}>Confirmar ${state.plan.length} bancas</button><button class="btn soft" data-pdf-plan="1" ${!state.plan.length?'disabled':''}>Baixar PDF do sorteio</button><button class="btn soft" data-clear-plan="1">Descartar prévia</button></div>
+ ${state.plan.length?`<div class="table-scroll"><table class="data-table"><thead><tr><th>Data e horário</th><th>Grupo / turma</th><th>Orientador</th><th>Participação</th><th>Avaliadores</th><th>Sala</th></tr></thead><tbody>${state.plan.slice().sort((a,b)=>a.startAt-b.startAt||a.room.localeCompare(b.room)).map(b=>`<tr><td data-label="Data e horário"><b>${dateStr(b.startAt)}</b></td><td data-label="Grupo / turma"><span><b>${esc(state.groups[b.groupId]?.name)}</b><br><small>Turma ${esc(state.groups[b.groupId]?.className)}</small></span></td><td data-label="Orientador"><span>${esc(b.advisorName)}</span></td><td data-label="Participação"><span>${b.members[b.advisorUid]?badge('Participa','green'):badge('Não participa','orange')}</span></td><td data-label="Avaliadores"><span>${Object.keys(b.members).map(uid=>esc(who(uid))).join(' · ')}</span></td><td data-label="Sala"><span>${esc(b.room)}</span></td></tr>`).join('')}</tbody></table></div>`:''}
+ <div class="schedule-plan-actions"><button class="btn primary" data-commit-plan="1" ${unassigned.length||!state.plan.length?'disabled':''}>Confirmar ${state.plan.length} bancas</button><button class="btn soft" data-pdf-plan="1" ${!state.plan.length?'disabled':''}>${icon('pdf')}Baixar PDF do sorteio</button><button class="btn soft" data-clear-plan="1">Descartar prévia</button></div>
  <p class="muted tiny">Revise a escala antes de confirmar. Nenhuma banca será salva antes da confirmação. Se houver atualização da agenda, gere uma nova prévia.</p>`:''}</div>`;
 }
 function manualMemberPicker(){
@@ -515,7 +896,7 @@ function gradeView(){let id=state.selectedBoard;let board=state.boards[id];if(!b
  ${!selfMember?'<div class="notice">Você pode consultar esta banca, mas não está entre seus avaliadores.</div>':sealed?'<div class="notice good">Banca encerrada. As notas estão bloqueadas para edição.</div>':'<div class="notice">As notas são individuais por aluno. Apenas você e o coordenador podem acessar as avaliações que você envia.</div>'}
  ${selfMember?studentsOf(g).map(([sid,name])=>`<form class="student" data-grade-form="${esc(id)}" data-student="${esc(sid)}"><h4>${esc(name)}</h4><p>${esc(g.name)} · ${esc(g.title)}</p><div class="grade-grid">${CRITERIOS.map(([key,label])=>`<div class="field"><label for="${esc(id)}-${esc(sid)}-${key}">${label}</label><input id="${esc(id)}-${esc(sid)}-${key}" name="${key}" type="number" inputmode="decimal" min="0" max="10" step="0.1" required ${sealed?'disabled':''} value="${own[sid]?.[key]??''}" placeholder="0 a 10"></div>`).join('')}</div><div class="grade-foot"><span class="muted tiny">Média deste avaliador: <strong>${mediaAvaliador(own[sid])===null?'—':fmt(mediaAvaliador(own[sid]))}</strong></span>${!sealed?'<button class="btn primary" type="submit">Salvar notas</button>':''}</div></form>`).join(''):empty('Apenas os avaliadores podem lançar notas nesta banca')}`;
 }
-function deliveriesView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const boards=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);return `${heading('Entregas · 40%','Somente o coordenador lança e visualiza esta nota. Cada aluno tem sua própria nota.')}<div class="notice">A nota de entregas é de 0 a 10; ela representa 40% da nota final. Após concluir a banca, as notas são bloqueadas.</div>${boards.length?boards.map(([bid,b])=>{const g=groupOf(b);if(!g)return '';const sealed=!!state.seals[bid];return `<section class="card">${heading(g.name,g.title,boardStatus(bid,b))}<p class="muted tiny">Orientador: ${esc(b.advisorName)}</p>${studentsOf(g).map(([sid,name])=>`<form class="student" data-delivery-form="${esc(bid)}" data-student="${esc(sid)}"><div class="row space"><div><h4>${esc(name)}</h4><p>Avaliação de entregas</p></div><div class="row"><input style="width:110px" class="filter" aria-label="Nota de entregas de ${esc(name)}" type="number" name="delivery" step="0.1" min="0" max="10" required ${sealed?'disabled':''} value="${state.deliveries[bid]?.[sid]??''}" placeholder="0 a 10"><button class="btn soft" type="submit" ${sealed?'disabled':''}>Salvar</button></div></div></form>`).join('')}</section>`;}).join(''):empty('Nenhuma banca criada')}`;}
+function deliveriesView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const boards=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);return `${heading('Entregas · 40%','Somente o coordenador lança e visualiza esta nota. Cada aluno tem sua própria nota.')}<div class="notice">A nota de entregas é de 0 a 10; ela representa 40% da nota final. Após concluir a banca, as notas são bloqueadas.</div>${boards.length?boards.map(([bid,b])=>{const g=groupOf(b);if(!g)return '';const sealed=!!state.seals[bid];return `<section class="card">${heading(g.name,g.title,boardStatus(bid,b))}<p class="muted tiny">Orientador: ${esc(b.advisorName)}</p>${studentsOf(g).map(([sid,name])=>`<form class="student" data-delivery-form="${esc(bid)}" data-student="${esc(sid)}"><div class="row space delivery-row"><div><h4>${esc(name)}</h4><p>Avaliação de entregas</p></div><div class="row delivery-controls"><input style="width:110px" class="filter" aria-label="Nota de entregas de ${esc(name)}" type="number" name="delivery" step="0.1" min="0" max="10" required ${sealed?'disabled':''} value="${state.deliveries[bid]?.[sid]??''}" placeholder="0 a 10"><button class="btn soft" type="submit" ${sealed?'disabled':''}>Salvar</button></div></div></form>`).join('')}</section>`;}).join(''):empty('Nenhuma banca criada')}`;}
 function reportsView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const ids=Object.entries(state.boards).sort((a,b)=>a[1].startAt-b[1].startAt);const filtered=ids.filter(([,b])=>state.reportFilter==='todas'||groupOf(b)?.className===state.reportFilter);
  const finished=filtered.filter(([id])=>state.seals[id]);const targetGroups=Object.values(state.groups).filter(g=>state.reportFilter==='todas'||g.className===state.reportFilter);const allReady=targetGroups.length>0&&targetGroups.every(g=>state.groupBoards[g.id]&&state.seals[state.groupBoards[g.id]])&&filtered.length===targetGroups.length;
  return `${heading('Relatórios oficiais','Detalhamento por aluno e professor avaliador, com a participação de 60% / 40%.',`<button class="btn dark" data-export-csv="1" ${!finished.length?'disabled':''}>Exportar CSV (concluídas)</button>`)}
@@ -530,7 +911,7 @@ function teachersView(){
  const manager=canManageTeachers();
  const teacherRow=([uid,u])=>`<article class="group-card"><div><h4>${esc(u.name)}</h4><p>${esc(u.email||'')} · ${u.role==='coordinator'?'Coordenador e avaliador':'Professor avaliador'}</p><p class="tiny">${openTeacherBoards(uid).length} banca(s) em aberto · Identificador: ${esc(u.key||'—')}</p></div><div class="row">${badge(u.active===false?'Acesso removido':u.role==='coordinator'?'Coordenação':'Avaliador',u.active===false?'orange':u.role==='coordinator'?'blue':'gray')}${manager&&u.role==='teacher'&&uid!==state.user.uid?`<button class="btn ${u.active===false?'soft':'danger'}" type="button" data-${u.active===false?'restore':'remove'}-teacher="${esc(uid)}" ${state.teacherBusy?'disabled':''}>${u.active===false?'Reativar professor':'Remover professor'}</button>`:''}</div></article>`;
  return `${heading('Equipe de professores','Professores autorizados a participar das bancas e registrar avaliações.')}
- <div class="grid">${stats('Docentes ativos',active.length,'04')}${stats('Coordenação',active.filter(([,u])=>u.role==='coordinator').length,'05')}${stats('Acessos removidos',removed.length,'06')}</div>
+ <div class="grid three">${stats('Docentes ativos',active.length,'04')}${stats('Coordenação',active.filter(([,u])=>u.role==='coordinator').length,'05')}${stats('Acessos removidos',removed.length,'06')}</div>
  ${manager?`<section class="card">${heading('Adicionar professor','Cadastre uma nova conta ou vincule um acesso já existente.')}
  <form id="teacher-form" class="form-grid" autocomplete="off">
  <div class="field"><label for="teacher-name">Nome do professor</label><input id="teacher-name" name="name" maxlength="120" placeholder="Nome completo" required></div>
@@ -950,7 +1331,7 @@ async function copiarPoliticaDeAcesso(){
  catch {downloadBlob(new Blob([content],{type:'application/json'}),'politica-de-acesso.json');notice('Política baixada. Publique em Firebase → Realtime Database → Regras.');}
 }
 const handle = async cb=>{try{await cb();}catch(err){fail(err);}};
-for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('click',e=>{const el=e.target.closest('[data-route]');if(!el)return;if(el.dataset.route==='sair')signOut(auth).catch(fail);else go(el.dataset.route);});
+for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('click',e=>{const el=e.target.closest('button');if(!el)return;if(el.dataset.openMenu!==undefined)return openMobileMenu();if(!el.dataset.route)return;if(el.dataset.route==='sair')signOut(auth).catch(fail);else go(el.dataset.route);});
 $('#view').addEventListener('click',e=>{
  const el=e.target.closest('button');if(!el||el.disabled)return;
  if(el.dataset.route)return go(el.dataset.route);
