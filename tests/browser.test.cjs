@@ -55,12 +55,12 @@ function adapter() {
   `;
 }
 
-async function openApp(t) {
+async function openApp(t,{timezoneId='UTC'}={}) {
   if(process.env.BANCAFLOW_SCREENSHOT_DIR)mkdirSync(process.env.BANCAFLOW_SCREENSHOT_DIR,{recursive:true});
   const args = process.env.BANCAFLOW_CHROMIUM_MODULE ? (await import(process.env.BANCAFLOW_CHROMIUM_MODULE)).default.args : ['--no-sandbox', '--disable-dev-shm-usage'];
   const browser = await chromium.launch({ headless: true, executablePath: binary, args, env: process.env });
   t.after(() => browser.close());
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
+  const page = await browser.newPage({ viewport: { width: 390, height: 844 },timezoneId });
   const errors = [], requests = [], downloads = [], cspErrors=[];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console',message=>{if(message.type()==='error'&&/Content Security Policy|violates.*directive|Refused to execute/i.test(message.text()))cspErrors.push(message.text());});
@@ -312,6 +312,59 @@ test('unmodified production HTML loads local Excel assets and Firebase modules u
     const script=frame.contentDocument.createElement('script');script.src='https://bancaflow-csp-fixture.firebaseio.com/.lp?fixture=1';frame.contentDocument.head.appendChild(script);
   });
   await page.waitForFunction(()=>globalThis.__fixtureLongPollLoaded===true);
+  assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('mobile date filters use local midnight, combine course/class, scope every export and retain mobile group navigation', {skip}, async t=>{
+  const{page,errors,cspErrors}=await openApp(t,{timezoneId:'America/Sao_Paulo'});
+  await page.setViewportSize({width:320,height:844});
+  await page.evaluate(()=>{
+    const copy=value=>JSON.parse(JSON.stringify(value)),original=copy(firebaseMock.data.boards.b1),template=copy(firebaseMock.data.groups.g1),scores=copy(firebaseMock.data.grades.b1),delivery=copy(firebaseMock.data.deliveries.b1);
+    const entries=[['b1','BEFORE_DAY','ADS','2A','2026-10-18T02:59:59Z',true],['b2','AFTER_DAY','ADS','2A','2026-10-18T03:00:00Z',true],['b3','ENGINEERING_DAY','Engenharia','2A','2026-10-18T04:00:00Z',true],['b4','PRIVATE_DAY','ADS','2A','2026-10-18T05:00:00Z',false],['b5','OTHER_CLASS','ADS','3A','2026-10-18T06:00:00Z',true]];
+    const data=firebaseMock.data;data.groups={};data.boards={};data.groupBoards={};data.grades={};data.deliveries={};data.seals={};data.timers={};
+    for(const[bid,name,courseName,className,at,assigned]of entries){
+      const gid='g'+bid.slice(1);data.groups[gid]={...copy(template),id:gid,name,courseName,className};
+      data.boards[bid]={...copy(original),groupId:gid,startAt:Date.parse(at),members:assigned?{t1:true,t2:true}:{t2:true,coord:true}};
+      data.groupBoards[gid]=bid;data.grades[bid]=assigned?copy(scores):{t2:copy(scores.t1),coord:copy(scores.t2)};data.deliveries[bid]=copy(delivery);data.seals[bid]={by:'coord',at:Date.now()};
+    }
+    data.groups.unscheduled={...copy(template),id:'unscheduled',name:'UNSCHEDULED_DAY',courseName:'ADS',className:'2A'};
+    appTest.mount('t1');appTest.go('bancas');
+  });
+  await page.locator('#filter-course').selectOption('ADS');await page.locator('#filter-class').selectOption('2A');
+  await page.locator('#filter-date').fill('2026-10-17');
+  assert.deepEqual(await page.locator('.board-card h4').allTextContents(),['BEFORE_DAY'],'23:59:59 local stays on the prior day');
+  await page.locator('#filter-date').fill('2026-10-18');
+  assert.deepEqual(await page.locator('.board-card h4').allTextContents(),['AFTER_DAY'],'00:00:00 local moves to the next day; unassigned stays hidden');
+  await page.locator('[data-date-today="boards"]').click();
+  const today=await page.evaluate(()=>{const date=new Date();return date.getFullYear()+'-'+String(date.getMonth()+1).padStart(2,'0')+'-'+String(date.getDate()).padStart(2,'0');});
+  assert.equal(await page.locator('#filter-date').inputValue(),today);
+  await page.locator('[data-date-clear="boards"]').click();assert.equal(await page.locator('#filter-date').inputValue(),'');
+  assert.deepEqual(await page.locator('.board-card h4').allTextContents(),['BEFORE_DAY','AFTER_DAY']);
+
+  await page.evaluate(()=>{appTest.mount('coord');appTest.go('bancas');});
+  assert.equal(await page.locator('#filter-date').inputValue(),'','account reset clears the previous date');
+  await page.locator('#filter-course').selectOption('ADS');await page.locator('#filter-class').selectOption('2A');await page.locator('#filter-date').fill('2026-10-18');
+  assert.deepEqual(await page.locator('.board-card h4').allTextContents(),['AFTER_DAY','PRIVATE_DAY']);
+  assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,'date toolbar fits 320px');
+  if(process.env.BANCAFLOW_SCREENSHOT_DIR)await page.screenshot({path:join(process.env.BANCAFLOW_SCREENSHOT_DIR,'banca-flow-date-filter-320.png'),fullPage:true});
+  let downloading=page.waitForEvent('download');await page.locator('[data-pdf-agenda]').click();let file=await downloading;
+  const agenda=readFileSync(await file.path(),'ascii');
+  for(const name of ['AFTER_DAY','PRIVATE_DAY'])assert.ok(agenda.includes(name));
+  for(const name of ['BEFORE_DAY','ENGINEERING_DAY','OTHER_CLASS','UNSCHEDULED_DAY'])assert.ok(!agenda.includes(name),name);
+  await page.evaluate(()=>appTest.go('relatorios'));await page.locator('#report-course-filter').selectOption('ADS');await page.locator('#report-filter').selectOption('2A');await page.locator('#report-date-filter').fill('2026-10-18');
+  assert.equal(await page.locator('[data-print-all]').isEnabled(),true,'unscheduled groups do not block a day-specific report');
+  downloading=page.waitForEvent('download');await page.locator('[data-print-all]').click();file=await downloading;
+  const report=readFileSync(await file.path(),'ascii');
+  for(const name of ['AFTER_DAY','PRIVATE_DAY'])assert.ok(report.includes(name));
+  for(const name of ['BEFORE_DAY','ENGINEERING_DAY','OTHER_CLASS','UNSCHEDULED_DAY'])assert.ok(!report.includes(name),name);
+  downloading=page.waitForEvent('download');await page.locator('[data-export-csv]').click();file=await downloading;
+  const csv=readFileSync(await file.path(),'utf8');
+  for(const name of ['AFTER_DAY','PRIVATE_DAY'])assert.ok(csv.includes(name));
+  for(const name of ['BEFORE_DAY','ENGINEERING_DAY','OTHER_CLASS','UNSCHEDULED_DAY'])assert.ok(!csv.includes(name),name);
+  await page.locator('[data-date-today="reports"]').click();assert.equal(await page.locator('#report-date-filter').inputValue(),today);
+  await page.locator('[data-date-clear="reports"]').click();assert.equal(await page.locator('[data-print-all]').isDisabled(),true,'all-dates report retains the unscheduled-group guard');
+  await page.locator('#mobile-nav [data-open-menu]').click();await page.locator('#mobile-menu [data-route="grupos"]').click();
+  assert.equal(await page.evaluate(()=>appTest.state.route),'grupos');
   assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
 });
 

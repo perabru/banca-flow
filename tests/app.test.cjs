@@ -118,6 +118,7 @@ function harness(uid = 't1') {
       createBoardShareSnapshot, assertShareSnapshotCurrent, buildSharePdf, buildBoardShareText, whatsappTextUrl, boardShareFilename,
       assertBoardAccess, hasUnsavedDrafts, saveGrade, saveDelivery, reportHtml, refreshReportData,
       printReports, exportCsv, csvCell, boardActions, timerHtml,
+      localDayKey,boardMatchesDay,filteredBoards,filteredReportBoards,reportGroups,setBancaDateFilter,resetAppData,boardsView,reportsView,exportSchedulePdf,
       teacherIdentity,teacherEditIdentity,teacherProfileFingerprint,addTeacher,changeTeacherAccess,saveTeacherEdit,
       validatedGroupDraft,groupRelatedBoards,groupAdminFingerprint,resetGroupAdmin,editGroup,saveGroup,changeGroupAccess,addGroupStudentRow,removeGroupStudentRow,
       confirmExcelImport,
@@ -587,4 +588,61 @@ test('CSV exports quote literal metadata and neutralize spreadsheet formula pref
   for(const value of ['=1+1',' +SUM(A1:A2)','-2+3','@SUM(A1:A2)','\tNome','\uFEFF=1'])assert.ok(app.csvCell(value).startsWith('"\''),value);
   assert.equal(app.csvCell('Ana "Silva"; Engenharia'),'"Ana ""Silva""; Engenharia"');
   assert.equal(app.csvCell('8,50'),'"8,50"');assert.equal(app.csvCell('Ana Silva'),'"Ana Silva"');
+});
+
+function installDateCatalog(h){
+  const{app}=h,original=clone(h.data.boards.b1),group=clone(h.data.groups.g1),grades=clone(h.data.grades.b1),deliveries=clone(h.data.deliveries.b1);
+  const entries=[['b1','DAY18','ADS','2A',18,true],['b2','DAY19','ADS','2A',19,true],['b3','ENGINEERING18','Engenharia','2A',18,true],['b4','CLASS3A18','ADS','3A',18,true],['b5','OTHERTEACHER18','ADS','2A',18,false]];
+  const groups={},boards={},groupBoards={},allGrades={},allDeliveries={},seals={};
+  entries.forEach(([bid,name,courseName,className,day,assigned],index)=>{
+    const gid='g'+bid.slice(1);groups[gid]={...clone(group),id:gid,name,courseName,className};
+    boards[bid]={...clone(original),groupId:gid,startAt:new Date(2026,9,day,10,index,0).getTime(),members:assigned?{t1:true,t2:true}:{t2:true,outsider:true}};
+    groupBoards[gid]=bid;allGrades[bid]=assigned?clone(grades):{t2:clone(grades.t1),outsider:clone(grades.t2)};allDeliveries[bid]=clone(deliveries);seals[bid]={by:'coord',at:h.now()};
+  });
+  groups.unscheduled={...clone(group),id:'unscheduled',name:'NOTSCHEDULED',courseName:'ADS',className:'2A'};
+  Object.assign(h.data,{groups,boards,groupBoards,grades:allGrades,deliveries:allDeliveries,seals});
+  Object.assign(app.state,clone({groups,boards,groupBoards,grades:allGrades,deliveries:allDeliveries,seals}));
+}
+
+test('date filters combine course/class/day and keep teacher assignment boundaries',()=>{
+  const h=harness('coord');installDateCatalog(h);const{app}=h;
+  Object.assign(app.state,{courseFilter:'ADS',filter:'2A',boardDateFilter:'2026-10-18',reportCourseFilter:'ADS',reportFilter:'2A',reportDateFilter:'2026-10-18'});
+  assert.deepEqual(clone(app.filteredBoards().map(([id])=>id)),['b1','b5']);
+  assert.deepEqual(clone(app.filteredReportBoards().map(([id])=>id)),['b1','b5']);
+  app.state.user={uid:'t1'};app.state.profile=clone(h.data.users.t1);
+  assert.deepEqual(clone(app.filteredBoards().map(([id])=>id)),['b1']);
+  assert.deepEqual(clone(app.filteredReportBoards()),[]);
+  app.setBancaDateFilter('2026-10-19');assert.deepEqual(clone(app.filteredBoards().map(([id])=>id)),['b2']);
+});
+
+test('date selection validates calendar dates, clears predictably and resets all account filters',()=>{
+  const{app}=harness('coord');
+  app.setBancaDateFilter('2026-10-18');app.setBancaDateFilter('2028-02-29',true);
+  for(const invalid of ['2026-02-29','2026-04-31','2026-13-01','18/10/2026'])assert.throws(()=>app.setBancaDateFilter(invalid),/data válida/);
+  assert.equal(app.state.boardDateFilter,'2026-10-18');assert.equal(app.state.reportDateFilter,'2028-02-29');
+  app.setBancaDateFilter('');assert.equal(app.state.boardDateFilter,'');assert.equal(app.state.reportDateFilter,'2028-02-29');
+  app.state.courseFilter='ADS';app.state.reportCourseFilter='Engenharia';app.state.filter='2A';app.state.reportFilter='3A';app.resetAppData();
+  for(const key of ['boardDateFilter','reportDateFilter'])assert.equal(app.state[key],'');
+  for(const key of ['courseFilter','reportCourseFilter','filter','reportFilter'])assert.equal(app.state[key],'todas');
+});
+
+test('date-filtered consolidated readiness ignores unscheduled groups only for a selected day',()=>{
+  const h=harness('coord');installDateCatalog(h);const{app}=h;
+  Object.assign(app.state,{reportCourseFilter:'ADS',reportFilter:'2A',reportDateFilter:'2026-10-18'});
+  assert.deepEqual(clone(app.reportGroups().map(group=>group.id)),['g1','g5']);
+  assert.ok(!app.reportsView().match(/<button[^>]*data-print-all[^>]*>/)[0].includes('disabled'));
+  app.setBancaDateFilter('',true);
+  assert.ok(app.reportGroups().some(group=>group.id==='unscheduled'));
+  assert.ok(app.reportsView().match(/<button[^>]*data-print-all[^>]*>/)[0].includes('disabled'));
+  app.setBancaDateFilter('2026-10-18',true);app.state.seals.b5=null;
+  assert.ok(app.reportsView().match(/<button[^>]*data-print-all[^>]*>/)[0].includes('disabled'));
+});
+
+test('date-filtered agenda export includes exactly the visible boards and changes no saved data',async()=>{
+  const h=harness('coord');installDateCatalog(h);const{app}=h,before=clone(h.data);
+  Object.assign(app.state,{courseFilter:'ADS',filter:'2A',boardDateFilter:'2026-10-18'});
+  app.exportSchedulePdf(false);const pdf=await h.downloads[0].blob.text();
+  for(const included of ['DAY18','OTHERTEACHER18'])assert.ok(pdf.includes(included),included);
+  for(const excluded of ['DAY19','ENGINEERING18','CLASS3A18','NOTSCHEDULED'])assert.ok(!pdf.includes(excluded),excluded);
+  assert.deepEqual(h.data,before);assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
 });

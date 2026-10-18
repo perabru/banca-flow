@@ -4,7 +4,7 @@
 <meta name="theme-color" content="#014996"><meta name="description" content="BancaFlow: organização de bancas e avaliação de TCC por professores da Univap, com coordenação de acessos, notas individuais e relatórios.">
 <meta name="color-scheme" content="light">
 <meta name="referrer" content="strict-origin-when-cross-origin">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-06j+aHD5P32yw5iKMwN3OpW3bpFYsFS5YUlua/kMxQE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-NTJRCc0EWg8GsNnJ2QLP+S6iEgzWEc5XiPV1vOPwxIk='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>BancaFlow · Avaliação de TCC | Univap</title><style>
 /* Mobile first. Cores institucionais Univap; todos os recursos ficam neste HTML. */
@@ -471,6 +471,15 @@ button.avatar{width:44px;height:44px;padding:0}
 .excel-import-stats{margin-top:12px}.excel-import-stats .stat strong{font-size:1.8rem}
 @media(max-width:600px){.excel-import-dialog{padding:18px}.excel-import-dialog>.row{align-items:flex-start}.excel-import-dialog>.row>div{min-width:0}.excel-import-footer{bottom:-18px}.excel-import-footer .btn{width:100%;justify-content:center}.excel-import-card .row .btn{flex:1 1 100%;justify-content:center}.excel-preview-group .row{align-items:flex-start;gap:8px}.excel-import-stats{grid-template-columns:1fr}.excel-import-dialog .form-grid{grid-template-columns:1fr}.excel-import-dialog .field{grid-column:1/-1}}
 
+
+.banca-filter-toolbar{align-items:flex-end;gap:12px}
+.banca-date-field{display:flex;flex-direction:column;gap:6px;min-width:0;width:100%}
+.banca-date-field label{margin:0;font-size:.78rem;font-weight:700;color:var(--texto)}
+.banca-date-field input{width:100%;max-width:100%;min-width:0;min-height:46px;color:var(--texto)}
+.banca-date-field small{font-size:.72rem;color:var(--cinza);line-height:1.5}
+.banca-date-actions{display:flex;flex-wrap:wrap;gap:8px;width:100%}
+.banca-date-actions .btn{flex:1 1 auto;justify-content:center}
+@media(min-width:640px){.banca-date-field{width:190px;flex:0 1 190px}.banca-date-actions{width:auto;align-self:center}.banca-date-actions .btn{flex:initial}}
 </style>
 </head><body>
 <noscript><p class="notice">Ative o JavaScript para acessar o BancaFlow. Em caso de dúvida, procure a coordenação.</p></noscript>
@@ -862,7 +871,7 @@ const ICON_PATHS={
 };
 const icon=name=>`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name]||ICON_PATHS.bancas}</svg>`;
 const ROSTER_PROTEGIDO = JSON.parse(document.getElementById('roster-criptografado').textContent);
-const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', unsubs:[], teacherSubs:new Map() };
+const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', unsubs:[], teacherSubs:new Map() };
 const isActiveTeacher = profile => !!profile && ['coordinator','teacher'].includes(profile.role) && profile.active !== false;
 const activeTeachers = () => Object.entries(state.users).filter(([,profile])=>isActiveTeacher(profile));
 const isCoord = () => state.profile?.role === 'coordinator' && state.profile.active !== false;
@@ -871,7 +880,10 @@ const groupOf = board => state.groups[board?.groupId];
 const availableGroups = () => Object.values(state.groups).filter(g=>g.active!==false);
 const courseLabel = group => group?.courseName || 'Curso não informado';
 const matchesReportGroup = group => !!group && (state.reportFilter==='todas'||group.className===state.reportFilter) && (state.reportCourseFilter==='todas'||courseLabel(group)===state.reportCourseFilter);
-const reportGroups = () => Object.values(state.groups).filter(g=>(g.active!==false||state.groupBoards[g.id])&&matchesReportGroup(g));
+const reportGroups = () => {
+ const selectedGroups=new Set(filteredReportBoards().map(([,board])=>board.groupId));
+ return Object.values(state.groups).filter(g=>(g.active!==false||state.groupBoards[g.id])&&matchesReportGroup(g)&&(!state.reportDateFilter||selectedGroups.has(g.id)));
+};
 const who = uid => state.users[uid]?.name || Object.values(state.boards).flatMap(b => Object.entries(b.memberNames || {})).find(([id]) => id === uid)?.[1] || uid;
 const dateStr = ms => new Date(ms).toLocaleString('pt-BR', {dateStyle:'short', timeStyle:'short'});
 const boardGrades = id => isCoord() ? (state.grades[id] || {}) : ({[state.user.uid]:state.grades[id]?.[state.user.uid] || {}});
@@ -904,6 +916,7 @@ function resetAppData(){
  for(const key of ['users','groups','boards','groupBoards','locks','roomLocks','grades','deliveries','seals','timers','timerErrors'])state[key]={};
  state.drafts.clear();state.busyBoards.clear();if(typeof closeBoardShare==='function')closeBoardShare();$('#view').innerHTML='';
  state.plan=[];state.planMeta=null;state.planUnassigned=[];state.selectedBoard='';
+ state.filter='todas';state.courseFilter='todas';state.reportFilter='todas';state.reportCourseFilter='todas';state.boardDateFilter='';state.reportDateFilter='';
 }
 function dataReadFailed(error,revision){
  if(revision!==accessRevision)return;
@@ -974,7 +987,7 @@ const navItems=()=>isCoord()? [['inicio','01','Visão geral'],['bancas','02','Ba
 function closeMobileMenu(){const menu=$('#mobile-menu');if(menu.open)menu.close();document.body.classList.remove('menu-open');}
 function openMobileMenu(){
  if(!state.user)return;const menu=$('#mobile-menu');if(menu.open)return;
- const extra=isCoord()?[['entregas','Entregas','Lançar a nota dos 40%'],['relatorios','Relatórios','Concluir bancas e emitir os PDFs']]:[];
+ const extra=isCoord()?[['grupos','Grupos e cursos','Cadastrar grupos e importar planilhas'],['entregas','Entregas','Lançar a nota dos 40%'],['relatorios','Relatórios','Concluir bancas e emitir os PDFs']]:[];
  menu.innerHTML=`<div class="menu-content"><div class="menu-grip" aria-hidden="true"></div><div class="menu-header"><h2 id="mobile-menu-title">Sua conta e outras áreas</h2><button type="button" class="icon-btn" data-close-menu="1" aria-label="Fechar menu" autofocus>${icon('fechar')}</button></div><div class="menu-profile"><span class="avatar" aria-hidden="true">${esc(initials(state.profile.name))}</span><div><strong>${esc(state.profile.name)}</strong><small>${isCoord()?'Coordenação':'Professor avaliador'}</small><small>${esc(state.profile.email||state.user.email||'')}</small></div></div><nav class="menu-links" aria-label="Outras áreas">${extra.map(([route,label,description])=>`<button type="button" data-route="${route}" class="${state.route===route?'active':''}" ${state.route===route?'aria-current="page"':''}>${icon(route)}<span><b>${label}</b><small>${description}</small></span>${icon('seta')}</button>`).join('')}<button type="button" data-route="sair" class="menu-logout">${icon('sair')}<span><b>Sair da conta</b><small>Encerrar esta sessão no dispositivo</small></span></button></nav></div>`;
  menu.showModal();document.body.classList.add('menu-open');
 }
@@ -997,11 +1010,27 @@ function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,
 }
 function boardStatus(bid,b){if(state.seals[bid])return badge('Avaliação encerrada','green');if(!isCoord())return badge('Agendada','blue');const g=groupOf(b);if(g&&situacao(b,g,boardGrades(bid),state.deliveries[bid]).pronta)return badge('Notas completas','green');return badge('Em avaliação','orange');}
 function boardList(boards){if(!boards.length)return empty('Nenhuma banca por aqui','Crie uma banca ou aguarde a atribuição da coordenação.');return `<div class="group-list">${boards.map(([id,b])=>{const g=groupOf(b);return `<article class="group-card board-card"><div><div class="row">${g?.courseName?badge(g.courseName):''}${badge(g?.className||'TCC','blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||b.groupId)}</h4><p class="project-name">${esc(g?.title||'')}</p><div class="board-info"><span>${icon('bancas')}${dateStr(b.startAt)}</span><span>${icon('sala')}${esc(b.room)}</span></div><p class="board-team">Orientador: ${esc(b.advisorName)} ${b.members?.[b.advisorUid]?'(participa)':'(não participa)'}<br>${Object.keys(b.members||{}).length} avaliadores · ${studentsOf(g).length} alunos</p></div><button class="btn soft" data-open-board="${esc(id)}">${isCoord()?'Ver detalhes':'Avaliar grupo'} ${icon('seta')}</button></article>`;}).join('')}</div>`;}
-function boardsView(){let arr=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);
- if(state.filter!=='todas')arr=arr.filter(([,b])=>groupOf(b)?.className===state.filter);
- if(state.courseFilter!=='todas')arr=arr.filter(([,b])=>courseLabel(groupOf(b))===state.courseFilter);
- const all=Object.values(state.groups);return `${heading(isCoord()?'Agenda de bancas':'Suas bancas',`${arr.length} banca(s) encontrada(s).`,isCoord()?'<button class="btn primary" data-route="sortear">+ Nova banca</button>':'')}
- <div class="toolbar"><select id="filter-course" class="filter" aria-label="Filtrar bancas por curso">${opts([['todas','Todos os cursos'],...[...new Set(all.map(courseLabel))].sort().map(c=>[c,c])],state.courseFilter)}</select><select id="filter-class" class="filter" aria-label="Filtrar bancas por turma"><option value="todas">Todas as turmas</option>${[...new Set(all.map(g=>g.className))].sort().map(c=>`<option ${state.filter===c?'selected':''} value="${esc(c)}">Turma ${esc(c)}</option>`).join('')}</select>${isCoord()?`<button class="btn soft" data-pdf-agenda="1" ${!arr.length?'disabled':''}>Baixar PDF da agenda</button>`:''}</div>${boardList(arr)}`;
+function boardMatchesDay(board,day){return !day||(Number.isFinite(board?.startAt)&&localDayKey(board.startAt)===day);}
+function filteredBoards(){
+ return activeBoards().filter(([,board])=>(state.filter==='todas'||groupOf(board)?.className===state.filter)&&(state.courseFilter==='todas'||courseLabel(groupOf(board))===state.courseFilter)&&boardMatchesDay(board,state.boardDateFilter)).sort((a,b)=>a[1].startAt-b[1].startAt);
+}
+function filteredReportBoards(){
+ if(!isCoord())return [];
+ return Object.entries(state.boards).filter(([,board])=>matchesReportGroup(groupOf(board))&&boardMatchesDay(board,state.reportDateFilter)).sort((a,b)=>a[1].startAt-b[1].startAt);
+}
+function setBancaDateFilter(value,report=false){
+ const day=String(value||'');
+ if(day&&(!/^\d{4}-\d{2}-\d{2}$/.test(day)||localDayKey(new Date(day+'T12:00:00').getTime())!==day))throw Error('Escolha uma data válida.');
+ if(report)state.reportDateFilter=day;else state.boardDateFilter=day;
+ render();
+}
+function bancaDateFilterHtml(report=false){
+ const day=report?state.reportDateFilter:state.boardDateFilter,id=report?'report-date-filter':'filter-date',scope=report?'reports':'boards';
+ return `<div class="banca-date-field"><label for="${id}">Data da banca</label><input id="${id}" class="filter" type="date" lang="pt-BR" value="${esc(day)}" aria-describedby="${id}-help"><small id="${id}-help">${day?'Somente '+esc(day.split('-').reverse().join('/')):'Todas as datas'}</small></div><div class="banca-date-actions"><button class="btn soft" type="button" data-date-today="${scope}">Hoje</button><button class="btn soft" type="button" data-date-clear="${scope}" ${!day?'disabled':''}>Todas as datas</button></div>`;
+}
+function boardsView(){const arr=filteredBoards();
+ const all=Object.values(state.groups);return `${heading(isCoord()?'Agenda de bancas':'Suas bancas',`${arr.length} banca(s) encontrada(s)${state.boardDateFilter?' em '+state.boardDateFilter.split('-').reverse().join('/'):''}.`,isCoord()?'<button class="btn primary" data-route="sortear">+ Nova banca</button>':'')}
+ <div class="toolbar banca-filter-toolbar"><select id="filter-course" class="filter" aria-label="Filtrar bancas por curso">${opts([['todas','Todos os cursos'],...[...new Set(all.map(courseLabel))].sort().map(c=>[c,c])],state.courseFilter)}</select><select id="filter-class" class="filter" aria-label="Filtrar bancas por turma"><option value="todas">Todas as turmas</option>${[...new Set(all.map(g=>g.className))].sort().map(c=>`<option ${state.filter===c?'selected':''} value="${esc(c)}">Turma ${esc(c)}</option>`).join('')}</select>${bancaDateFilterHtml()}${isCoord()?`<button class="btn soft" data-pdf-agenda="1" ${!arr.length?'disabled':''}>Baixar PDF da agenda</button>`:''}</div>${arr.length?boardList(arr):empty('Nenhuma banca encontrada','Escolha outra data, curso ou turma para ajustar a busca.')}`;
 }
 const opts=(items,selected='')=>items.map(([v,text])=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(text)}</option>`).join('');
 function localDayKey(at){const d=new Date(at);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;}
@@ -1061,10 +1090,10 @@ function gradeView(){let id=state.selectedBoard;let board=state.boards[id];if(!b
  ${selfMember?studentsOf(g).map(([sid,name])=>`<form class="student" data-grade-form="${esc(id)}" data-student="${esc(sid)}"><h4>${esc(name)}</h4><p>${esc(g.name)} · ${esc(g.title)}</p><div class="grade-grid">${CRITERIOS.map(([key,label])=>`<div class="field"><label for="${esc(id)}-${esc(sid)}-${key}">${label}</label><input id="${esc(id)}-${esc(sid)}-${key}" name="${key}" type="number" inputmode="decimal" min="0" max="10" step="0.1" required ${sealed?'disabled':''} value="${own[sid]?.[key]??''}" placeholder="0 a 10"></div>`).join('')}</div><div class="grade-foot"><span class="muted tiny">Média deste avaliador: <strong>${mediaAvaliador(own[sid])===null?'—':fmt(mediaAvaliador(own[sid]))}</strong></span>${!sealed?'<button class="btn primary" type="submit">Salvar notas</button>':''}<button class="btn whatsapp" type="button" data-share-board="${esc(id)}" data-share-student="${esc(sid)}">Compartilhar avaliação deste aluno</button></div></form>`).join(''):empty('Apenas os avaliadores podem lançar notas nesta banca')}`;
 }
 function deliveriesView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const boards=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);return `${heading('Entregas · 40%','Somente o coordenador lança e visualiza esta nota. Cada aluno tem sua própria nota.')}<div class="notice">A nota de entregas é de 0 a 10; ela representa 40% da nota final. Ao encerrar a banca, as notas são bloqueadas. Reabra a banca para lançar ou corrigir entregas; depois encerre novamente.</div>${boards.length?boards.map(([bid,b])=>{const g=groupOf(b);if(!g)return '';const sealed=!!state.seals[bid];return `<section class="card">${heading(g.name,g.title,boardStatus(bid,b))}<p class="muted tiny">Orientador: ${esc(b.advisorName)}</p><div class="board-actions">${boardActions(bid)}</div>${studentsOf(g).map(([sid,name])=>`<form class="student" data-delivery-form="${esc(bid)}" data-student="${esc(sid)}"><div class="row space delivery-row"><div><h4>${esc(name)}</h4><p>Avaliação de entregas</p></div><div class="row delivery-controls"><input style="width:110px" class="filter" aria-label="Nota de entregas de ${esc(name)}" type="number" name="delivery" step="0.1" min="0" max="10" required ${sealed?'disabled':''} value="${state.deliveries[bid]?.[sid]??''}" placeholder="0 a 10"><button class="btn soft" type="submit" ${sealed?'disabled':''}>Salvar</button></div></div></form>`).join('')}</section>`;}).join(''):empty('Nenhuma banca criada')}`;}
-function reportsView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const ids=Object.entries(state.boards).sort((a,b)=>a[1].startAt-b[1].startAt);const filtered=ids.filter(([,b])=>matchesReportGroup(groupOf(b)));
+function reportsView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const filtered=filteredReportBoards();
  const finished=filtered.filter(([id,b])=>state.seals[id]&&groupOf(b)&&situacao(b,groupOf(b),boardGrades(id),state.deliveries[id]).pronta);const targetGroups=reportGroups();const allReady=targetGroups.length>0&&targetGroups.every(g=>state.groupBoards[g.id]&&finished.some(([id])=>id===state.groupBoards[g.id]))&&filtered.length===targetGroups.length;
  return `${heading('Relatórios oficiais','Detalhamento por aluno e professor avaliador, com a participação de 60% / 40%.',`<button class="btn dark" data-export-csv="1" ${!finished.length?'disabled':''}>Exportar CSV (concluídas)</button>`)}
- <div class="toolbar"><select id="report-course-filter" class="filter" aria-label="Filtrar relatórios por curso">${opts([['todas','Todos os cursos'],...[...new Set(Object.values(state.groups).map(courseLabel))].sort().map(c=>[c,c])],state.reportCourseFilter)}</select><select id="report-filter" class="filter" aria-label="Filtrar relatórios por turma">${opts([['todas','Todas as turmas'],...new Set(Object.values(state.groups).map(g=>g.className))].map(x=>Array.isArray(x)?x:[x,`Turma ${x}`]),state.reportFilter)}</select><button class="btn primary" data-print-all="1" ${!allReady?'disabled':''}>Baixar PDF consolidado</button></div>
+ <div class="toolbar banca-filter-toolbar"><select id="report-course-filter" class="filter" aria-label="Filtrar relatórios por curso">${opts([['todas','Todos os cursos'],...[...new Set(Object.values(state.groups).map(courseLabel))].sort().map(c=>[c,c])],state.reportCourseFilter)}</select><select id="report-filter" class="filter" aria-label="Filtrar relatórios por turma">${opts([['todas','Todas as turmas'],...new Set(Object.values(state.groups).map(g=>g.className))].map(x=>Array.isArray(x)?x:[x,`Turma ${x}`]),state.reportFilter)}</select>${bancaDateFilterHtml(true)}<button class="btn primary" data-print-all="1" ${!allReady?'disabled':''}>Baixar PDF consolidado</button></div>
  ${!allReady?'<div class="notice">O relatório consolidado só será habilitado quando todas as bancas do filtro estiverem encerradas e com todas as notas, incluindo as entregas. É possível emitir individualmente o relatório de uma banca encerrada e com notas completas.</div>':'<div class="notice good">Todas as bancas do filtro estão encerradas e com notas completas.</div>'}
  ${filtered.length?filtered.map(([id,b])=>{const g=groupOf(b);const s=g?situacao(b,g,boardGrades(id),state.deliveries[id]):{pronta:false,pendencias:[]};const sealed=!!state.seals[id];return `<article class="group-card"><div><div class="row">${badge(g?.className||'', 'blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||id)} — ${esc(g?.title||'')}</h4><p>${esc(b.advisorName)} · ${s.pendencias.length} lançamento(s) pendente(s) · ${dateStr(b.startAt)}</p></div><div class="row">${boardActions(id)}<button class="btn primary" data-print-one="${esc(id)}" ${!sealed||!s.pronta?'disabled':''}>Baixar relatório PDF</button><button class="btn whatsapp" type="button" data-share-board="${esc(id)}" ${!sealed||!s.pronta?'disabled':''}>WhatsApp / compartilhar</button></div></article>`;}).join(''):empty('Nenhuma banca encontrada')}`;
 }
@@ -2113,7 +2142,7 @@ function downloadBlob(blob,filename){
 }
 function exportSchedulePdf(preview){
  if(!isCoord())throw Error('Somente a coordenação pode exportar a escala.');
- const boards=preview?state.plan:Object.values(state.boards).filter(b=>(state.filter==='todas'||groupOf(b)?.className===state.filter)&&(state.courseFilter==='todas'||courseLabel(groupOf(b))===state.courseFilter));
+ const boards=preview?state.plan:filteredBoards().map(([,board])=>board);
  const options=preview?{preview:true,unassigned:state.planUnassigned,className:state.planMeta?.className||'todas'}:{className:state.filter};
  downloadBlob(buildSchedulePdf(boards,options),`${preview?'sorteio':'agenda'}_bancas_univap_${localDayKey(Date.now())}.pdf`);
  notice('PDF gerado. Verifique os downloads do navegador.');
@@ -2576,6 +2605,8 @@ for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('clic
 $('#view').addEventListener('click',e=>{
  const el=e.target.closest('button');if(!el||el.disabled)return;
  if(el.dataset.route)return go(el.dataset.route);
+ if(el.dataset.dateToday)return handle(()=>setBancaDateFilter(localDayKey(Date.now()),el.dataset.dateToday==='reports'));
+ if(el.dataset.dateClear)return handle(()=>setBancaDateFilter('',el.dataset.dateClear==='reports'));
  if(el.dataset.importRoster)return handle(importarGruposProtegidos);
  if(el.dataset.copyPolicy)return handle(copiarPoliticaDeAcesso);
  if(el.dataset.editTeacher)return handle(()=>editTeacher(el.dataset.editTeacher));
@@ -2600,14 +2631,14 @@ $('#view').addEventListener('click',e=>{
  if(el.dataset.shareBoard)return handle(()=>openBoardShare(el.dataset.shareBoard,{studentId:el.dataset.shareStudent||''}));
  if(el.dataset.printOne)return handle(()=>printReports([el.dataset.printOne]));
  if(el.dataset.printAll)return handle(async()=>{
-  const selected=Object.entries(state.boards).filter(([,b])=>matchesReportGroup(groupOf(b))).map(([id])=>id);
+  const selected=filteredReportBoards().map(([id])=>id);
   const targetGroups=reportGroups();
   if(!targetGroups.length||selected.length!==targetGroups.length||targetGroups.some(g=>!state.groupBoards[g.id]||!state.seals[state.groupBoards[g.id]]))throw Error('Agende e conclua todos os grupos do filtro antes do consolidado.');
   await printReports(selected);
  });
- if(el.dataset.exportCsv)return handle(async()=>{const ids=Object.keys(state.seals).filter(id=>state.seals[id]&&state.boards[id]&&groupOf(state.boards[id])&&situacao(state.boards[id],groupOf(state.boards[id]),boardGrades(id),state.deliveries[id]).pronta&&matchesReportGroup(groupOf(state.boards[id])));await refreshReportData(ids);exportCsv(ids);});
+ if(el.dataset.exportCsv)return handle(async()=>{const ids=filteredReportBoards().filter(([id,b])=>state.seals[id]&&situacao(b,groupOf(b),boardGrades(id),state.deliveries[id]).pronta).map(([id])=>id);await refreshReportData(ids);exportCsv(ids);});
 });
-$('#view').addEventListener('change',e=>{if(['group-course-filter','group-class-filter','group-search','group-show-archived'].includes(e.target.id))return groupFiltersChanged(e);if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='teacher-method')teacherRegistrationMethod();if(e.target.id==='filter-course'){state.courseFilter=e.target.value;render();}if(e.target.id==='report-course-filter'){state.reportCourseFilter=e.target.value;render();}if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
+$('#view').addEventListener('change',e=>{if(e.target.id==='filter-date'||e.target.id==='report-date-filter')return handle(()=>setBancaDateFilter(e.target.value,e.target.id==='report-date-filter'));if(['group-course-filter','group-class-filter','group-search','group-show-archived'].includes(e.target.id))return groupFiltersChanged(e);if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='teacher-method')teacherRegistrationMethod();if(e.target.id==='filter-course'){state.courseFilter=e.target.value;render();}if(e.target.id==='report-course-filter'){state.reportCourseFilter=e.target.value;render();}if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
 $('#view').addEventListener('submit',e=>{e.preventDefault();const f=e.target;handle(async()=>{
  if(f.id==='manual-form'){const d=new FormData(f);const g=state.groups[d.get('groupId')];if(!g||g.active===false||state.groupBoards[g.id])throw Error('Selecione um grupo ativo ainda não agendado.');const startAt=new Date(d.get('date')).getTime(),durationMin=Number(d.get('duration')),size=Number(d.get('size')),room=String(d.get('room')||'').trim();const evaluators=d.getAll('evaluator');if(evaluators.length!==size||new Set(evaluators).size!==evaluators.length)throw Error(`Selecione exatamente ${size} professores avaliadores.`);if(evaluators.some(uid=>!state.users[uid]))throw Error('Há um professor sem cadastro.');if(!room)throw Error('Informe a sala.');await createBoards([makeBoard(g,startAt,durationMin,room,evaluators)]);}
  else if(f.id==='lottery-form'){if(!isCoord())throw Error('Sorteio exclusivo da coordenação.');const result=makeLottery(new FormData(f));state.plan=result.plan;state.planMeta=result.config;state.planUnassigned=result.unassigned;render();notice(result.unassigned.length?`${result.plan.length} bancas encaixadas; ${result.unassigned.length} grupo(s) sem horário. Ajuste as condições antes de confirmar.`:'Sorteio completo! Baixe o PDF da prévia ou confirme as bancas.',!!result.unassigned.length);}
