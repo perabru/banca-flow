@@ -5,7 +5,6 @@
  * BANCAFLOW_RULES_DEPS may point to an external npm installation prefix.
  */
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
@@ -20,7 +19,7 @@ const { ref, set, get, update, remove } = require('firebase/database');
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const html = await readFile(join(rootDir, 'index.html'), 'utf8');
 const embedded = html.match(/<script[^>]*id="firebase-rules"[^>]*>([\s\S]*?)<\/script>/)[1];
-const rules = JSON.parse(embedded);
+const rules = JSON.parse(await readFile(join(rootDir, 'database.rules.json'), 'utf8'));
 const [host = '127.0.0.1', port = '9000'] = (process.env.FIREBASE_DATABASE_EMULATOR_HOST || '127.0.0.1:9000').split(':');
 // The Node RTDB WebSocket SDK ignores NO_PROXY. Keep emulator requests local.
 if (['127.0.0.1', 'localhost', '::1'].includes(host)) {
@@ -31,12 +30,16 @@ const grade = { presentation: 8, practice: 9, code: 7, time: 8 };
 const fixture = () => ({
   users: {
     coord: { name: 'Coordenação', email: 'coord@example.test', role: 'coordinator', key: 'alberson', active: true },
+    otherCoord: { name: 'Outra coordenação', email: 'othercoord@example.test', role: 'coordinator', key: 'another', active: true },
     teacher1: { name: 'Professor 1', email: 'one@example.test', role: 'teacher', key: 'one', active: true },
     teacher2: { name: 'Professor 2', email: 'two@example.test', role: 'teacher', key: 'two', active: true },
     outsider: { name: 'Outro professor', email: 'other@example.test', role: 'teacher', key: 'other', active: true },
     disabled: { name: 'Desativado', email: 'off@example.test', role: 'teacher', key: 'off', active: false }
   },
-  groups: { g1: { id: 'g1', name: 'Grupo 1', className: '2A', title: 'Projeto', advisorUid: 'teacher1', students: { s1: 'Aluno 1', s2: 'Aluno 2' } } },
+  groups: {
+    g1: { id: 'g1', name: 'Grupo 1', className: '2A', title: 'Projeto', advisorUid: 'teacher1', students: { s1: 'Aluno 1', s2: 'Aluno 2' } },
+    g2: { id: 'g2', name: 'Grupo 2', className: '2B', title: 'Novo projeto', advisorUid: 'teacher1', students: { s3: 'Aluno 3', s4: 'Aluno 4' } }
+  },
   boards: { b1: { groupId: 'g1', advisorUid: 'teacher1', advisorName: 'Professor 1', members: { teacher1: true, teacher2: true, disabled: true }, memberNames: { teacher1: 'Professor 1', teacher2: 'Professor 2', disabled: 'Desativado' }, startAt: 900000, durationMin: 30, room: 'Laboratório', createdBy: 'coord', createdAt: 1 } },
   groupBoards: { g1: 'b1' },
   locks: { slice: { teacher1: 'b1', teacher2: 'b1' } },
@@ -55,16 +58,17 @@ const readPrivileged = async path => {
 };
 
 before(async () => {
-  env = await initializeTestEnvironment({ projectId: 'demo-banca-flow', database: { host, port: Number(port), rules: embedded } });
+  env = await initializeTestEnvironment({ projectId: 'demo-banca-flow', database: { host, port: Number(port), rules: JSON.stringify(rules) } });
 }, { timeout: 15000 });
 beforeEach(async () => { await env.clearDatabase(); await bypass('/', fixture()); }, { timeout: 15000 });
 after(async () => { await env?.cleanup(); });
 
-test('published JSON matches embedded rules; unrelated original permissions are unchanged', async () => {
-  assert.deepEqual(JSON.parse(await readFile(join(rootDir, 'database.rules.json'), 'utf8')), rules);
-  const unchanged = Object.fromEntries(Object.entries(rules.rules).filter(([key]) => !['seals', 'timers'].includes(key)));
-  assert.equal(createHash('sha256').update(JSON.stringify(unchanged)).digest('hex'),
-    '2c615c5766f7118797e0f31fd1d19fcb26415e5c4efa9c8364a25f7fc6e58270');
+test('published JSON matches embedded rules and individual evaluation privacy remains explicit', () => {
+  assert.deepEqual(JSON.parse(embedded), rules);
+  assert.equal(rules.rules['.read'], false);
+  assert.equal(rules.rules['.write'], false);
+  assert.match(rules.rules.grades['$bid']['$uid']['.read'], /auth\.uid === \$uid/);
+  assert.match(rules.rules.deliveries['.read'], /role'\)\.val\(\) === 'coordinator'/);
 });
 
 test('teacher reads only own evaluations before and after closure; coordinator reads all', async () => {
@@ -175,5 +179,145 @@ test('stale atomic close is rejected entirely, preserving current timer and open
   await assertFails(update(ref(db('teacher2')), {
     'seals/b1': seal('teacher2'), 'timers/b1': timer('teacher2', 2)
   }));
+  assert.deepEqual(await readPrivileged('/'), beforeData);
+});
+
+const newBoard = () => ({
+  groupId: 'g2', advisorUid: 'teacher1', advisorName: 'Professor 1',
+  members: { teacher1: true, teacher2: true }, memberNames: { teacher1: 'Professor 1', teacher2: 'Professor 2' },
+  startAt: Math.ceil((Date.now() + 60000) / 900000) * 900000,
+  durationMin: 30, room: 'Laboratório 2', createdBy: 'coord', createdAt: Date.now()
+});
+
+test('Alberson edits teacher name/contact, preserving login mapping and roles', async () => {
+  await assertSucceeds(update(ref(db('coord'), 'users/teacher1'), { name: 'Professor atualizado', contactEmail: 'contato@example.test' }));
+  const edited = await readPrivileged('users/teacher1');
+  assert.equal(edited.email, 'one@example.test');
+  assert.equal(edited.key, 'one');
+  assert.equal(edited.role, 'teacher');
+  for (const change of [{ email: 'changed@example.test' }, { key: 'changed' }, { role: 'coordinator' }, { contactEmail: 42 }, { contactEmail: 'x'.repeat(255) }]) {
+    await assertFails(update(ref(db('coord'), 'users/teacher1'), change));
+  }
+  await assertSucceeds(update(ref(db('coord'), 'users/teacher1'), { contactEmail: null }));
+});
+
+test('teacher management remains exclusive to Alberson and cannot affect coordination or self', async () => {
+  for (const uid of ['teacher1', 'teacher2', 'otherCoord', null]) await assertFails(update(ref(db(uid), 'users/teacher1'), { name: 'Alterado' }));
+  await assertFails(update(ref(db('coord'), 'users/coord'), { name: 'Alterado' }));
+  await assertFails(update(ref(db('coord'), 'users/otherCoord'), { name: 'Alterado' }));
+  await assertFails(remove(ref(db('coord'), 'users/teacher1')));
+  await assertSucceeds(update(ref(db('coord'), 'users/teacher1'), { active: false, disabledBy: 'coord', disabledAt: Date.now() }));
+  await assertSucceeds(update(ref(db('coord'), 'users/teacher1'), { active: true, disabledBy: null, disabledAt: null }));
+});
+
+test('Alberson creates and edits an unscheduled catalog group with course and stable identifiers', async () => {
+  const group = { ...fixture().groups.g2, id: 'g3', courseName: 'Análise e Desenvolvimento de Sistemas', active: true, createdBy: 'coord', createdAt: Date.now() };
+  await assertSucceeds(set(ref(db('coord'), 'groups/g3'), group));
+  await assertSucceeds(update(ref(db('coord'), 'groups/g3'), {
+    name: 'Grupo atualizado', className: 'Turma com identificação ampliada até oitenta caracteres', title: 'Título atualizado',
+    courseName: 'Engenharia da Computação', advisorUid: 'teacher2', students: { a: 'Aluna A', b: 'Aluno B' },
+    updatedBy: 'coord', updatedAt: Date.now()
+  }));
+  assert.deepEqual((await readPrivileged('groups/g3')).students, { a: 'Aluna A', b: 'Aluno B' });
+  await assertFails(update(ref(db('coord'), 'groups/g3'), { id: 'changed' }));
+  await assertFails(update(ref(db('coord'), 'groups/g3'), { createdBy: 'teacher1' }));
+  await assertFails(update(ref(db('coord'), 'groups/g3'), { createdAt: null }));
+  await assertFails(update(ref(db('coord'), 'groups/g3'), { className: 'x'.repeat(81) }));
+  await assertFails(update(ref(db('coord'), 'groups/g3'), { courseName: 'x'.repeat(121) }));
+  await assertFails(set(ref(db('coord'), 'groups/g3/students'), {}));
+});
+
+test('other coordinators, teachers and anonymous clients cannot create or alter catalog groups', async () => {
+  for (const uid of ['otherCoord', 'teacher1', 'teacher2', null]) {
+    await assertFails(set(ref(db(uid), 'groups/g3'), { ...fixture().groups.g2, id: 'g3' }));
+    await assertFails(update(ref(db(uid), 'groups/g2'), { title: 'Alterado' }));
+    await assertFails(update(ref(db(uid), 'groups/g2'), { active: false }));
+  }
+  await assertFails(set(ref(db('coord'), 'groups/missing/active'), true));
+  await assertFails(remove(ref(db('coord'), 'groups/g2')));
+});
+
+test('scheduled academic fields and student map reject scalar, nested, deletion and whole-group mutations', async () => {
+  const beforeGroup = await readPrivileged('groups/g1');
+  for (const [path, value] of [
+    ['name', 'Alterado'], ['className', 'Outra turma'], ['title', 'Outro título'], ['advisorUid', 'teacher2'],
+    ['courseName', 'Outro curso'], ['students/s1', 'Outro nome'], ['students/new', 'Novo aluno'], ['students/s1', null]
+  ]) await assertFails(set(ref(db('coord'), `groups/g1/${path}`), value));
+  await assertFails(set(ref(db('coord'), 'groups/g1'), { ...beforeGroup, active: true }));
+  assert.deepEqual(await readPrivileged('groups/g1'), beforeGroup);
+});
+
+test('scheduled open groups cannot be archived; closed archive and restore preserve all academic records', async () => {
+  const beforeGroup = await readPrivileged('groups/g1');
+  const beforeGrades = await readPrivileged('grades/b1');
+  await assertFails(update(ref(db('coord'), 'groups/g1'), { active: false, archivedBy: 'coord', archivedAt: Date.now() }));
+  await bypass('seals/b1', seal());
+  await assertSucceeds(update(ref(db('coord'), 'groups/g1'), { active: false, archivedBy: 'coord', archivedAt: Date.now(), updatedBy: 'coord', updatedAt: Date.now() }));
+  const archived = await readPrivileged('groups/g1');
+  for (const key of ['id', 'name', 'className', 'title', 'advisorUid', 'students']) assert.deepEqual(archived[key], beforeGroup[key]);
+  await assertSucceeds(update(ref(db('coord'), 'groups/g1'), { active: true, archivedBy: null, archivedAt: null, updatedBy: 'coord', updatedAt: Date.now() }));
+  assert.deepEqual(await readPrivileged('grades/b1'), beforeGrades);
+});
+
+test('lifecycle metadata is validated and does not create a bypass to academic fields', async () => {
+  await assertSucceeds(update(ref(db('coord'), 'groups/g1'), { updatedBy: 'coord', updatedAt: Date.now() }));
+  for (const change of [{ updatedBy: 'teacher1' }, { archivedBy: 'teacher1' }, { updatedAt: Date.now() + 120000 }, { archivedAt: 'today' }, { active: null }, { active: 'false' }]) {
+    await assertFails(update(ref(db('coord'), 'groups/g1'), change));
+  }
+  await assertFails(update(ref(db('coord'), 'groups/g1'), { title: 'Tentativa', updatedBy: 'coord' }));
+});
+
+test('reciprocal board and group mapping validation permits the existing atomic scheduling shape', async () => {
+  const board = newBoard();
+  await assertFails(set(ref(db('coord'), 'boards/b2'), board));
+  await assertFails(set(ref(db('coord'), 'groupBoards/g2'), 'b2'));
+  await assertSucceeds(update(ref(db('coord')), { 'boards/b2': board, 'groupBoards/g2': 'b2' }));
+  await assertFails(update(ref(db('coord'), 'groups/g2'), { title: 'Alteração posterior' }));
+});
+
+test('academic edit plus new scheduling in one commit is rejected atomically', async () => {
+  const beforeData = await readPrivileged('/');
+  await assertFails(update(ref(db('coord')), {
+    'groups/g2/title': 'Título adulterado', 'boards/b2': newBoard(), 'groupBoards/g2': 'b2'
+  }));
+  assert.deepEqual(await readPrivileged('/'), beforeData);
+});
+
+test('archiving plus new scheduling in one commit is rejected atomically', async () => {
+  const beforeData = await readPrivileged('/');
+  await assertFails(update(ref(db('coord')), {
+    'groups/g2/active': false, 'boards/b2': newBoard(), 'groupBoards/g2': 'b2'
+  }));
+  assert.deepEqual(await readPrivileged('/'), beforeData);
+});
+
+test('archived groups cannot receive new boards or grades until explicitly restored', async () => {
+  await assertSucceeds(update(ref(db('coord'), 'groups/g2'), { active: false }));
+  await assertFails(update(ref(db('coord')), { 'boards/b2': newBoard(), 'groupBoards/g2': 'b2' }));
+  await bypass('seals/b1', seal());
+  await assertSucceeds(update(ref(db('coord'), 'groups/g1'), { active: false }));
+  await assertSucceeds(remove(ref(db('coord'), 'seals/b1')));
+  await assertFails(set(ref(db('teacher1'), 'grades/b1/teacher1/s1'), grade));
+  await assertFails(set(ref(db('coord'), 'deliveries/b1/s1'), 10));
+  await assertSucceeds(update(ref(db('coord'), 'groups/g1'), { active: true }));
+  await assertSucceeds(set(ref(db('teacher1'), 'grades/b1/teacher1/s1'), grade));
+});
+
+test('closing and archiving an existing board in one atomic commit is supported', async () => {
+  const beforeGroup = await readPrivileged('groups/g1');
+  await assertSucceeds(update(ref(db('coord')), {
+    'seals/b1': seal('coord'), 'groups/g1/active': false,
+    'groups/g1/archivedBy': 'coord', 'groups/g1/archivedAt': Date.now()
+  }));
+  const afterGroup = await readPrivileged('groups/g1');
+  assert.equal(afterGroup.active, false);
+  assert.deepEqual(afterGroup.students, beforeGroup.students);
+  await assertFails(update(ref(db('coord'), 'groups/g1'), { title: 'Histórico alterado' }));
+});
+
+test('reopening and archiving together cannot bypass the post-write seal requirement', async () => {
+  await bypass('seals/b1', seal());
+  const beforeData = await readPrivileged('/');
+  await assertFails(update(ref(db('coord')), { 'seals/b1': null, 'groups/g1/active': false }));
   assert.deepEqual(await readPrivileged('/'), beforeData);
 });

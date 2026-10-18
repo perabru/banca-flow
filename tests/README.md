@@ -12,6 +12,16 @@ node --test tests/app.test.cjs
 
 A suíte executa o JavaScript do próprio `index.html` com adaptadores de DOM e Firebase em memória. Verifica notas individuais e médias ponderadas, nota zero, dados incompletos, cronômetro compartilhado com centésimos, repetição de transações, confirmação/cancelamento, encerramento/reabertura por avaliadores e coordenação, exclusividade das entregas, preservação de rascunhos, atualização consistente do relatório e PDF nativo. Também verifica snapshots oficiais e parciais, filtro por aluno, privacidade das notas de outros professores, bloqueio de prévias desatualizadas e mudança de sessão durante operações assíncronas.
 
+A gestão de professores e grupos também é verificada: exclusividade do Alberson, conta secundária durante o cadastro, reversão de criação incompleta, dados imutáveis de login, edição de contato, concorrência, remoção e restauração sem apagar histórico, identidade dos alunos, proteção após agendamento e confirmação da importação.
+
+O parser local do Excel tem uma suíte própria, sem dependências adicionais:
+
+```bash
+node --test tests/import.test.cjs
+```
+
+Ela lê arquivos XLSX, XLS e CSV reais com a biblioteca local, verifica cabeçalhos e orientadores, agrupamento e identidades estáveis, importações repetidas, cursos distintos, fórmulas e limites de arquivo.
+
 ## Navegador real
 
 Instale Playwright em um ambiente de desenvolvimento e indique um executável Chromium existente:
@@ -24,12 +34,14 @@ Sem Playwright ou sem essa variável, os testes de navegador aparecem como ignor
 
 O compartilhamento é verificado com `navigator.share`, clipboard e links do WhatsApp interceptados: arquivo PDF real, notas individuais, ativação por clique, cancelamento sem envio automático, alternativa de download/texto, escolha de um aluno, privacidade do relatório parcial e bloqueio de dados desatualizados. Os testes não abrem conversas reais nem enviam mensagens.
 
+Os fluxos de administração cobrem cadastro, edição e reativação de professor, criação e arquivamento de grupo e carregamento de um arquivo Excel real com prévia, cancelamento, confirmação e preservação do catálogo na reimportação. O HTML de produção também é aberto sem alterações, com módulos Firebase simulados, para conferir os hashes da política CSP, os recursos locais e o formulário de acesso. Os demais cenários usam o mesmo CSP com o hash recalculado apenas para o módulo de teste.
+
 Para usar um pacote Chromium de servidor, `BANCAFLOW_CHROMIUM_MODULE` pode apontar para o módulo que exporta `default.args`. `FONTCONFIG_PATH` pode indicar o diretório de fontes desse pacote. Para salvar capturas da página real em 390 e 1440 px, defina `BANCAFLOW_SCREENSHOT_DIR`.
 
 As duas suítes podem rodar juntas:
 
 ```bash
-BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/app.test.cjs tests/browser.test.cjs
+BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/app.test.cjs tests/import.test.cjs tests/browser.test.cjs
 ```
 
 ## Regras do Firebase
