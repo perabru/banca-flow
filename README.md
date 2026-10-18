@@ -2,7 +2,7 @@
 
 Aplicação estática em HTML, CSS e JavaScript, conectada ao projeto Firebase existente `avaliadortcc`. A atualização preserva os cadastros, grupos, alunos, agenda, notas, entregas, configuração Firebase e lista criptografada de grupos. Não faz migração destrutiva nem importação automática.
 
-`index.html` e `BancaFlow_TCC_2026_Unico.html` oferecem a mesma versão, incluindo a mesma política de acesso atualizada. O layout começa em 320 px e se adapta a tablets e computadores. O site continua sem etapa de compilação.
+`index.html` e `BancaFlow_TCC_2026_Unico.html` oferecem a mesma versão, incluindo a mesma política de acesso atualizada. O layout começa em 320 px e se adapta a tablets e computadores. O site continua sem etapa de compilação. A importação de Excel usa arquivos locais em `assets/`, que devem ser publicados junto dos HTMLs. `privacidade.html` identifica o sistema, os responsáveis e o tratamento dos dados.
 
 ## Ativar a atualização
 
@@ -12,7 +12,7 @@ Aplicação estática em HTML, CSS e JavaScript, conectada ao projeto Firebase e
 
 O arquivo `firebase.json` também permite publicar somente as regras com `firebase deploy --only database --project avaliadortcc`, após autenticar uma conta autorizada.
 
-Publicar arquivos no GitHub não publica as regras no Firebase. A nova política é necessária para o cronômetro compartilhado e para o encerramento/reabertura pelos avaliadores. As regras preservam a privacidade e os demais caminhos originais; não existe acesso público ao banco nem cadastro público de coordenadores.
+Publicar arquivos no GitHub não publica as regras no Firebase. A política atualizada é necessária para o cronômetro compartilhado, o encerramento/reabertura pelos avaliadores, a edição de contatos e a gestão de grupos e cursos. Se você publicou uma versão anterior das regras, publique novamente o arquivo desta versão. As regras preservam a privacidade e os demais caminhos originais; não existe acesso público ao banco nem cadastro público de coordenadores.
 
 ## Permissões e bancas
 
@@ -69,6 +69,43 @@ Na avaliação, use **Compartilhar minhas avaliações** para o grupo ou **Compa
 Nada é enviado automaticamente. A prévia é preparada antes do clique que abre o compartilhamento, para manter a ativação exigida pelo navegador. Se notas, tempo, sessão ou estado da banca mudarem, prepare uma nova prévia antes de compartilhar. O site não guarda números de telefone nem pede acesso aos contatos.
 
 Compatibilidade: [Web Share](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/share), [canShare](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/canShare) e [WhatsApp click to chat](https://faq.whatsapp.com/425247423114725/).
+
+
+## Professores: administração do Alberson
+
+Em **Professores**, o coordenador com perfil `role: "coordinator"` e `key: "alberson"` pode criar uma conta de professor ou vincular um UID existente, editar nome/e-mail de contato, remover e reativar acessos. A sessão do Alberson permanece aberta durante o cadastro. O acesso da coordenação não pode ser removido ou promovido por essa tela.
+
+O **e-mail de contato** pode ser alterado sem afetar o login. O e-mail de acesso e o identificador nas planilhas permanecem vinculados à conta existente; a alteração de login é administrada no Firebase Authentication. Os nomes já registrados nas bancas não são reescritos ao editar o professor. A remoção bloqueia o acesso ao aplicativo, conserva o perfil e as avaliações e exige concluir as bancas em aberto.
+
+## Grupos, cursos e planilhas
+
+Em **Grupos e cursos**, o Alberson pode:
+
+- Cadastrar um grupo com curso, turma, título, orientador ativo e de 1 a 20 alunos.
+- Editar grupos antes de agendar uma banca, preservando os identificadores dos alunos.
+- Remover e restaurar grupos. A remoção é um arquivamento: o grupo sai de novos agendamentos, mas os alunos, notas, bancas e relatórios permanecem. Bancas em aberto precisam ser encerradas primeiro.
+- Buscar grupos ou alunos e filtrar por curso e turma. A agenda, o sorteio e os relatórios também oferecem seleção de curso.
+- Importar arquivos `.xlsx`, `.xls` e `.csv` (UTF-8), selecionar a aba e conferir a prévia antes de confirmar. Nenhum dado é gravado enquanto houver erros.
+
+Os dados acadêmicos do grupo ficam protegidos após o agendamento, para que alterações de alunos ou orientador não invalidem avaliações existentes. Para corrigir notas de uma banca de um grupo removido, restaure o grupo e depois reabra a banca.
+
+### Formato da planilha
+
+Use as colunas **Curso, Turma, Grupo, Título, Orientador, Aluno**, uma linha por aluno, repetindo os dados do grupo. Também são aceitas colunas **Aluno 1, Aluno 2…** na mesma linha. Se não houver coluna Curso, informe-o no campo da importação. O botão **Baixar modelo CSV** gera um modelo fictício para abrir no Excel.
+
+Em Orientador, use o e-mail, o identificador, o UID ou o nome completo de um professor ativo. Nomes ambíguos são recusados; use um identificador exclusivo. Grupos repetidos são identificados por curso, turma e nome, inclusive os removidos, e não são sobrescritos. O sistema informa conflitos de título/orientador e nomes repetidos de alunos. Fórmulas são recusadas; use valores.
+
+Limites: 5 MB, 10.000 linhas, 200 colunas, 1.000 grupos por arquivo e 20 alunos por grupo. O arquivo original é lido no navegador e não é enviado para um conversor. Somente os novos registros confirmados são enviados, em uma atualização atômica. Uma conferência recente detecta alterações desde a prévia e exige confirmação renovada. Evite operar o mesmo cadastro simultaneamente em duas abas: sem um índice global no servidor, a checagem de nomes/chaves entre novas criações simultâneas não é uma restrição de unicidade absoluta.
+
+Os grupos antigos, sem `courseName` ou `active`, continuam válidos e ativos. Não há migração automática. `active: false` identifica grupos removidos; campos de criação, edição e remoção guardam o responsável e a data. Os caminhos de notas, entregas e cronômetros são preservados.
+
+## Segurança do endereço
+
+O login apresenta BancaFlow, responsáveis, finalidade e o uso de conta própria. [Sobre e privacidade](privacidade.html) explica a hospedagem e os dados. A versão utiliza HTTPS, Referrer Policy e uma Content Security Policy com hash do código embutido. Não há anúncios, solicitação de senha de outro portal ou envio automático de resultados.
+
+HTTPS não remove uma classificação externa de phishing. O diagnóstico e os passos oficiais de revisão estão em [SECURITY.md](SECURITY.md). A consulta pública de 18/10/2026 confirmou uma classificação do Google como inseguro, com indicador de engenharia social. Isso não demonstra a causa específica nem comprova phishing na versão atual; a retirada continua dependendo de revisão pelo fornecedor. Não foi declarada a remoção do alerta. O responsável deve consultar o Search Console e, se houver classificação incorreta, solicitar revisão pelo canal oficial.
+
+Depois de editar o código embutido ou as regras, execute `node scripts/sync-html.cjs` para atualizar os hashes CSP e o segundo HTML. Publique também `assets/`, `privacidade.html`, os HTMLs e os demais arquivos do repositório.
 
 ## Verificação local
 

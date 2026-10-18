@@ -16,9 +16,9 @@ const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringi
 const grade = (presentation = 8, practice = 8, code = 8, time = 8) => ({ presentation, practice, code, time });
 const fixture = () => ({
   users: {
-    coord: { name: 'Alberson', role: 'coordinator', key: 'alberson', active: true },
-    t1: { name: 'Professor Um', role: 'teacher', active: true },
-    t2: { name: 'Professora Dois', role: 'teacher', active: true },
+    coord: { name: 'Alberson', email:'coord@example.test', role: 'coordinator', key: 'alberson', active: true },
+    t1: { name: 'Professor Um', email:'one@example.test', key:'one', role: 'teacher', active: true },
+    t2: { name: 'Professora Dois', email:'two@example.test', key:'two', role: 'teacher', active: true },
     outsider: { name: 'Outro Professor', role: 'teacher', active: true },
     disabled: { name: 'Desativado', role: 'teacher', active: false }
   },
@@ -32,14 +32,14 @@ const fixture = () => ({
 function harness(uid = 't1') {
   let now = 1_800_000_000_000;
   const data = fixture();
-  const calls = { reads: [], sets: [], updates: [], transactions: [], confirmations: [] };
+  const calls = { reads: [], sets: [], updates: [], transactions: [], confirmations: [], authCreates:[], authDeletes:[], appDeletes:[] };
   const options = { confirm: true, setError: null, updateError: null, transactionError: null };
   const elements = new Map();
   const element = selector => {
     if (!elements.has(selector)) elements.set(selector, {
       textContent: '', innerHTML: '', value: '', dataset: {}, style: {},
       classList: { add() {}, remove() {}, toggle() {} }, addEventListener() {},
-      setAttribute() {}, focus() {}, querySelectorAll() { return []; },
+      setAttribute() {}, focus() {}, scrollIntoView() {}, remove() {}, querySelectorAll() { return []; },
       showModal() { this.open = true; }, close() { this.open = false; }
     });
     return elements.get(selector);
@@ -67,7 +67,7 @@ function harness(uid = 't1') {
   }
   const context = vm.createContext({
     console, Date: Clock, Blob, File, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
-    FormData: FormDataAdapter, URL, atob, btoa,
+    FormData: FormDataAdapter, URL, atob, btoa, crypto:{randomUUID:()=> 'test-uuid'},
     window: { scrollTo() {}, addEventListener() {} }, navigator: {},
     document: {
       hidden: false, body: { classList: { add() {}, remove() {} } },
@@ -77,9 +77,14 @@ function harness(uid = 't1') {
     },
     setInterval() {}, clearInterval() {}, setTimeout() {}, clearTimeout() {},
     confirm(message) { calls.confirmations.push(message); return options.confirm; },
-    initializeApp: () => ({}), getAuth: () => ({}), getDatabase: () => ({}),
+    initializeApp: (_config,name='main') => ({name}), getAuth: () => ({}), getDatabase: () => ({}),
+    initializeAuth: app => ({app}), inMemoryPersistence:{},
+    createUserWithEmailAndPassword: async (_auth,email,password) => {calls.authCreates.push({email,password});if(options.authCreateError)throw options.authCreateError;return{user:{uid:options.newAuthUid||'new-teacher'}};},
+    deleteUser: async user => {calls.authDeletes.push(user.uid);if(options.authDeleteError)throw options.authDeleteError;},
+    deleteApp: async app => {calls.appDeletes.push(app.name);}, signOut:async()=>{},
     onAuthStateChanged: () => () => {}, onValue: () => () => {},
     ref: (_db, path = '') => path,
+    push: () => ({key:'new-group'}),
     serverTimestamp: () => ({ '.sv': 'timestamp' }),
     get: async path => { calls.reads.push(path); options.onRead?.(path, calls.reads); return snapshot(read(path)); },
     set: async (path, value) => {
@@ -87,10 +92,10 @@ function harness(uid = 't1') {
       if (options.setError) throw options.setError;
       write(path, value);
     },
-    update: async (_path, changes) => {
+    update: async (base, changes) => {
       calls.updates.push(clone(changes));
       if (options.updateError) throw options.updateError;
-      Object.entries(changes).forEach(([path, value]) => write(path, value));
+      Object.entries(changes).forEach(([path, value]) => write(base?`${base}/${path}`:path, value));
     },
     runTransaction: async (path, updater, config) => {
       calls.transactions.push({ path, config });
@@ -102,6 +107,7 @@ function harness(uid = 't1') {
       return { committed: true, snapshot: snapshot(read(path)) };
     }
   });
+  vm.runInContext(readFileSync(join(__dirname,'..','assets','roster-import.js'),'utf8'),context,{filename:'assets/roster-import.js'});
   vm.runInContext(source + `
     render = () => {};
     refreshTimerUi = () => {};
@@ -111,7 +117,12 @@ function harness(uid = 't1') {
       elapsedAt, formatElapsed, boardElapsed, timerRecord, controlTimer, closeBoard, reopenBoard,
       createBoardShareSnapshot, assertShareSnapshotCurrent, buildSharePdf, buildBoardShareText, whatsappTextUrl, boardShareFilename,
       assertBoardAccess, hasUnsavedDrafts, saveGrade, saveDelivery, reportHtml, refreshReportData,
-      printReports, exportCsv, boardActions, timerHtml,
+      printReports, exportCsv, csvCell, boardActions, timerHtml,
+      teacherIdentity,teacherEditIdentity,teacherProfileFingerprint,addTeacher,changeTeacherAccess,saveTeacherEdit,
+      validatedGroupDraft,groupRelatedBoards,groupAdminFingerprint,resetGroupAdmin,editGroup,saveGroup,changeGroupAccess,addGroupStudentRow,removeGroupStudentRow,
+      confirmExcelImport,
+      startTeacherEdit(uid){teacherEditSession={uid,ownerUid:state.user.uid,revision:accessRevision,profileFingerprint:teacherProfileFingerprint(state.users[uid]),dialog:{open:false,remove(){},querySelectorAll(){return[];}},saving:false};},
+      prepareImport(rows){const catalog={users:state.users,existingGroups:state.groups},preview=BancaFlowImport.parseRows(rows,catalog);excelImportState={uid:state.user.uid,revision:accessRevision,busy:false,rows,defaultCourse:'',catalog,preview,fingerprint:excelPreviewFingerprint(preview)};return excelImportState;},
       buildEvaluationPdf: typeof buildEvaluationPdf === 'function' ? buildEvaluationPdf : null };
   `, context, { filename: 'index.html.inline-module.js' });
   const app = context.appTest;
@@ -452,4 +463,128 @@ test('snapshot uses refreshed group metadata and rejects a student removed durin
   app.assertShareSnapshotCurrent(snapshot);
   h.options.onRead=()=>{app.state.groups.g1={...app.state.groups.g1,students:{s2:'Bruno'}};};
   await assert.rejects(app.createBoardShareSnapshot('b1',{studentId:'s1'}),/Aluno não encontrado/);
+});
+
+function adminForm(values,dataset={}){
+  return{values,dataset,querySelector:()=>({disabled:false}),querySelectorAll:()=>[],reset(){this.wasReset=true;}};
+}
+function groupForm(draft){
+  return{dataset:{},elements:{namedItem:name=>({value:draft[name]||''})},querySelectorAll:selector=>selector==='[data-group-student]'?draft.students.map(student=>({dataset:{groupStudent:student.sid},querySelector:()=>({value:student.name})})):[]};
+}
+const newGroupDraft=()=>({name:'Grupo do novo curso',className:'1A',courseName:'Redes de Computadores',title:'Rede segura',advisorUid:'t1',students:[{sid:'s1',name:'Carla'},{sid:'s2',name:'Daniel'}]});
+const importRows=()=>[['Curso','Turma','Grupo','Título','Orientador','Aluno'],['Engenharia','1E','Grupo novo','Sensores','one@example.test','Carla'],['Engenharia','1E','Grupo novo','Sensores','one@example.test','Daniel']];
+
+test('only Alberson manages teachers or groups, including another coordinator account',async()=>{
+  for(const uid of ['t1','coord']){
+    const h=harness(uid);if(uid==='coord')h.app.state.profile.key='other-coordinator';
+    await assert.rejects(h.app.addTeacher(adminForm({name:'Nova',email:'new@example.test',key:'nova',method:'new',password:'strongpass'})),/Somente o Alberson/);
+    await assert.rejects(h.app.changeTeacherAccess('t2',false),/Somente o Alberson/);
+    await assert.rejects(h.app.saveGroup(groupForm(newGroupDraft())),/Somente o Alberson/);
+    await assert.rejects(h.app.changeGroupAccess('g1',false),/Somente o Alberson/);
+    assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
+  }
+});
+
+test('new teacher uses a secondary Auth account and preserves the coordinator session and stored data',async()=>{
+  const h=harness('coord'),before=clone(h.data),form=adminForm({name:'  Nova Docente  ',email:'NOVA@EXAMPLE.TEST',key:'nova',method:'new',password:'strongpass'});
+  await h.app.addTeacher(form);
+  assert.equal(h.data.users['new-teacher'].name,'Nova Docente');assert.equal(h.data.users['new-teacher'].email,'nova@example.test');assert.equal(h.data.users['new-teacher'].role,'teacher');
+  assert.equal(h.app.state.user.uid,'coord');assert.equal(h.calls.authCreates.length,1);assert.equal(h.calls.authDeletes.length,0);
+  assert.equal(form.wasReset,true);assert.equal(h.app.state.teacherBusy,false);
+  assert.equal('password'in h.data.users['new-teacher'],false);assert.deepEqual(h.data.grades,before.grades);assert.deepEqual(h.data.boards,before.boards);
+});
+
+test('teacher creation checks fresh duplicates before Auth and rolls back only its own account on profile collision',async()=>{
+  const values={name:'Nova',email:'new@example.test',key:'nova',method:'new',password:'strongpass'};
+  const duplicate=harness('coord');duplicate.data.users.hidden={name:'Outra',email:'new@example.test',key:'other',role:'teacher',active:true};
+  await assert.rejects(duplicate.app.addTeacher(adminForm(values)),/Já existe/);assert.equal(duplicate.calls.authCreates.length,0);
+  const conflict=harness('coord');conflict.options.transactionRetries=[{name:'Cadastro concorrente',email:'concurrent@example.test',key:'other',role:'teacher',active:true}];
+  await assert.rejects(conflict.app.addTeacher(adminForm(values)),/outra janela/);
+  assert.deepEqual(conflict.calls.authDeletes,['new-teacher']);assert.equal(conflict.app.state.teacherBusy,false);assert.equal(conflict.data.users['new-teacher'],undefined);
+  const existing=harness('coord');await existing.app.addTeacher(adminForm({...values,method:'existing',uid:'linked-uid'}));
+  assert.equal(existing.calls.authCreates.length,0);assert.equal(existing.data.users['linked-uid'].role,'teacher');
+});
+
+test('teacher edit changes name/contact only and retains login identity and historical evaluator labels',async()=>{
+  const h=harness('coord'),{app}=h;app.startTeacherEdit('t1');
+  await app.saveTeacherEdit(adminForm({name:' Nome Atualizado ',contactEmail:'CONTATO@EXAMPLE.TEST'},{teacherUid:'t1'}));
+  assert.equal(h.data.users.t1.name,'Nome Atualizado');assert.equal(h.data.users.t1.contactEmail,'contato@example.test');
+  assert.equal(h.data.users.t1.email,'one@example.test');assert.equal(h.data.users.t1.key,'one');assert.equal(h.data.users.t1.role,'teacher');
+  assert.equal(h.data.boards.b1.memberNames.t1,'Professor Um');assert.equal(h.data.grades.b1.t1.s1.presentation,10);
+  const data=new h.context.FormData({values:{name:'Nome',email:'new@example.test'}});
+  assert.throws(()=>app.teacherEditIdentity(data,h.data.users.t1),/não podem ser alterados/);
+});
+
+test('teacher edit detects stale profiles and removal checks fresh boards before preserving history',async()=>{
+  const h=harness('coord'),{app}=h;app.startTeacherEdit('t1');h.data.users.t1.name='Mudou em outra janela';
+  await assert.rejects(app.saveTeacherEdit(adminForm({name:'Sobrescrever',contactEmail:''},{teacherUid:'t1'})),/outra janela/);
+  assert.equal(h.data.users.t1.name,'Mudou em outra janela');
+  app.state.boards={};await assert.rejects(app.changeTeacherAccess('t1',false),/bancas em aberto/);
+  h.write('seals/b1',{by:'coord',at:h.now()});const grades=clone(h.data.grades);
+  await app.changeTeacherAccess('t1',false);assert.equal(h.data.users.t1.active,false);assert.deepEqual(h.data.grades,grades);
+  await app.changeTeacherAccess('t1',true);assert.equal(h.data.users.t1.active,true);assert.equal(h.data.users.t1.disabledAt,undefined);
+});
+
+test('manual group creation for another course appends stable student identities without modifying existing evaluations',async()=>{
+  const h=harness('coord'),before=clone(h.data);h.app.resetGroupAdmin();
+  await h.app.saveGroup(groupForm(newGroupDraft()));
+  assert.equal(h.data.groups['new-group'].courseName,'Redes de Computadores');assert.deepEqual(h.data.groups['new-group'].students,{s1:'Carla',s2:'Daniel'});
+  assert.deepEqual(h.data.groups.g1,before.groups.g1);assert.deepEqual(h.data.grades,before.grades);assert.deepEqual(h.data.boards,before.boards);
+});
+
+test('group validation rejects inactive advisors, duplicate names and unsafe student IDs',()=>{
+  const {app}=harness('coord');
+  for(const change of [draft=>draft.advisorUid='disabled',draft=>draft.students[1].name='Cárla',draft=>draft.students[0].sid='invalid/id',draft=>draft.students=[]]){
+    const draft=newGroupDraft();change(draft);assert.throws(()=>app.validatedGroupDraft(draft),/orientador|mesmo nome|identificadores|1 a 20/);
+  }
+});
+
+test('manual addition does not duplicate an existing or archived course/class/group identity',async()=>{
+  const h=harness('coord'),draft=newGroupDraft();h.data.groups.old={id:'old',...draft,students:{s1:'Outra pessoa'},active:false};h.app.resetGroupAdmin();
+  await assert.rejects(h.app.saveGroup(groupForm(draft)),/já existe|já cadastrado|cadastrado|duplicado/i);
+  assert.equal(h.calls.sets.length,0);assert.equal(h.data.groups.old.active,false);
+});
+
+test('scheduled group metadata stays protected while closed groups can be archived and restored without data deletion',async()=>{
+  const h=harness('coord'),{app}=h,before=clone(h.data);
+  assert.throws(()=>app.editGroup('g1'),/já possui uma banca/);
+  await assert.rejects(app.changeGroupAccess('g1',false),/banca em aberto/);
+  h.write('seals/b1',{by:'coord',at:h.now()});await app.changeGroupAccess('g1',false);
+  assert.equal(h.data.groups.g1.active,false);assert.deepEqual(h.data.groups.g1.students,before.groups.g1.students);assert.deepEqual(h.data.grades,before.grades);assert.deepEqual(h.data.boards,before.boards);
+  await app.changeGroupAccess('g1',true);assert.equal(h.data.groups.g1.active,true);
+});
+
+test('unscheduled group edit keeps student IDs and refuses a fresh schedule or concurrent metadata change',async()=>{
+  const h=harness('coord'),{app}=h;
+  const group={id:'g2',name:'Grupo sem banca',className:'2A',courseName:'ADS',title:'Antes',advisorUid:'t1',students:{s10:'Carla',s20:'Daniel'},active:true};
+  h.write('groups/g2',group);app.state.groups.g2=clone(group);app.resetGroupAdmin();app.editGroup('g2');
+  await app.saveGroup(groupForm({...newGroupDraft(),students:[{sid:'s10',name:'Carla Atualizada'},{sid:'s20',name:'Daniel'}]}));
+  assert.deepEqual(h.data.groups.g2.students,{s10:'Carla Atualizada',s20:'Daniel'});
+  app.editGroup('g2');h.write('boards/b2',{groupId:'g2',members:{t1:true,t2:true}});
+  await assert.rejects(app.saveGroup(groupForm(newGroupDraft())),/recebeu uma banca/);
+  h.write('boards/b2',null);app.editGroup('g2');h.data.groups.g2.title='Concorrente';
+  await assert.rejects(app.saveGroup(groupForm(newGroupDraft())),/outra sessão/);
+  assert.equal(h.data.groups.g2.title,'Concorrente');
+});
+
+test('Excel commit requires confirmation and appends groups atomically while preserving the existing catalog',async()=>{
+  const h=harness('coord'),{app}=h,before=clone(h.data),session=app.prepareImport(importRows());
+  h.options.confirm=false;await app.confirmExcelImport(session);assert.equal(h.calls.updates.length,0);
+  h.options.confirm=true;await app.confirmExcelImport(session);
+  assert.equal(h.data.groups['new-group'].courseName,'Engenharia');assert.deepEqual(h.data.groups['new-group'].students,{s001:'Carla',s002:'Daniel'});
+  assert.equal(h.calls.updates.length,1);assert.deepEqual(Object.keys(h.calls.updates[0]),['groups/new-group']);assert.deepEqual(h.data.groups.g1,before.groups.g1);assert.deepEqual(h.data.grades,before.grades);
+});
+
+test('Excel confirmation refreshes advisor/catalog and refuses stale previews or partial writes after errors',async()=>{
+  const h=harness('coord'),{app}=h,session=app.prepareImport(importRows());h.data.users.t1.active=false;
+  await assert.rejects(app.confirmExcelImport(session),/cadastro de grupos ou professores mudou/);assert.equal(h.calls.updates.length,0);
+  h.data.users.t1.active=true;app.state.users.t1.active=true;const next=app.prepareImport(importRows());h.options.updateError=Error('permission-denied');
+  await assert.rejects(app.confirmExcelImport(next),/permission-denied/);assert.equal(h.data.groups['new-group'],undefined);assert.ok(h.data.groups.g1);
+});
+
+test('CSV exports quote literal metadata and neutralize spreadsheet formula prefixes',()=>{
+  const{app}=harness('coord');
+  for(const value of ['=1+1',' +SUM(A1:A2)','-2+3','@SUM(A1:A2)','\tNome','\uFEFF=1'])assert.ok(app.csvCell(value).startsWith('"\''),value);
+  assert.equal(app.csvCell('Ana "Silva"; Engenharia'),'"Ana ""Silva""; Engenharia"');
+  assert.equal(app.csvCell('8,50'),'"8,50"');assert.equal(app.csvCell('Ana Silva'),'"Ana Silva"');
 });
