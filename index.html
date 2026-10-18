@@ -19,6 +19,8 @@ html{scroll-behavior:smooth;scroll-padding-top:100px;-webkit-text-size-adjust:10
 body{margin:0;min-width:320px;line-height:1.5}
 body.menu-open{overflow:hidden}
 button,input,select,textarea{font:inherit}
+button,summary,label,a{ -webkit-tap-highlight-color:transparent }
+button,summary{touch-action:manipulation}
 button{cursor:pointer;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
 button:disabled{opacity:.48;cursor:not-allowed}
 input,select,textarea{max-width:100%;min-width:0}
@@ -38,7 +40,7 @@ a{color:var(--azul)}
   display:inline-flex;align-items:center;justify-content:center;gap:9px;
   min-height:48px;max-width:100%;padding:12px 16px;border:1px solid #c9d7e6;
   border-radius:12px;background:#fff;color:var(--azul);font-size:.88rem;
-  font-weight:700;line-height:1.4;text-align:center;transition:background .15s,transform .15s;
+  min-width:0;font-weight:700;line-height:1.4;text-align:center;white-space:normal;overflow-wrap:anywhere;transition:background .15s,transform .15s;
 }
 .btn:active:not(:disabled){transform:translateY(1px)}
 .btn.primary,.btn.dark{background:var(--azul);border-color:var(--azul);color:#fff}
@@ -98,7 +100,7 @@ a{color:var(--azul)}
 .topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:84px;padding:calc(14px + env(safe-area-inset-top)) max(20px,env(safe-area-inset-right)) 14px max(20px,env(safe-area-inset-left));background:#fff;border-bottom:1px solid #e4ebf3;box-shadow:0 2px 12px #123b6705}
 .topbar:before{content:"";position:absolute;inset:0 0 auto;height:3px;background:var(--vermelho)}
 .topbar>div:first-child{min-width:0}
-.topbar h1{color:var(--azul-profundo);font-size:1.3rem;letter-spacing:-.03em;line-height:1.25;margin:5px 0 0}
+.topbar h1{color:var(--azul-profundo);font-size:1.3rem;letter-spacing:-.03em;line-height:1.25;margin:5px 0 0;overflow-wrap:anywhere}
 .top-right{display:flex;align-items:center;gap:10px;flex-shrink:0;color:var(--cinza);font-size:.8rem}
 .top-right .online-label,.top-right .live-dot{display:none}
 .avatar{display:grid;place-items:center;flex-shrink:0;width:42px;height:42px;border:1px solid #cfe0f1;background:var(--azul-claro);color:var(--azul);font-size:.92rem;font-weight:750;border-radius:14px}
@@ -132,7 +134,7 @@ button.avatar{width:44px;height:44px;padding:0}
 /* Cartões, campos e ações. */
 .hero{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:20px;background:var(--azul);border:1px solid var(--azul);color:#fff;border-radius:22px;padding:25px 22px;margin-bottom:18px;box-shadow:0 8px 24px #01499614}
 .hero:after{content:"";position:absolute;right:-65px;top:-65px;width:175px;height:175px;border:24px solid #ffffff08;border-radius:50%;pointer-events:none}
-.hero>div,.hero>.btn{position:relative;z-index:1}
+.hero>div,.hero>.btn{position:relative;z-index:1;min-width:0}
 .hero .pill{color:#d6e8fa;font-size:.66rem}
 .hero h2{font-size:1.6rem;line-height:1.25;font-weight:750;letter-spacing:-.035em;margin:10px 0 9px;color:#fff;overflow-wrap:anywhere}
 .hero p{font-size:.88rem;line-height:1.65;color:#e3edf8;max-width:670px;margin:0}
@@ -146,14 +148,15 @@ button.avatar{width:44px;height:44px;padding:0}
 .stat-icon .ui-icon{width:17px;height:17px}
 .stat strong{display:block;margin-top:12px;font-size:2rem;line-height:1.2;color:var(--azul-profundo);letter-spacing:-.045em;font-weight:750}
 .card{padding:20px 17px;margin-top:20px}
-.card h3,.section-heading h3{margin:0;color:var(--azul-profundo);font-size:1.11rem;font-weight:750;letter-spacing:-.02em;line-height:1.35}
+.card h3,.section-heading h3{margin:0;color:var(--azul-profundo);font-size:1.11rem;font-weight:750;letter-spacing:-.02em;line-height:1.35;overflow-wrap:anywhere}
 .section-heading{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-bottom:20px;min-width:0}
 .section-heading>div{min-width:0}
 .section-heading p{color:var(--cinza);font-size:.84rem;line-height:1.6;margin:7px 0 0;overflow-wrap:anywhere}
 .section-heading>.btn{width:100%}
 .toolbar{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin:0 0 18px}
 .field{display:flex;flex-direction:column;gap:8px;min-width:0}
-.field label{font-size:.84rem;font-weight:650;color:#3e536c;line-height:1.5}
+.field label{font-size:.84rem;font-weight:650;color:#3e536c;line-height:1.5;overflow-wrap:anywhere}
+.field textarea{min-height:120px;resize:vertical}
 .field small{font-size:.76rem;line-height:1.6;color:var(--cinza)}
 .form-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:18px}
 .form-grid .wide{grid-column:1/-1}
@@ -166,14 +169,14 @@ button.avatar{width:44px;height:44px;padding:0}
 .group-card p{font-size:.82rem;color:var(--cinza);line-height:1.65;margin:5px 0;overflow-wrap:anywhere}
 .group-card>.btn{width:100%}
 .group-card>.row{width:100%;gap:10px}
-.group-card>.row>.btn{flex:1}
+.group-card>.row>.btn{flex:1 1 100%}
 .board-card h4{font-size:1.03rem}
 .board-card .project-name{margin:0 0 14px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 .board-info{display:grid;gap:7px;font-size:.8rem;color:var(--texto);margin-bottom:12px}
-.board-info span{display:flex;align-items:flex-start;gap:8px}
+.board-info span{display:flex;align-items:flex-start;gap:8px;min-width:0;overflow-wrap:anywhere}
 .board-info .ui-icon{width:17px;height:17px;margin-top:2px;color:var(--azul)}
 .board-card .board-team{padding-top:12px;border-top:1px solid #e6edf5;font-size:.77rem;margin:0}
-.chip{display:inline-flex;align-items:center;max-width:100%;border-radius:7px;background:var(--azul-claro);color:var(--azul);font-size:.69rem;font-weight:700;line-height:1.4;padding:6px 9px}
+.chip{display:inline-flex;align-items:center;min-width:0;max-width:100%;border-radius:7px;background:var(--azul-claro);color:var(--azul);font-size:.69rem;font-weight:700;line-height:1.4;padding:6px 9px;overflow-wrap:anywhere}
 .chip.green{background:#eaf6f0;color:#146847}
 .chip.orange{background:#fff3db;color:#7f5613}
 .chip.gray{background:#eef2f6;color:#52677e}
@@ -187,8 +190,8 @@ button.avatar{width:44px;height:44px;padding:0}
 .student{min-width:0;border:1px solid var(--borda);border-radius:16px;background:#fff;margin:14px 0;padding:18px 15px}
 .student h4{font-size:.98rem;color:var(--azul-profundo);line-height:1.5;margin:0 0 6px;overflow-wrap:anywhere}
 .student p{font-size:.8rem;line-height:1.6;color:var(--cinza);margin:0 0 18px;overflow-wrap:anywhere}
-.grade-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px 12px}
-.grade-grid .field label{font-size:.79rem;min-height:38px}
+.grade-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px 12px}
+.grade-grid .field label{font-size:.84rem}
 .grade-grid .field input{text-align:center;font-size:1.1rem;font-weight:700}
 .grade-foot{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-top:20px;padding-top:18px;border-top:1px solid var(--borda)}
 .grade-foot strong{color:var(--azul)}
@@ -198,11 +201,20 @@ button.avatar{width:44px;height:44px;padding:0}
 .delivery-controls .btn{min-width:90px}
 .board-details{display:grid;gap:12px;min-width:0;font-size:.85rem;line-height:1.65;color:var(--cinza);overflow-wrap:anywhere}
 .board-details b{color:var(--texto)}
+.board-actions{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin-top:18px}
+.board-actions>.btn{width:100%}
+.board-timer{padding:20px 17px;border:1px solid #c9dcee;border-radius:var(--raio);background:linear-gradient(135deg,#fff,var(--azul-claro));margin-top:20px;min-width:0}
+.timer-head{display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:10px;min-width:0}
+.timer-head>div{min-width:0}
+.timer-head h3{margin:0;font-size:1.05rem;line-height:1.4;color:var(--azul-profundo);overflow-wrap:anywhere}
+.timer-display{display:block;font-variant-numeric:tabular-nums;font-size:clamp(1.9rem,9.4vw,3.5rem);font-weight:750;line-height:1.25;letter-spacing:-.025em;color:var(--azul-profundo);margin:20px 0 16px;white-space:nowrap}
+.timer-controls{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.timer-status{font-size:.78rem;line-height:1.65;color:var(--cinza);overflow-wrap:anywhere;margin:14px 0 0}
 .step-list{display:grid;gap:12px}
-.step-row{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid var(--borda);border-radius:12px;font-size:.86rem}
+.step-row{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid var(--borda);border-radius:12px;font-size:.86rem;min-width:0;overflow-wrap:anywhere}
 .step-number{display:grid;place-items:center;flex-shrink:0;width:32px;height:32px;background:var(--azul-claro);color:var(--azul);border-radius:10px;font-size:.8rem;font-weight:700}
 .check-list{display:grid;grid-template-columns:1fr;gap:9px}
-.check-tag,.check-option{display:flex;align-items:center;gap:10px;min-height:48px;padding:13px 12px;border:1px solid var(--borda);border-radius:12px;background:#fff;font-size:.84rem;line-height:1.5;cursor:pointer}
+.check-tag,.check-option{display:flex;align-items:center;gap:10px;min-width:0;min-height:48px;padding:13px 12px;border:1px solid var(--borda);border-radius:12px;background:#fff;font-size:.84rem;line-height:1.5;cursor:pointer;overflow-wrap:anywhere}
 .check-tag:has(input:checked){background:var(--azul-claro);border-color:#a9cbed;color:var(--azul-escuro)}
 .check-option{background:#f5f8fc}
 .check-tag input,.check-option input{accent-color:var(--azul);flex-shrink:0;width:20px;height:20px;min-height:20px;margin:0}
@@ -211,6 +223,7 @@ button.avatar{width:44px;height:44px;padding:0}
 .notice.error{border-color:#edc5cb;border-left-color:var(--vermelho);background:#fff3f5;color:#a92335}
 .badge-row{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
 .preview-row{display:grid;grid-template-columns:1fr;gap:10px;padding:14px;border-bottom:1px solid var(--borda);font-size:.83rem}
+.preview-row>*{min-width:0;overflow-wrap:anywhere}
 .preview-row span{color:var(--cinza)}
 .teacher-admin-note{margin:0 0 18px;font-size:.83rem;line-height:1.7;color:var(--cinza)}
 .teacher-archive{margin-top:24px}
@@ -232,7 +245,7 @@ button.avatar{width:44px;height:44px;padding:0}
 
 /* Prévia: cartões no celular e tabela a partir do tablet. */
 .table-scroll{min-width:0}
-.data-table{border-collapse:separate;border-spacing:0;width:100%;font-size:.82rem}
+.data-table{display:block;border-collapse:separate;border-spacing:0;width:100%;font-size:.82rem}
 .data-table thead{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}
 .data-table tbody{display:grid;gap:14px}
 .data-table tr{display:block;border:1px solid var(--borda);border-radius:15px;padding:0 14px 8px;background:#fff;overflow:hidden}
@@ -241,6 +254,7 @@ button.avatar{width:44px;height:44px;padding:0}
 .data-table td:first-child{display:block;margin:0 -14px 5px;padding:13px 14px;background:var(--azul-claro);color:var(--azul-profundo);font-size:.91rem}
 .data-table td:first-child:before{display:none}
 .data-table td:last-child{border-bottom:0}
+.data-table td>*{min-width:0}
 .data-table td strong{display:block;color:var(--azul-profundo)}
 .data-table small{color:var(--cinza)}
 #toast{position:fixed;z-index:100;left:16px;right:16px;bottom:calc(var(--nav-height) + env(safe-area-inset-bottom) + 14px);max-width:460px;margin:0 auto;background:var(--azul-profundo);color:#fff;padding:14px 16px;font-size:.85rem;line-height:1.6;border-radius:14px;border-left:4px solid #8abbea;box-shadow:0 9px 28px #12355829;opacity:0;transform:translateY(12px);pointer-events:none;transition:opacity .15s,transform .15s}
@@ -248,6 +262,11 @@ button.avatar{width:44px;height:44px;padding:0}
 #toast.error{background:#8c2632;border-left-color:#f09ba4}
 #print-root{display:none}
 
+@media(min-width:400px){
+  .grade-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .grade-grid .field label{min-height:40px}
+  .timer-controls{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
 @media(min-width:480px){
   .auth-deco{padding-right:max(32px,env(safe-area-inset-right));padding-left:max(32px,env(safe-area-inset-left))}
   .auth-card{padding:32px}
@@ -259,6 +278,7 @@ button.avatar{width:44px;height:44px;padding:0}
   .mobile-nav{padding-right:max(20px,env(safe-area-inset-right));padding-left:max(20px,env(safe-area-inset-left))}
   .schedule-summary span{font-size:.8rem}
   .schedule-summary>div{padding:18px}
+  .board-timer{padding:24px}
 }
 @media(min-width:640px){
   .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
@@ -273,15 +293,21 @@ button.avatar{width:44px;height:44px;padding:0}
   .section-heading>.btn{width:auto;flex-shrink:0}
   .toolbar{flex-direction:row;align-items:center;flex-wrap:wrap}
   .toolbar>.filter{width:auto;min-width:200px}
-  .group-card{flex-direction:row;align-items:center;justify-content:space-between;padding:20px}
-  .group-card>.btn,.group-card>.row{width:auto;flex-shrink:0}
-  .group-card>.row>.btn{flex:none}
+  .group-card{flex-direction:row;flex-wrap:wrap;align-items:center;justify-content:space-between;padding:20px}
+  .group-card>div:first-child{flex:1 1 280px}
+  .group-card>.btn{width:auto;flex:0 1 auto}
+  .group-card>.row{width:auto;flex:1 1 240px}
+  .group-card>.row>.btn{flex:1 1 auto}
   .board-card>.btn{align-self:center}
   .student{padding:22px}
   .grade-foot{flex-direction:row;align-items:center;justify-content:space-between}
   .delivery-row{flex-direction:row;align-items:center}
   .schedule-plan-actions{display:flex;flex-wrap:wrap}
   .preview-row{grid-template-columns:1.3fr 1fr 1.5fr auto}
+  .board-actions{flex-direction:row;flex-wrap:wrap}
+  .board-actions>.btn{width:auto;flex:1 1 180px}
+  .timer-controls{display:flex;flex-wrap:wrap}
+  .timer-controls>.btn{flex:1 1 140px}
 }
 @media(min-width:768px){
   .topbar{padding-left:max(30px,env(safe-area-inset-left));padding-right:max(30px,env(safe-area-inset-right))}
@@ -289,7 +315,7 @@ button.avatar{width:44px;height:44px;padding:0}
   .grid{grid-template-columns:repeat(4,minmax(0,1fr))}
   .grade-grid{grid-template-columns:repeat(4,minmax(0,1fr))}
   .table-scroll{overflow-x:auto;border:1px solid var(--borda);border-radius:14px}
-  .data-table{border-collapse:collapse;min-width:680px}
+  .data-table{display:table;border-collapse:collapse;min-width:680px}
   .data-table thead{position:static;width:auto;height:auto;overflow:visible;clip-path:none;display:table-header-group}
   .data-table tbody{display:table-row-group}
   .data-table tr{display:table-row;border:0;padding:0;border-radius:0;overflow:visible}
@@ -592,13 +618,39 @@ button.avatar{width:44px;height:44px;padding:0}
       ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$bid": {
         ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).child('members').child(auth.uid).val() === true",
-        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('boards').child($bid).exists() && !data.exists() && newData.exists()",
-        ".validate": "newData.hasChildren(['by','at']) && newData.child('by').val() === auth.uid",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).exists() && (root.child('users').child(auth.uid).child('role').val() === 'coordinator' || root.child('boards').child($bid).child('members').child(auth.uid).val() === true) && ((!data.exists() && newData.exists()) || (data.exists() && !newData.exists()))",
+        ".validate": "newData.hasChildren(['by','at']) && newData.child('by').val() === auth.uid && (!newData.parent().parent().child('timers').child($bid).exists() || newData.parent().parent().child('timers').child($bid).child('startedAt').val() === 0)",
         "by": {
           ".validate": "newData.isString()"
         },
         "at": {
           ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "timers": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      "$bid": {
+        ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).exists() && (root.child('users').child(auth.uid).child('role').val() === 'coordinator' || root.child('boards').child($bid).child('members').child(auth.uid).val() === true)",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).exists() && (root.child('users').child(auth.uid).child('role').val() === 'coordinator' || root.child('boards').child($bid).child('members').child(auth.uid).val() === true) && newData.exists() && (!root.child('seals').child($bid).exists() || !newData.parent().parent().child('seals').child($bid).exists())",
+        ".validate": "newData.hasChildren(['elapsedMs','startedAt','updatedAt','updatedBy','revision']) && (!newData.parent().parent().child('seals').child($bid).exists() || newData.child('startedAt').val() === 0)",
+        "elapsedMs": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 31536000000 && newData.val() % 1 === 0"
+        },
+        "startedAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 60000 && newData.val() % 1 === 0"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() >= now - 60000 && newData.val() <= now + 60000"
+        },
+        "updatedBy": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "revision": {
+          ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1)"
         },
         "$other": {
           ".validate": false
@@ -679,7 +731,7 @@ const fmt = value => Number(value).toLocaleString('pt-BR', { minimumFractionDigi
 
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import { getAuth, initializeAuth, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, deleteUser } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
+import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 
 
 
@@ -707,7 +759,7 @@ const ICON_PATHS={
 };
 const icon=name=>`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name]||ICON_PATHS.bancas}</svg>`;
 const ROSTER_PROTEGIDO = JSON.parse(document.getElementById('roster-criptografado').textContent);
-const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, unsubs:[], teacherSubs:new Map() };
+const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, unsubs:[], teacherSubs:new Map() };
 const isActiveTeacher = profile => !!profile && ['coordinator','teacher'].includes(profile.role) && profile.active !== false;
 const activeTeachers = () => Object.entries(state.users).filter(([,profile])=>isActiveTeacher(profile));
 const isCoord = () => state.profile?.role === 'coordinator' && state.profile.active !== false;
@@ -739,7 +791,8 @@ function showAccessProblem(message,user=auth.currentUser){
  $('#access-help').open=true;notice(message,true);
 }
 function resetAppData(){
- for(const key of ['users','groups','boards','groupBoards','locks','roomLocks','grades','deliveries','seals'])state[key]={};
+ for(const key of ['users','groups','boards','groupBoards','locks','roomLocks','grades','deliveries','seals','timers','timerErrors'])state[key]={};
+ state.drafts.clear();state.busyBoards.clear();$('#view').innerHTML='';
  state.plan=[];state.planMeta=null;state.planUnassigned=[];state.selectedBoard='';
 }
 function dataReadFailed(error,revision){
@@ -778,8 +831,8 @@ $('#retry-access').addEventListener('click',async()=>{
  try{await verificarAcesso(auth.currentUser);}finally{button.disabled=false;}
 });
 $('#switch-access-account').addEventListener('click',()=>signOut(auth).catch(fail));
-function clearListeners(){state.unsubs.forEach(unsub=>unsub());state.unsubs=[];state.teacherSubs.forEach(unsubs=>unsubs.forEach(fn=>fn()));state.teacherSubs.clear();}
-function listen(path, key, allow=true){if(!allow)return;const revision=accessRevision;state.unsubs.push(onValue(ref(db,path),snap=>{if(revision!==accessRevision)return;const next=snap.val()||{};if(state.plan.length && ['groups','users','boards','groupBoards','locks','roomLocks'].includes(key) && JSON.stringify(next)!==JSON.stringify(state[key])){state.plan=[];state.planMeta=null;state.planUnassigned=[];notice('A agenda foi atualizada. Gere novamente o sorteio para evitar conflitos.',true);}state[key]=next;if(key==='boards'&&!isCoord())syncTeacherSubs();render();},error=>dataReadFailed(error,revision)));}
+function clearListeners(){state.unsubs.forEach(unsub=>unsub());state.unsubs=[];state.teacherSubs.forEach(unsubs=>unsubs.forEach(fn=>fn()));state.teacherSubs.clear();state.timerSubs.forEach(unsub=>unsub());state.timerSubs.clear();}
+function listen(path, key, allow=true){if(!allow)return;const revision=accessRevision;state.unsubs.push(onValue(ref(db,path),snap=>{if(revision!==accessRevision)return;const next=snap.val()||{};if(state.plan.length && ['groups','users','boards','groupBoards','locks','roomLocks'].includes(key) && JSON.stringify(next)!==JSON.stringify(state[key])){state.plan=[];state.planMeta=null;state.planUnassigned=[];notice('A agenda foi atualizada. Gere novamente o sorteio para evitar conflitos.',true);}state[key]=next;if(key==='boards'){if(!isCoord())syncTeacherSubs();syncTimerSubs();}render();},error=>dataReadFailed(error,revision)));}
 function syncTeacherSubs(){if(!state.user||isCoord())return;const uid=state.user.uid;for(const [bid,board] of activeBoards()){
  if(state.teacherSubs.has(bid))continue;
  const revision=accessRevision,subs=[onValue(ref(db,`grades/${bid}/${uid}`),s=>{if(revision!==accessRevision)return;state.grades[bid]={[uid]:s.val()||{}};render();},error=>dataReadFailed(error,revision)),onValue(ref(db,`seals/${bid}`),s=>{if(revision!==accessRevision)return;state.seals[bid]=s.val()||null;render();},error=>dataReadFailed(error,revision))];state.teacherSubs.set(bid,subs);
@@ -817,7 +870,7 @@ function openMobileMenu(){
  menu.showModal();document.body.classList.add('menu-open');
 }
 function go(route,board=''){closeMobileMenu();if(board)state.selectedBoard=board;state.route=route;render();$('#view').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
-function render(){if(!state.user)return;const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'))state.route='inicio';
+function render(){if(!state.user)return;captureDrafts();const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'))state.route='inicio';
  const pageTitles={inicio:'Visão geral',bancas:'Bancas de avaliação',sortear:'Sorteio de bancas',entregas:'Notas de entregas',relatorios:'Relatórios finais',professores:'Professores',avaliar:'Avaliação individual'};
  $('#page-title').textContent=pageTitles[state.route];$('#page-eyebrow').textContent=isCoord()?'COORDENAÇÃO • TCC 2026':'CORPO DOCENTE • TCC 2026';
  const active=route=>state.route===route||(route==='bancas'&&state.route==='avaliar'&&isCoord());
@@ -825,7 +878,7 @@ function render(){if(!state.user)return;const routes=navItems();if(!routes.some(
  $('#desktop-nav').innerHTML=routes.map(([route,,label])=>navButton(route,label)).join('');
  const primary=isCoord()?[['inicio','Início'],['bancas','Bancas'],['sortear','Sorteio'],['professores','Equipe']]:[['inicio','Início'],['bancas','Bancas'],['avaliar','Avaliar']];
  $('#mobile-nav').innerHTML=primary.map(([route,label])=>navButton(route,label)).join('')+(isCoord()?`<button type="button" data-open-menu="1" class="${['entregas','relatorios'].includes(state.route)?'active':''}" aria-label="Mais áreas e opções da conta" aria-haspopup="dialog" aria-controls="mobile-menu"><span class="nav-ico">${icon('mais')}</span><span>Mais</span></button>`:navButton('sair','Sair'));
- const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,professores:teachersView};$('#view').innerHTML=views[state.route]?.()||'';
+ const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,professores:teachersView};$('#view').innerHTML=views[state.route]?.()||'';restoreDrafts();
 }
 function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,b])=>{const g=groupOf(b);return g&&isCoord()&&situacao(b,g,boardGrades(id),state.deliveries[id]).pronta;});
  const completed=isCoord()?ready.length:boards.filter(([id,b])=>{const g=groupOf(b);return g&&studentsOf(g).every(([sid])=>mediaAvaliador(state.grades[id]?.[state.user.uid]?.[sid])!==null);}).length;
@@ -833,7 +886,7 @@ function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,
  <div class="grid">${stats(isCoord()?'Grupos importados':'Bancas atribuídas',isCoord()?Object.keys(state.groups).length:boards.length,'01')}${stats('Bancas agendadas',boards.length,'02')}${stats(isCoord()?'Prontas para concluir':'Minhas bancas avaliadas',completed,'03')}${stats(isCoord()?'Professores ativos':'Alunos para avaliar',isCoord()?activeTeachers().length:boards.reduce((s,[,b])=>s+studentsOf(groupOf(b)).length,0),'04')}</div>
  ${isCoord() && !Object.keys(state.groups).length ? '<div class="notice">Nenhum grupo cadastrado. Acesse Professores e importe os grupos da planilha usando a senha de importação fornecida separadamente.</div>' : ''}<section class="card">${heading('Próximas bancas',isCoord()?'Acompanhe as bancas criadas e o andamento das notas.':'Somente as bancas das quais você participa.',`<button class="btn soft" data-route="bancas">Ver todas →</button>`)}${boardList(boards.slice().sort((a,b)=>a[1].startAt-b[1].startAt).slice(0,5))}</section>`;
 }
-function boardStatus(bid,b){if(state.seals[bid])return badge('Concluída','green');if(!isCoord())return badge('Agendada','blue');const g=groupOf(b);if(g&&situacao(b,g,boardGrades(bid),state.deliveries[bid]).pronta)return badge('Notas completas','green');return badge('Em avaliação','orange');}
+function boardStatus(bid,b){if(state.seals[bid])return badge('Avaliação encerrada','green');if(!isCoord())return badge('Agendada','blue');const g=groupOf(b);if(g&&situacao(b,g,boardGrades(bid),state.deliveries[bid]).pronta)return badge('Notas completas','green');return badge('Em avaliação','orange');}
 function boardList(boards){if(!boards.length)return empty('Nenhuma banca por aqui','Crie uma banca ou aguarde a atribuição da coordenação.');return `<div class="group-list">${boards.map(([id,b])=>{const g=groupOf(b);return `<article class="group-card board-card"><div><div class="row">${badge(g?.className||'TCC','blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||b.groupId)}</h4><p class="project-name">${esc(g?.title||'')}</p><div class="board-info"><span>${icon('bancas')}${dateStr(b.startAt)}</span><span>${icon('sala')}${esc(b.room)}</span></div><p class="board-team">Orientador: ${esc(b.advisorName)} ${b.members?.[b.advisorUid]?'(participa)':'(não participa)'}<br>${Object.keys(b.members||{}).length} avaliadores · ${studentsOf(g).length} alunos</p></div><button class="btn soft" data-open-board="${esc(id)}">${isCoord()?'Ver detalhes':'Avaliar grupo'} ${icon('seta')}</button></article>`;}).join('')}</div>`;}
 function boardsView(){let arr=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);
  if(state.filter!=='todas')arr=arr.filter(([,b])=>groupOf(b)?.className===state.filter);
@@ -891,18 +944,18 @@ function manualMemberPicker(){
 }
 function gradeView(){let id=state.selectedBoard;let board=state.boards[id];if(!board||(!isCoord()&&!board.members?.[state.user.uid])){const first=activeBoards()[0];id=first?.[0];board=first?.[1];state.selectedBoard=id||'';}
  if(!board)return empty('Nenhuma banca atribuída','Você verá sua avaliação quando o coordenador criar uma banca.');const g=groupOf(board);if(!g)return empty('Grupo ainda não importado');const sealed=!!state.seals[id];const selfMember=!!board.members[state.user.uid];const own=state.grades[id]?.[state.user.uid]||{};
- return `<div class="row space">${heading(g.name,g.title)}<select class="filter" id="board-switch">${opts(activeBoards().map(([bid,b])=>[bid,`${groupOf(b)?.name||bid} · ${dateStr(b.startAt)}`]),id)}</select></div>
- <div class="card"><div class="row space"><div class="board-details"><div><b>Orientador:</b> ${esc(board.advisorName)} · ${board.members?.[board.advisorUid]?"participa da banca":"não participa da banca"}</div><div><b>Horário:</b> ${dateStr(board.startAt)} · ${esc(board.room)} · ${board.durationMin} min</div><div><b>Banca:</b> ${Object.keys(board.members).map(uid=>esc(board.memberNames?.[uid]||who(uid))).join(', ')}</div></div>${badge(sealed?'Concluída':'Em avaliação',sealed?'green':'orange')}</div></div>
+ return `<div class="row space">${heading(g.name,g.title)}<select class="filter" id="board-switch" aria-label="Selecionar banca para avaliação">${opts(activeBoards().map(([bid,b])=>[bid,`${groupOf(b)?.name||bid} · ${dateStr(b.startAt)}`]),id)}</select></div>
+ <div class="card"><div class="row space"><div class="board-details"><div><b>Orientador:</b> ${esc(board.advisorName)} · ${board.members?.[board.advisorUid]?"participa da banca":"não participa da banca"}</div><div><b>Horário:</b> ${dateStr(board.startAt)} · ${esc(board.room)} · ${board.durationMin} min</div><div><b>Banca:</b> ${Object.keys(board.members).map(uid=>esc(board.memberNames?.[uid]||who(uid))).join(', ')}</div></div>${badge(sealed?'Avaliação encerrada':'Em avaliação',sealed?'green':'orange')}</div><div class="board-actions">${boardActions(id)}</div></div>${timerHtml(id)}
  ${!selfMember?'<div class="notice">Você pode consultar esta banca, mas não está entre seus avaliadores.</div>':sealed?'<div class="notice good">Banca encerrada. As notas estão bloqueadas para edição.</div>':'<div class="notice">As notas são individuais por aluno. Apenas você e o coordenador podem acessar as avaliações que você envia.</div>'}
  ${selfMember?studentsOf(g).map(([sid,name])=>`<form class="student" data-grade-form="${esc(id)}" data-student="${esc(sid)}"><h4>${esc(name)}</h4><p>${esc(g.name)} · ${esc(g.title)}</p><div class="grade-grid">${CRITERIOS.map(([key,label])=>`<div class="field"><label for="${esc(id)}-${esc(sid)}-${key}">${label}</label><input id="${esc(id)}-${esc(sid)}-${key}" name="${key}" type="number" inputmode="decimal" min="0" max="10" step="0.1" required ${sealed?'disabled':''} value="${own[sid]?.[key]??''}" placeholder="0 a 10"></div>`).join('')}</div><div class="grade-foot"><span class="muted tiny">Média deste avaliador: <strong>${mediaAvaliador(own[sid])===null?'—':fmt(mediaAvaliador(own[sid]))}</strong></span>${!sealed?'<button class="btn primary" type="submit">Salvar notas</button>':''}</div></form>`).join(''):empty('Apenas os avaliadores podem lançar notas nesta banca')}`;
 }
-function deliveriesView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const boards=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);return `${heading('Entregas · 40%','Somente o coordenador lança e visualiza esta nota. Cada aluno tem sua própria nota.')}<div class="notice">A nota de entregas é de 0 a 10; ela representa 40% da nota final. Após concluir a banca, as notas são bloqueadas.</div>${boards.length?boards.map(([bid,b])=>{const g=groupOf(b);if(!g)return '';const sealed=!!state.seals[bid];return `<section class="card">${heading(g.name,g.title,boardStatus(bid,b))}<p class="muted tiny">Orientador: ${esc(b.advisorName)}</p>${studentsOf(g).map(([sid,name])=>`<form class="student" data-delivery-form="${esc(bid)}" data-student="${esc(sid)}"><div class="row space delivery-row"><div><h4>${esc(name)}</h4><p>Avaliação de entregas</p></div><div class="row delivery-controls"><input style="width:110px" class="filter" aria-label="Nota de entregas de ${esc(name)}" type="number" name="delivery" step="0.1" min="0" max="10" required ${sealed?'disabled':''} value="${state.deliveries[bid]?.[sid]??''}" placeholder="0 a 10"><button class="btn soft" type="submit" ${sealed?'disabled':''}>Salvar</button></div></div></form>`).join('')}</section>`;}).join(''):empty('Nenhuma banca criada')}`;}
+function deliveriesView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const boards=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);return `${heading('Entregas · 40%','Somente o coordenador lança e visualiza esta nota. Cada aluno tem sua própria nota.')}<div class="notice">A nota de entregas é de 0 a 10; ela representa 40% da nota final. Ao encerrar a banca, as notas são bloqueadas. Reabra a banca para lançar ou corrigir entregas; depois encerre novamente.</div>${boards.length?boards.map(([bid,b])=>{const g=groupOf(b);if(!g)return '';const sealed=!!state.seals[bid];return `<section class="card">${heading(g.name,g.title,boardStatus(bid,b))}<p class="muted tiny">Orientador: ${esc(b.advisorName)}</p><div class="board-actions">${boardActions(bid)}</div>${studentsOf(g).map(([sid,name])=>`<form class="student" data-delivery-form="${esc(bid)}" data-student="${esc(sid)}"><div class="row space delivery-row"><div><h4>${esc(name)}</h4><p>Avaliação de entregas</p></div><div class="row delivery-controls"><input style="width:110px" class="filter" aria-label="Nota de entregas de ${esc(name)}" type="number" name="delivery" step="0.1" min="0" max="10" required ${sealed?'disabled':''} value="${state.deliveries[bid]?.[sid]??''}" placeholder="0 a 10"><button class="btn soft" type="submit" ${sealed?'disabled':''}>Salvar</button></div></div></form>`).join('')}</section>`;}).join(''):empty('Nenhuma banca criada')}`;}
 function reportsView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const ids=Object.entries(state.boards).sort((a,b)=>a[1].startAt-b[1].startAt);const filtered=ids.filter(([,b])=>state.reportFilter==='todas'||groupOf(b)?.className===state.reportFilter);
- const finished=filtered.filter(([id])=>state.seals[id]);const targetGroups=Object.values(state.groups).filter(g=>state.reportFilter==='todas'||g.className===state.reportFilter);const allReady=targetGroups.length>0&&targetGroups.every(g=>state.groupBoards[g.id]&&state.seals[state.groupBoards[g.id]])&&filtered.length===targetGroups.length;
+ const finished=filtered.filter(([id,b])=>state.seals[id]&&groupOf(b)&&situacao(b,groupOf(b),boardGrades(id),state.deliveries[id]).pronta);const targetGroups=Object.values(state.groups).filter(g=>state.reportFilter==='todas'||g.className===state.reportFilter);const allReady=targetGroups.length>0&&targetGroups.every(g=>state.groupBoards[g.id]&&finished.some(([id])=>id===state.groupBoards[g.id]))&&filtered.length===targetGroups.length;
  return `${heading('Relatórios oficiais','Detalhamento por aluno e professor avaliador, com a participação de 60% / 40%.',`<button class="btn dark" data-export-csv="1" ${!finished.length?'disabled':''}>Exportar CSV (concluídas)</button>`)}
- <div class="toolbar"><select id="report-filter" class="filter">${opts([['todas','Todas as turmas'],...new Set(Object.values(state.groups).map(g=>g.className))].map(x=>Array.isArray(x)?x:[x,`Turma ${x}`]),state.reportFilter)}</select><button class="btn primary" data-print-all="1" ${!allReady?'disabled':''}>Imprimir todas / PDF</button></div>
- ${!allReady?'<div class="notice">O relatório consolidado só será habilitado quando todas as bancas do filtro estiverem concluídas. É possível emitir individualmente o relatório de uma banca concluída.</div>':'<div class="notice good">Todas as bancas do filtro estão concluídas e podem ser exportadas.</div>'}
- ${filtered.length?filtered.map(([id,b])=>{const g=groupOf(b);const s=g?situacao(b,g,boardGrades(id),state.deliveries[id]):{pendencias:[]};const sealed=!!state.seals[id];return `<article class="group-card"><div><div class="row">${badge(g?.className||'', 'blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||id)} — ${esc(g?.title||'')}</h4><p>${esc(b.advisorName)} · ${s.pendencias.length} lançamento(s) pendente(s) · ${dateStr(b.startAt)}</p></div><div class="row">${!sealed?`<button class="btn soft" data-seal="${esc(id)}" ${!s.pronta?'disabled':''}>Concluir banca</button>`:''}<button class="btn primary" data-print-one="${esc(id)}" ${!sealed?'disabled':''}>Relatório / PDF</button></div></article>`;}).join(''):empty('Nenhuma banca encontrada')}`;
+ <div class="toolbar"><select id="report-filter" class="filter" aria-label="Filtrar relatórios por turma">${opts([['todas','Todas as turmas'],...new Set(Object.values(state.groups).map(g=>g.className))].map(x=>Array.isArray(x)?x:[x,`Turma ${x}`]),state.reportFilter)}</select><button class="btn primary" data-print-all="1" ${!allReady?'disabled':''}>Baixar PDF consolidado</button></div>
+ ${!allReady?'<div class="notice">O relatório consolidado só será habilitado quando todas as bancas do filtro estiverem encerradas e com todas as notas, incluindo as entregas. É possível emitir individualmente o relatório de uma banca encerrada e com notas completas.</div>':'<div class="notice good">Todas as bancas do filtro estão encerradas e com notas completas.</div>'}
+ ${filtered.length?filtered.map(([id,b])=>{const g=groupOf(b);const s=g?situacao(b,g,boardGrades(id),state.deliveries[id]):{pronta:false,pendencias:[]};const sealed=!!state.seals[id];return `<article class="group-card"><div><div class="row">${badge(g?.className||'', 'blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||id)} — ${esc(g?.title||'')}</h4><p>${esc(b.advisorName)} · ${s.pendencias.length} lançamento(s) pendente(s) · ${dateStr(b.startAt)}</p></div><div class="row">${boardActions(id)}<button class="btn primary" data-print-one="${esc(id)}" ${!sealed||!s.pronta?'disabled':''}>Baixar relatório PDF</button></div></article>`;}).join(''):empty('Nenhuma banca encontrada')}`;
 }
 function teachersView(){
  if(!isCoord())return empty('Acesso exclusivo da coordenação');
@@ -926,7 +979,7 @@ function teachersView(){
  ${removed.length?`<details class="teacher-archive"><summary>Professores removidos (${removed.length})</summary><div class="teacher-list">${removed.map(teacherRow).join('')}</div></details>`:''}</section>
  <div class="card">${heading('Grupos e alunos','Importe a lista de grupos da planilha. Grupos já cadastrados serão preservados.')}
  <button class="btn primary" data-import-roster="1" type="button">Importar grupos</button></div>
- <div class="card">${heading('Configuração de permissões','Aplique uma vez a política atualizada para habilitar a gestão de professores.')}
+ <div class="card">${heading('Configuração de permissões','Publique a política atualizada para habilitar o cronômetro e a reabertura pelos avaliadores.')}
  <button class="btn soft" data-copy-policy="1" type="button">Copiar política de acesso</button>
  <details class="policy-guide"><summary>Como aplicar no Firebase</summary><ol><li>No projeto <code>avaliadortcc</code>, abra <b>Realtime Database → Regras</b>.</li><li>Cole a política copiada acima e clique em <b>Publicar</b>.</li><li>Em <b>Dados → users → UID do Alberson</b>, confirme <code>role: "coordinator"</code> e <code>key: "alberson"</code>.</li><li>Em <b>Authentication → Método de login</b>, mantenha <b>E-mail/senha</b> habilitado.</li></ol><p>A política está incluída neste mesmo index.html. Não é necessário criar outro arquivo.</p></details></div>`;
 }
@@ -1125,17 +1178,39 @@ function makeLottery(data){
  const config={className,perDay,maxDays,size,rooms,durationMin,prefix,skipWeekends,dateRaw,startRaw,endRaw};
  return {plan:best.plan,unassigned,config};
 }
-async function saveGrade(form){const bid=form.dataset.gradeForm,sid=form.dataset.student;const board=state.boards[bid];if(!board?.members?.[state.user.uid]||state.seals[bid])throw Error('Banca não disponível para avaliação.');const entries=new FormData(form);if(CRITERIOS.some(([key])=>!String(entries.get(key)??'').trim()))throw Error('Preencha todos os critérios.');const scores=Object.fromEntries(CRITERIOS.map(([key])=>[key,Number(String(entries.get(key)).replace(',','.'))]));if(!CRITERIOS.every(([k])=>notaValida(scores[k])))throw Error('Informe quatro notas entre 0 e 10.');await set(ref(db,`grades/${bid}/${state.user.uid}/${sid}`),scores);notice(`Notas de ${state.groups[board.groupId].students[sid]} salvas.`);}
-async function saveDelivery(form){if(!isCoord())throw Error('Acesso restrito.');const bid=form.dataset.deliveryForm,sid=form.dataset.student;if(state.seals[bid])throw Error('Banca já concluída.');const raw=new FormData(form).get('delivery');if(!String(raw).trim())throw Error('Digite uma nota.');const value=Number(String(raw).replace(',','.'));if(!notaValida(value))throw Error('Nota deve estar entre 0 e 10.');await set(ref(db,`deliveries/${bid}/${sid}`),value);notice('Nota de entregas salva.');}
-async function closeBoard(bid){if(!isCoord())throw Error('Acesso restrito.');const b=state.boards[bid],g=groupOf(b);if(!b||!g)throw Error('Banca ou grupo inexistente.');const s=situacao(b,g,boardGrades(bid),state.deliveries[bid]);if(!s.pronta)throw Error(`Não é possível concluir: ${s.pendencias.length} lançamento(s) pendente(s).`);if(state.seals[bid])return;const confirmed=confirm(`Concluir ${g.name}? As notas serão bloqueadas e o relatório poderá ser emitido.`);if(!confirmed)return;await set(ref(db,`seals/${bid}`),{by:state.user.uid,at:Date.now()});notice(`${g.name} concluído. Relatório liberado.`);}
+async function saveGrade(form){const bid=form.dataset.gradeForm,sid=form.dataset.student;const board=state.boards[bid];if(!board?.members?.[state.user.uid]||state.seals[bid])throw Error('Banca não disponível para avaliação.');const entries=new FormData(form);if(CRITERIOS.some(([key])=>!String(entries.get(key)??'').trim()))throw Error('Preencha todos os critérios.');const scores=Object.fromEntries(CRITERIOS.map(([key])=>[key,Number(String(entries.get(key)).replace(',','.'))]));if(!CRITERIOS.every(([k])=>notaValida(scores[k])))throw Error('Informe quatro notas entre 0 e 10.');await set(ref(db,`grades/${bid}/${state.user.uid}/${sid}`),scores);clearSavedDraft(form,scores);notice(`Notas de ${state.groups[board.groupId].students[sid]} salvas.`);}
+async function saveDelivery(form){if(!isCoord())throw Error('Acesso restrito.');const bid=form.dataset.deliveryForm,sid=form.dataset.student;if(state.seals[bid])throw Error('Banca já concluída.');const raw=new FormData(form).get('delivery');if(!String(raw).trim())throw Error('Digite uma nota.');const value=Number(String(raw).replace(',','.'));if(!notaValida(value))throw Error('Nota deve estar entre 0 e 10.');await set(ref(db,`deliveries/${bid}/${sid}`),value);clearSavedDraft(form,{delivery:value});notice('Nota de entregas salva.');}
+async function changeBoardStatus(bid,reopen){
+ assertBoardAccess(bid);if(state.busyBoards.has(bid))return;
+ if(!state.connected)throw Error('Conecte-se à internet para alterar a banca.');
+ const group=groupOf(state.boards[bid]);
+ if(!reopen&&hasUnsavedDrafts(bid))throw Error('Salve as notas em edição antes de encerrar a banca.');
+ const message=reopen?`Reabrir ${group.name}? As notas já salvas serão preservadas e voltarão a aceitar alterações. O cronômetro ficará pausado. Somente o coordenador poderá alterar as entregas.`:`Encerrar a avaliação de ${group.name}? As notas já salvas serão bloqueadas e o cronômetro será pausado. Se houver notas pendentes, será necessário reabrir a banca. O PDF final exige todas as notas, incluindo as entregas do coordenador.`;
+ if(!confirm(message))return;
+ state.busyBoards.add(bid);refreshTimerUi(bid);
+ try{
+  const [sealSnap,timerSnap]=await Promise.all([get(ref(db,`seals/${bid}`)),get(ref(db,`timers/${bid}`))]);
+  const seal=sealSnap.val(),timer=timerSnap.val();
+  if(reopen?!seal:!!seal)throw Error('O estado da banca mudou. Atualize a tela e tente novamente.');
+  const changes={[`seals/${bid}`]:reopen?null:{by:state.user.uid,at:serverTimestamp()}};
+  if(timer)changes[`timers/${bid}`]=timerRecord(timer,elapsedAt(timer,reopen?Math.min(serverNow(),seal.at):serverNow()),0);
+  await update(ref(db),changes);
+  state.seals[bid]=reopen?null:{by:state.user.uid,at:serverNow()};
+  if(timer)state.timers[bid]={...changes[`timers/${bid}`],updatedAt:serverNow()};
+  notice(reopen?`${group.name} reaberto. As notas foram preservadas.`:`${group.name}: avaliação encerrada. O PDF será liberado quando todas as notas estiverem completas.`);
+ }finally{state.busyBoards.delete(bid);render();}
+}
+const closeBoard=bid=>changeBoardStatus(bid,false);
+const reopenBoard=bid=>changeBoardStatus(bid,true);
+
 function reportHtml(ids){let html=`<header><h1>Relatório de Avaliação de TCC</h1><p>Ano letivo: 2026 · Emissão: ${esc(new Date().toLocaleString('pt-BR'))} · Responsável: ${esc(state.profile.name)}</p><p>Critérios por avaliador: apresentação, parte prática, domínio do código e domínio do tempo (0 a 10). Média da banca = média dos avaliadores. Nota final = banca × 0,60 + entregas × 0,40.</p></header>`;
  for(const [index,bid] of ids.entries()){const b=state.boards[bid],g=groupOf(b);if(!b||!g||!state.seals[bid])throw Error('A emissão exige bancas concluídas.');const grades=boardGrades(bid),deliveries=state.deliveries[bid]||{};if(!situacao(b,g,grades,deliveries).pronta)throw Error('Há notas pendentes; relatório cancelado.');
- html+=`<article class="${index?'print-break':''}"><h2>${esc(g.name)} — ${esc(g.title)}</h2><p><b>Turma:</b> ${esc(g.className)} &nbsp; <b>Orientador:</b> ${esc(b.advisorName)} (${b.members?.[b.advisorUid]?"participa":"não participa"}) &nbsp; <b>Banca:</b> ${dateStr(b.startAt)}, ${esc(b.room)}</p><p><b>Avaliadores:</b> ${Object.keys(b.members).map(uid=>esc(b.memberNames[uid]||who(uid))).join(' • ')} &nbsp; <b>Responsável pela nota de entregas:</b> ${esc(state.profile.name)}</p>`;
+ html+=`<article class="${index?'print-break':''}"><h2>${esc(g.name)} — ${esc(g.title)}</h2><p><b>Turma:</b> ${esc(g.className)} &nbsp; <b>Orientador:</b> ${esc(b.advisorName)} (${b.members?.[b.advisorUid]?"participa":"não participa"}) &nbsp; <b>Banca:</b> ${dateStr(b.startAt)}, ${esc(b.room)}</p><p><b>Tempo de apresentação:</b> ${state.timers[bid]?formatElapsed(boardElapsed(bid)):'Não registrado'}</p><p><b>Avaliadores:</b> ${Object.keys(b.members).map(uid=>esc(b.memberNames[uid]||who(uid))).join(' • ')} &nbsp; <b>Responsável pela nota de entregas:</b> ${esc(state.profile.name)}</p>`;
  for(const [sid,name] of studentsOf(g)){const r=resultadoAluno(b,sid,grades,deliveries);if(!r)throw Error('Nota incompleta encontrada.');html+=`<h3>Aluno(a): ${esc(name)}</h3><table><thead><tr><th>Professor avaliador</th><th>Apresent.</th><th>Prática</th><th>Código</th><th>Tempo</th><th>Média</th></tr></thead><tbody>${Object.keys(b.members).map(uid=>{const n=grades[uid][sid];return `<tr><td>${esc(b.memberNames[uid]||who(uid))}</td>${CRITERIOS.map(([k])=>`<td>${fmt(n[k])}</td>`).join('')}<td>${fmt(mediaAvaliador(n))}</td></tr>`;}).join('')}</tbody></table><table><thead><tr><th>Média banca (0–10)</th><th>Banca × 60%</th><th>Entregas × 40%</th><th>Nota final (0–10)</th></tr></thead><tbody><tr><td>${fmt(r.banca)}</td><td>${fmt(r.parcelaBanca)}</td><td>${fmt(r.parcelaEntrega)} (entregas: ${fmt(r.entrega)})</td><td><b>${fmt(r.final)}</b></td></tr></tbody></table>`;}
  html+=`<p class="print-footer">Banca concluída em ${dateStr(state.seals[bid].at)}. Registro emitido exclusivamente pela coordenação.</p></article>`;
  }return html;
 }
-function printReports(ids){if(!isCoord())throw Error('Acesso restrito.');$('#print-root').innerHTML=reportHtml(ids);$('#print-root').setAttribute('aria-hidden','false');window.print();}
+async function printReports(ids){if(!isCoord())throw Error('Acesso restrito.');await refreshReportData(ids);downloadBlob(buildEvaluationPdf(ids),`relatorio_tcc_${ids.length===1?ids[0]:'consolidado'}_${localDayKey(Date.now())}.pdf`);notice('Relatório PDF gerado. Verifique os downloads do navegador.');}
 
 // PDF nativo: texto selecionável, fontes padrão e paginação, sem arquivo ou CDN adicional.
 const PDF_WINANSI={'€':128,'‚':130,'ƒ':131,'„':132,'…':133,'†':134,'‡':135,'ˆ':136,'‰':137,'Š':138,'‹':139,'Œ':140,'Ž':142,'‘':145,'’':146,'“':147,'”':148,'•':149,'–':150,'—':151,'˜':152,'™':153,'š':154,'›':155,'œ':156,'ž':158,'Ÿ':159};
@@ -1202,7 +1277,7 @@ class SchedulePdf{
   const count=this.pages.length;
   this.pages.forEach((page,i)=>{
    page.push(`${this.color('#dbe3ed')} rg 40 31.89 515.28 0.75 re f`);
-   page.push(`BT /F1 8 Tf ${this.color('#60738a')} rg 1 0 0 1 40 19.89 Tm ${pdfLiteral(this.preview?'PRÉVIA - sujeita à confirmação pela coordenação':'Agenda confirmada - Univap')} Tj ET`);
+   page.push(`BT /F1 8 Tf ${this.color('#60738a')} rg 1 0 0 1 40 19.89 Tm ${pdfLiteral(this.footerLabel||(this.preview?'PRÉVIA - sujeita à confirmação pela coordenação':'Agenda confirmada - Univap'))} Tj ET`);
    page.push(`BT /F1 8 Tf ${this.color('#60738a')} rg 1 0 0 1 482 19.89 Tm ${pdfLiteral(`Página ${i+1} de ${count}`)} Tj ET`);
   });
   const objects=[];
@@ -1216,7 +1291,7 @@ class SchedulePdf{
    objects[pageId]=`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${this.width} ${this.height}] /Resources << /Font << /F1 3 0 R /F2 4 0 R >> >> /Contents ${streamId} 0 R >>`;
   });
   const infoId=5+count*2;
-  objects[infoId]=`<< /Title ${pdfLiteral(this.preview?'Sorteio de bancas - Prévia Univap':'Agenda de bancas - Univap')} /Author ${pdfLiteral(this.responsible)} /Creator (Sistema de Avaliacao de TCC - Univap) >>`;
+  objects[infoId]=`<< /Title ${pdfLiteral(this.documentTitle||(this.preview?'Sorteio de bancas - Prévia Univap':'Agenda de bancas - Univap'))} /Author ${pdfLiteral(this.responsible)} /Creator (Sistema de Avaliacao de TCC - Univap) >>`;
   // Todos os comandos são ASCII; os acentos usam escapes octais WinAnsi.
   let body='%PDF-1.4\n% Univap TCC\n';const offsets=[0];
   for(let i=1;i<objects.length;i++){offsets[i]=body.length;body+=`${i} 0 obj\n${objects[i]}\nendobj\n`;}
@@ -1227,6 +1302,126 @@ class SchedulePdf{
   return new Blob([new TextEncoder().encode(body)],{type:'application/pdf'});
  }
 }
+// PDF de notas: paginação e cabeçalhos repetidos para cada aluno.
+class EvaluationPdf extends SchedulePdf {
+ newPage(){
+  this.pages.push([]);
+  this.rect(0,0,this.width,6,'#e0001a');
+  this.rect(0,6,this.width,83,'#014996');
+  this.text('UNIVERSIDADE DO VALE DO PARAÍBA',this.margin,20,10,true,'#ffffff');
+  this.text('Relatório de avaliação de TCC',this.margin,43,19,true,'#ffffff');
+  this.text('Notas individuais e médias ponderadas · 2026',this.margin,69,9,false,'#ffffff');
+  const issued=this.wrap(`Emissão: ${this.issued} · Responsável: ${this.responsible}`,this.width-2*this.margin,9);
+  issued.forEach((line,i)=>this.text(line,this.margin,102+i*12,9,false,'#60738a'));
+  this.y=109+issued.length*12;
+  if(this.activeBoardLabel){
+   this.text(`${this.activeBoardLabel} · continuação`,this.margin+10,this.y,9,true,'#014996');
+   this.y+=20;
+  }
+  this.contentTop=this.y;
+ }
+ finish(){
+  this.footerLabel='Avaliação de TCC · Banca 60% + entregas 40% · Univap';
+  this.documentTitle='Relatório de avaliação de TCC - Univap';
+  return super.finish();
+ }
+ // Cada célula quebra linhas; cabeçalhos se repetem após as quebras de página.
+ // Uma linha excepcionalmente longa continua em outra página sem truncamento.
+ table(headers,rows,widths,{context='',size=9,headerSize=8.5,align=[],bold=false}={}){
+  const padding=7,lineHeight=size+4,headerLineHeight=headerSize+3;
+  const headerLines=headers.map((value,i)=>this.wrap(value,widths[i]-padding*2,headerSize,true));
+  const headerHeight=Math.max(...headerLines.map(lines=>lines.length))*headerLineHeight+padding*2;
+  const draw=(cells,height,{header=false,offset=0,count=Infinity,fill='#ffffff'}={})=>{
+   let x=this.margin;
+   this.rect(x,this.y,widths.reduce((sum,width)=>sum+width,0),height,fill);
+   const fontSize=header?headerSize:size,step=header?headerLineHeight:lineHeight;
+   cells.forEach((lines,column)=>{
+    lines.slice(offset,offset+count).forEach((line,lineIndex)=>{
+     let textX=x+padding;
+     if(!header&&align[column]==='center'){
+      this.measure.font=`${bold?'bold ':''}${fontSize}px Arial`;
+      textX=x+(widths[column]-this.measure.measureText(line).width)/2;
+     }
+     this.text(line,textX,this.y+padding+lineIndex*step,fontSize,header||bold,header?'#014996':'#22354c');
+    });
+    x+=widths[column];
+   });
+   this.y+=height;
+   this.rect(this.margin,this.y-.7,widths.reduce((sum,width)=>sum+width,0),.7,'#dbe3ed');
+  };
+  const header=()=>draw(headerLines,headerHeight,{header:true,fill:'#eaf3fb'});
+  const nextPage=()=>{
+   this.newPage();
+   if(context)this.paragraph(`${context} · continuação`,9,true,'#014996',4);
+   header();
+  };
+  this.ensure(headerHeight+lineHeight+padding*2);
+  header();
+  rows.forEach((values,rowIndex)=>{
+   const cells=values.map((value,i)=>this.wrap(value,widths[i]-padding*2,size,bold));
+   const total=Math.max(...cells.map(lines=>lines.length));
+   const totalHeight=total*lineHeight+padding*2;
+   const freshCapacity=this.bottom-this.contentTop-headerHeight-(context?24:0);
+   if(this.y+totalHeight>this.bottom&&totalHeight<=freshCapacity)nextPage();
+   let offset=0;
+   while(offset<total){
+    let capacity=Math.floor((this.bottom-this.y-padding*2)/lineHeight);
+    if(capacity<1){nextPage();capacity=Math.floor((this.bottom-this.y-padding*2)/lineHeight);}
+    if(capacity<1)throw Error('Não foi possível paginar o relatório de avaliação.');
+    const count=Math.min(total-offset,capacity);
+    draw(cells,count*lineHeight+padding*2,{offset,count,fill:rowIndex%2?'#f7f9fc':'#ffffff'});
+    offset+=count;
+    if(offset<total)nextPage();
+   }
+  });
+  this.y+=12;
+ }
+}
+
+function buildEvaluationPdf(ids){
+ if(!isCoord())throw Error('Somente a coordenação pode emitir o relatório final.');
+ if(!Array.isArray(ids)||!ids.length)throw Error('Selecione pelo menos uma banca concluída.');
+ const boards=[...new Set(ids)].map(bid=>{
+  const b=state.boards[bid],g=groupOf(b),seal=state.seals[bid];
+  if(!b||!g||!seal)throw Error('A emissão exige bancas concluídas e grupos existentes.');
+  const grades=boardGrades(bid),deliveries=state.deliveries[bid]||{};
+  if(!situacao(b,g,grades,deliveries).pronta)throw Error('Há notas pendentes; complete as notas dos avaliadores e as entregas antes de emitir o relatório final.');
+  return {bid,b,g,seal,grades,deliveries};
+ });
+ const pdf=new EvaluationPdf(false,new Date().toLocaleString('pt-BR'),state.profile?.name||'Coordenação');
+ const totalWidth=pdf.width-2*pdf.margin;
+ boards.forEach(({bid,b,g,seal,grades,deliveries},index)=>{
+  const boardLabel=`Banca ${String(index+1).padStart(2,'0')}`;
+  // A página inicial de cada banca já tem o título completo abaixo.
+  pdf.activeBoardLabel='';
+  if(index)pdf.newPage();
+  pdf.activeBoardLabel=boardLabel;
+  pdf.paragraph(`${boardLabel} · ${g.name||b.groupId}`,13,true,'#014996',8);
+  pdf.paragraph(`Projeto: ${g.title||'Não informado'}`,11,true);
+  pdf.paragraph(`Turma: ${g.className||'TCC'} · Data: ${dateStr(b.startAt)} · Sala / link: ${b.room||'Não informado'}`,10);
+  pdf.paragraph(`Orientador: ${b.advisorName||who(b.advisorUid)} (${b.members?.[b.advisorUid]?'participa da banca':'não participa da banca'})`,10);
+  pdf.paragraph(`Avaliadores: ${Object.keys(b.members||{}).map(uid=>b.memberNames?.[uid]||who(uid)).join(' · ')}`,10);
+  pdf.paragraph(`Tempo de apresentação (minutos:segundos,centésimos): ${state.timers[bid]?formatElapsed(boardElapsed(bid)):'Não registrado'}`,10,true,'#014996');
+  pdf.paragraph(`Encerramento: ${dateStr(seal.at)} · Responsável: ${who(seal.by)}`,9,false,'#60738a');
+  pdf.paragraph('Critérios de 0 a 10: apresentação, parte prática, domínio do código e domínio do tempo, com pesos iguais na média do avaliador. A média da banca é a média dos avaliadores. Nota final = média da banca × 0,60 + entregas × 0,40. Notas de entregas lançadas exclusivamente pela coordenação.',9,false,'#60738a',14);
+  studentsOf(g).forEach(([sid,name],studentIndex)=>{
+   const result=resultadoAluno(b,sid,grades,deliveries);
+   if(!result)throw Error('Nota incompleta encontrada.');
+   const studentLabel=`${boardLabel} · Aluno(a) ${String(studentIndex+1).padStart(2,'0')}`;
+   pdf.ensure(90);
+   pdf.paragraph(`Aluno(a) ${String(studentIndex+1).padStart(2,'0')}: ${name}`,11,true,'#014996',9);
+   const nameWidth=195,noteWidth=(totalWidth-nameWidth)/5;
+   const evaluatorRows=Object.keys(b.members||{}).map(uid=>{
+    const scores=grades[uid][sid];
+    return [b.memberNames?.[uid]||who(uid),...CRITERIOS.map(([key])=>fmt(scores[key])),fmt(mediaAvaliador(scores))];
+   });
+   pdf.table(['Professor avaliador','Apresent.','Parte prática','Domínio do código','Domínio do tempo','Média do avaliador'],evaluatorRows,[nameWidth,noteWidth,noteWidth,noteWidth,noteWidth,noteWidth],{context:`${studentLabel} · Notas individuais`,align:['left','center','center','center','center','center']});
+   pdf.table(['Média da banca (0–10)','Banca × 60% (0–6)','Entregas (0–10)','Entregas × 40% (0–4)','Nota final (0–10)'],[[fmt(result.banca),fmt(result.parcelaBanca),fmt(result.entrega),fmt(result.parcelaEntrega),fmt(result.final)]],Array(5).fill(totalWidth/5),{context:`${studentLabel} · Resultado ponderado`,size:10,headerSize:9,align:Array(5).fill('center'),bold:true});
+  });
+ });
+ return pdf.finish();
+}
+
 function buildSchedulePdf(boards,{preview=false,unassigned=[],className='todas'}={},groups=state.groups,responsible=state.profile?.name||'Coordenação'){
  if(!boards.length)throw Error('Não há bancas para gerar o PDF.');
  const sorted=boards.slice().sort((a,b)=>a.startAt-b.startAt||a.room.localeCompare(b.room,'pt-BR'));
@@ -1275,8 +1470,8 @@ function exportSchedulePdf(preview){
  downloadBlob(buildSchedulePdf(boards,options),`${preview?'sorteio':'agenda'}_bancas_univap_${localDayKey(Date.now())}.pdf`);
  notice('PDF gerado. Verifique os downloads do navegador.');
 }
-function exportCsv(ids){if(!isCoord())throw Error('Acesso restrito.');const csv=[['Turma','Grupo','Projeto','Orientador','Aluno','Professor avaliador','Apresentação','Parte prática','Domínio do código','Domínio do tempo','Média avaliador','Média banca','Entregas','Parcela banca 60%','Parcela entregas 40%','Nota final']];
- for(const bid of ids){if(!state.seals[bid])throw Error('Banca não concluída.');const b=state.boards[bid],g=groupOf(b),gr=boardGrades(bid),ds=state.deliveries[bid]||{};if(!situacao(b,g,gr,ds).pronta)throw Error('Notas incompletas.');for(const [sid,name] of studentsOf(g)){const r=resultadoAluno(b,sid,gr,ds);for(const uid of Object.keys(b.members)){const n=gr[uid][sid];csv.push([g.className,g.name,g.title,b.advisorName,name,b.memberNames[uid],...CRITERIOS.map(([k])=>fmt(n[k])),fmt(mediaAvaliador(n)),fmt(r.banca),fmt(r.entrega),fmt(r.parcelaBanca),fmt(r.parcelaEntrega),fmt(r.final)]);}}}
+function exportCsv(ids){if(!isCoord())throw Error('Acesso restrito.');const csv=[['Turma','Grupo','Projeto','Orientador','Aluno','Professor avaliador','Apresentação','Parte prática','Domínio do código','Domínio do tempo','Média avaliador','Média banca','Entregas','Parcela banca 60%','Parcela entregas 40%','Nota final','Tempo da apresentação (mm:ss,cc)']];
+ for(const bid of ids){if(!state.seals[bid])throw Error('Banca não concluída.');const b=state.boards[bid],g=groupOf(b),gr=boardGrades(bid),ds=state.deliveries[bid]||{};if(!situacao(b,g,gr,ds).pronta)throw Error('Notas incompletas.');for(const [sid,name] of studentsOf(g)){const r=resultadoAluno(b,sid,gr,ds);for(const uid of Object.keys(b.members)){const n=gr[uid][sid];csv.push([g.className,g.name,g.title,b.advisorName,name,b.memberNames[uid],...CRITERIOS.map(([k])=>fmt(n[k])),fmt(mediaAvaliador(n)),fmt(r.banca),fmt(r.entrega),fmt(r.parcelaBanca),fmt(r.parcelaEntrega),fmt(r.final),state.timers[bid]?formatElapsed(boardElapsed(bid)):'Não registrado']);}}}
  const content='\ufeff'+csv.map(row=>row.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(';')).join('\r\n');const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='relatorio_tcc_2026.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 // Importação protegida: a senha NÃO é incluída no HTML e deve permanecer com a coordenação.
@@ -1330,6 +1525,120 @@ async function copiarPoliticaDeAcesso(){
  try {await navigator.clipboard.writeText(content);notice('Política copiada. Publique em Firebase → Realtime Database → Regras.');}
  catch {downloadBlob(new Blob([content],{type:'application/json'}),'politica-de-acesso.json');notice('Política baixada. Publique em Firebase → Realtime Database → Regras.');}
 }
+// Tempo compartilhado: apenas iniciar, pausar e zerar gravam no banco.
+// A tela calcula centésimos pelo relógio ajustado ao servidor, inclusive após recarregar.
+const serverNow=()=>Date.now()+state.serverOffset;
+function elapsedAt(timer,at=serverNow()){
+ if(!timer)return 0;
+ return Math.max(0,Math.floor((Number(timer.elapsedMs)||0)+(timer.startedAt?Math.max(0,at-timer.startedAt):0)));
+}
+function formatElapsed(ms){
+ const cs=Math.floor(Math.max(0,Number(ms)||0)/10);
+ return `${String(Math.floor(cs/6000)).padStart(2,'0')}:${String(Math.floor(cs/100)%60).padStart(2,'0')},${String(cs%100).padStart(2,'0')}`;
+}
+function boardElapsed(bid){const seal=state.seals[bid];return elapsedAt(state.timers[bid],seal?Math.min(serverNow(),seal.at):serverNow());}
+function assertBoardAccess(bid){
+ const board=state.boards[bid];
+ if(!state.user||!isActiveTeacher(state.profile)||!board||(!isCoord()&&!board.members?.[state.user.uid]))throw Error('Somente os avaliadores desta banca e o coordenador podem realizar esta ação.');
+ if(!groupOf(board))throw Error('Grupo não encontrado.');
+}
+function timerRecord(previous,elapsedMs,startedAt){
+ if(elapsedMs>31536000000)throw Error('O tempo registrado excede o limite de um ano. Confira o relógio do dispositivo.');
+ return {elapsedMs:Math.floor(elapsedMs),startedAt,updatedBy:state.user.uid,updatedAt:serverTimestamp(),revision:(previous?.revision||0)+1};
+}
+function boardActions(bid){
+ const busy=state.busyBoards.has(bid);
+ return state.seals[bid]?`<button type="button" class="btn soft" data-reopen="${esc(bid)}" ${busy?'disabled':''}>Reabrir banca</button>`:`<button type="button" class="btn dark" data-seal="${esc(bid)}" ${busy?'disabled':''}>Encerrar avaliação da banca</button>`;
+}
+function timerHtml(bid){
+ const timer=state.timers[bid],sealed=!!state.seals[bid],busy=state.busyBoards.has(bid),loaded=Object.hasOwn(state.timers,bid);
+ const problem=state.timerErrors[bid];
+ const disabled=sealed||busy||!loaded||!!problem||!state.connected;
+ return `<section class="board-timer" data-timer-panel="${esc(bid)}" aria-labelledby="timer-heading"><div class="timer-head"><div><p class="eyebrow">TEMPO DA APRESENTAÇÃO</p><h3 id="timer-heading">Cronômetro da banca</h3></div>${badge(sealed?'Encerrado':timer?.startedAt?'Em andamento':'Pausado',timer?.startedAt&&!sealed?'green':'gray')}</div><div class="timer-display" data-timer-display="${esc(bid)}" aria-label="Tempo em minutos, segundos e centésimos">${formatElapsed(boardElapsed(bid))}</div><p class="timer-status" role="status">${esc(problem?'Não foi possível acessar o cronômetro. Publique a política de acesso atualizada no Firebase e entre novamente.':!state.connected?'Sem conexão. O tempo em andamento continua a ser contado; reconecte para usar os controles.':!loaded?'Carregando o tempo salvo…':sealed?'Tempo registrado. Reabra a banca para retomar ou corrigir a avaliação.':'Tempo compartilhado entre os avaliadores, salvo ao iniciar, pausar e zerar.')}</p><div class="timer-controls"><button type="button" class="btn primary" data-timer-action="${timer?.startedAt?'pause':'start'}" data-board="${esc(bid)}" ${disabled?'disabled':''}>${timer?.startedAt?'Pausar':timer?.elapsedMs?'Continuar':'Iniciar'}</button><button type="button" class="btn danger" data-timer-action="reset" data-board="${esc(bid)}" ${disabled||!timer?'disabled':''}>Zerar cronômetro</button></div><p class="tiny">Formato: minutos:segundos,centésimos. O tempo registrado também aparece no relatório PDF.</p></section>`;
+}
+function refreshTimerUi(bid){
+ for(const button of document.querySelectorAll('[data-seal],[data-reopen]'))if((button.dataset.seal||button.dataset.reopen)===bid)button.disabled=state.busyBoards.has(bid);
+ const panel=[...document.querySelectorAll('[data-timer-panel]')].find(el=>el.dataset.timerPanel===bid);
+ if(panel)panel.outerHTML=timerHtml(bid);
+}
+function syncTimerSubs(){
+ const allowed=new Set(activeBoards().map(([bid])=>bid));
+ for(const [bid,unsub] of state.timerSubs)if(!allowed.has(bid)){unsub();state.timerSubs.delete(bid);delete state.timers[bid];}
+ for(const bid of allowed){
+  if(state.timerSubs.has(bid))continue;
+  const revision=accessRevision;
+  state.timerSubs.set(bid,onValue(ref(db,`timers/${bid}`),snap=>{
+   if(revision!==accessRevision)return;
+   state.timers[bid]=snap.val();delete state.timerErrors[bid];refreshTimerUi(bid);
+  },error=>{if(revision!==accessRevision)return;state.timerErrors[bid]=error.code||'unavailable';refreshTimerUi(bid);}));
+ }
+}
+async function controlTimer(bid,action){
+ assertBoardAccess(bid);
+ if(state.seals[bid])throw Error('Reabra a banca para usar o cronômetro.');
+ if(!state.connected)throw Error('Conecte-se à internet para usar os controles do cronômetro.');
+ if(state.busyBoards.has(bid))return;
+ if(!['start','pause','reset'].includes(action))throw Error('Ação inválida.');
+ if(action==='reset'&&!confirm('Zerar o cronômetro desta banca? O tempo anterior será substituído por 00:00,00 para todos os avaliadores.'))return;
+ state.busyBoards.add(bid);refreshTimerUi(bid);
+ try{
+  const result=await runTransaction(ref(db,`timers/${bid}`),current=>{
+   if(state.seals[bid])return;
+   if(action==='start')return current?.startedAt?undefined:timerRecord(current,current?.elapsedMs||0,serverTimestamp());
+   if(action==='pause')return !current?.startedAt?undefined:timerRecord(current,elapsedAt(current),0);
+   return timerRecord(current,0,0);
+  },{applyLocally:false});
+  if(result.committed)state.timers[bid]=result.snapshot.val();
+ }finally{state.busyBoards.delete(bid);refreshTimerUi(bid);}
+}
+function draftKey(form){return `${form.dataset.gradeForm?'grade':'delivery'}/${form.dataset.gradeForm||form.dataset.deliveryForm}/${form.dataset.student}`;}
+function clearSavedDraft(form,saved){
+ captureDrafts();const key=draftKey(form),draft=state.drafts.get(key);
+ if(draft&&Object.entries(draft).every(([name,value])=>String(value).trim()&&Number(String(value).replace(',','.'))===saved[name]))state.drafts.delete(key);
+}
+function captureDrafts(){
+ for(const form of document.querySelectorAll('#view form[data-grade-form],#view form[data-delivery-form]')){
+  const inputs=[...form.querySelectorAll('input[name]:not(:disabled)')];
+  if(!inputs.length)continue; // Keep drafts when another evaluator closes the board.
+  const key=draftKey(form);
+  if(inputs.some(input=>input.value!==input.defaultValue))state.drafts.set(key,Object.fromEntries(inputs.map(input=>[input.name,input.value])));
+  else state.drafts.delete(key);
+ }
+}
+
+function restoreDrafts(){
+ for(const form of document.querySelectorAll('#view form[data-grade-form],#view form[data-delivery-form]')){
+  const draft=state.drafts.get(draftKey(form));if(!draft)continue;
+  for(const input of form.querySelectorAll('input[name]:not(:disabled)'))if(Object.hasOwn(draft,input.name))input.value=draft[input.name];
+ }
+}
+function hasUnsavedDrafts(bid){
+ captureDrafts();
+ for(const [key,values] of state.drafts){
+  const [kind,id,sid]=key.split('/');if(id!==bid)continue;
+  const saved=kind==='grade'?state.grades[bid]?.[state.user.uid]?.[sid]:{delivery:state.deliveries[bid]?.[sid]};
+  if(Object.entries(values).some(([name,value])=>String(value).trim()?(saved?.[name]===undefined||Number(String(value).replace(',','.'))!==saved[name]):saved?.[name]!==undefined))return true;
+ }
+ return false;
+}
+async function refreshReportData(ids){
+ if(!state.connected)throw Error('Conecte-se à internet para gerar um relatório atualizado.');
+ if(!ids.length)throw Error('Não há bancas completas para exportar.');
+ await Promise.all(ids.map(async bid=>{
+  const before=await get(ref(db,`seals/${bid}`));
+  if(!before.exists())throw Error('A banca foi reaberta. Encerre novamente antes de emitir o relatório.');
+  const paths=['grades','deliveries','timers'];
+  const snapshots=await Promise.all(paths.map(path=>get(ref(db,`${path}/${bid}`))));
+  const after=await get(ref(db,`seals/${bid}`));
+  if(JSON.stringify(before.val())!==JSON.stringify(after.val()))throw Error('A banca mudou durante a emissão. Gere o relatório novamente.');
+  paths.forEach((path,i)=>state[path][bid]=snapshots[i].val());state.seals[bid]=after.val();
+ }));
+}
+
+onValue(ref(db,'.info/serverTimeOffset'),snap=>{state.serverOffset=snap.val()||0;});
+onValue(ref(db,'.info/connected'),snap=>{state.connected=!!snap.val();if(state.selectedBoard)refreshTimerUi(state.selectedBoard);});
+setInterval(()=>{if(document.hidden)return;for(const el of document.querySelectorAll('[data-timer-display]'))el.textContent=formatElapsed(boardElapsed(el.dataset.timerDisplay));},10);
+
 const handle = async cb=>{try{await cb();}catch(err){fail(err);}};
 for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('click',e=>{const el=e.target.closest('button');if(!el)return;if(el.dataset.openMenu!==undefined)return openMobileMenu();if(!el.dataset.route)return;if(el.dataset.route==='sair')signOut(auth).catch(fail);else go(el.dataset.route);});
 $('#view').addEventListener('click',e=>{
@@ -1345,14 +1654,16 @@ $('#view').addEventListener('click',e=>{
  if(el.dataset.clearPlan){state.plan=[];state.planMeta=null;state.planUnassigned=[];render();return;}
  if(el.dataset.commitPlan)return handle(()=>createBoards(state.plan));
  if(el.dataset.seal)return handle(()=>closeBoard(el.dataset.seal));
+ if(el.dataset.reopen)return handle(()=>reopenBoard(el.dataset.reopen));
+ if(el.dataset.timerAction)return handle(()=>controlTimer(el.dataset.board,el.dataset.timerAction));
  if(el.dataset.printOne)return handle(()=>printReports([el.dataset.printOne]));
- if(el.dataset.printAll)return handle(()=>{
+ if(el.dataset.printAll)return handle(async()=>{
   const selected=Object.entries(state.boards).filter(([,b])=>state.reportFilter==='todas'||groupOf(b)?.className===state.reportFilter).map(([id])=>id);
   const targetGroups=Object.values(state.groups).filter(g=>state.reportFilter==='todas'||g.className===state.reportFilter);
   if(!targetGroups.length||selected.length!==targetGroups.length||targetGroups.some(g=>!state.groupBoards[g.id]||!state.seals[state.groupBoards[g.id]]))throw Error('Agende e conclua todos os grupos do filtro antes do consolidado.');
-  printReports(selected);
+  await printReports(selected);
  });
- if(el.dataset.exportCsv)return handle(()=>exportCsv(Object.keys(state.seals).filter(id=>state.seals[id]&&state.boards[id]&&(state.reportFilter==='todas'||groupOf(state.boards[id])?.className===state.reportFilter))));
+ if(el.dataset.exportCsv)return handle(async()=>{const ids=Object.keys(state.seals).filter(id=>state.seals[id]&&state.boards[id]&&groupOf(state.boards[id])&&situacao(state.boards[id],groupOf(state.boards[id]),boardGrades(id),state.deliveries[id]).pronta&&(state.reportFilter==='todas'||groupOf(state.boards[id])?.className===state.reportFilter));await refreshReportData(ids);exportCsv(ids);});
 });
 $('#view').addEventListener('change',e=>{if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='teacher-method')teacherRegistrationMethod();if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
 $('#view').addEventListener('submit',e=>{e.preventDefault();const f=e.target;handle(async()=>{
@@ -1367,4 +1678,3 @@ $('#view').addEventListener('submit',e=>{e.preventDefault();const f=e.target;han
 </script>
 
 </body></html>
-
