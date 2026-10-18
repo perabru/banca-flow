@@ -66,15 +66,15 @@ async function openApp(t,{timezoneId='UTC'}={}) {
   page.on('console',message=>{if(message.type()==='error'&&/Content Security Policy|violates.*directive|Refused to execute/i.test(message.text()))cspErrors.push(message.text());});
   page.on('download', file => downloads.push(file.suggestedFilename()));
   let servedMarkup;
-  const assets=new Map(['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js'].map(path=>[path,readFileSync(join(__dirname,'..',path.slice(1)),'utf8')]));
+  const assets=new Map(['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css'].map(path=>[path,readFileSync(join(__dirname,'..',path.slice(1)),'utf8')]));
   await page.route('**/*', route => {
     requests.push(route.request().url());
     const url=new URL(route.request().url());
-    if(url.origin==='https://bancaflow.example.test'&&assets.has(url.pathname))return route.fulfill({contentType:'text/javascript',body:assets.get(url.pathname)});
+    if(url.origin==='https://bancaflow.example.test'&&assets.has(url.pathname))return route.fulfill({contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:assets.get(url.pathname)});
     return route.request().url() === 'https://bancaflow.example.test/' ? route.fulfill({ contentType: 'text/html', body: servedMarkup }) : route.abort();
   });
   const bootstrap = adapter() + source + `
-    globalThis.appTest={state,go,render,resetAppData,openBoardShare,closeBoardShare,
+    globalThis.appTest={state,go,render,resetAppData,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,
       mount(uid){clearListeners();resetAppData();mock.uid=uid;state.user={uid,email:uid+'@example.test'};state.profile=mock.clone(mock.data.users[uid]);for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])state[key]=mock.clone(mock.data[key]||{});state.connected=true;document.querySelector('#login-view').classList.add('hidden');document.querySelector('#app-view').classList.remove('hidden');if(isCoord())for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])listen(key,key);else syncTeacherSubs();syncTimerSubs();go('avaliar','b1');}
     };appTest.mount('t1');
   `;
@@ -284,7 +284,7 @@ test('Alberson manages teachers and groups and imports a real Excel sheet only a
   assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
 });
 
-test('unmodified production HTML loads local Excel assets and Firebase modules under its published CSP', {skip}, async t=>{
+test('unmodified production HTML loads local Excel and analytics assets and Firebase modules under its published CSP', {skip}, async t=>{
   const args=process.env.BANCAFLOW_CHROMIUM_MODULE?(await import(process.env.BANCAFLOW_CHROMIUM_MODULE)).default.args:['--no-sandbox','--disable-dev-shm-usage'];
   const browser=await chromium.launch({headless:true,executablePath:binary,args,env:process.env});t.after(()=>browser.close());
   const page=await browser.newPage({viewport:{width:390,height:844}}),errors=[],cspErrors=[];
@@ -297,13 +297,13 @@ test('unmodified production HTML loads local Excel assets and Firebase modules u
   await page.route('**/*',route=>{
     const url=new URL(route.request().url());
     if(url.href==='https://bancaflow.production.test/')return route.fulfill({contentType:'text/html',body:html});
-    if(url.origin==='https://bancaflow.production.test'&&['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js'].includes(url.pathname))return route.fulfill({contentType:'text/javascript',body:readFileSync(join(__dirname,'..',url.pathname.slice(1)),'utf8')});
+    if(url.origin==='https://bancaflow.production.test'&&['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css'].includes(url.pathname))return route.fulfill({contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:readFileSync(join(__dirname,'..',url.pathname.slice(1)),'utf8')});
     if(url.origin==='https://bancaflow-csp-fixture.firebaseio.com'&&url.pathname==='/.lp')return route.fulfill({contentType:'text/javascript',body:'parent.__fixtureLongPollLoaded=true;'});
     const name=url.pathname.split('/').at(-1);if(url.origin==='https://www.gstatic.com'&&modules[name])return route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:modules[name]});
     return route.abort();
   });
   await page.goto('https://bancaflow.production.test/');
-  await page.waitForFunction(()=>globalThis.XLSX?.version==='0.20.3'&&!!globalThis.BancaFlowImport);
+  await page.waitForFunction(()=>globalThis.XLSX?.version==='0.20.3'&&!!globalThis.BancaFlowImport&&!!globalThis.BancaAnalytics&&!!globalThis.BancaAnalyticsPdf);
   await page.locator('#email').fill('fixture@example.test');await page.locator('#password').fill('password123');await page.locator('#toggle-password').click();
   assert.equal(await page.locator('#password').getAttribute('type'),'text');
   await page.locator('#login-button').click();await page.waitForFunction(()=>document.querySelector('#login-status').textContent.includes('E-mail ou senha incorretos'));
@@ -368,3 +368,70 @@ test('mobile date filters use local midnight, combine course/class, scope every 
   assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
 });
 
+
+test('coordinator analytics render responsive accessible charts with filtered zero/missing times and export real vector PDFs', {skip}, async t=>{
+  const{page,errors,cspErrors}=await openApp(t,{timezoneId:'America/Sao_Paulo'});
+  await page.evaluate(()=>{
+    const copy=value=>JSON.parse(JSON.stringify(value)),original=copy(firebaseMock.data.boards.b1),group=copy(firebaseMock.data.groups.g1),grades=copy(firebaseMock.data.grades.b1),deliveries=copy(firebaseMock.data.deliveries.b1),data=firebaseMock.data;
+    Object.assign(data,{groups:{},boards:{},groupBoards:{},grades:{},deliveries:{},seals:{},timers:{}});
+    const entries=[['b1','GRUPO_ALFA','ADS','2026-10-18T13:00:00Z',true,0],['b2','GRUPO_BETA','ADS','2026-10-18T14:00:00Z',true,null],['b3','PENDENTE','ADS','2026-10-18T15:00:00Z',false,123456],['b4','OUTRO_DIA','ADS','2026-10-19T13:00:00Z',true,123456],['b5','OUTRO_CURSO','Engenharia','2026-10-18T13:00:00Z',true,123456]];
+    for(const[bid,name,courseName,at,sealed,elapsedMs]of entries){
+      const gid='g'+bid.slice(1);data.groups[gid]={...copy(group),id:gid,name,courseName,className:'2A'};
+      data.boards[bid]={...copy(original),groupId:gid,startAt:Date.parse(at)};data.groupBoards[gid]=bid;
+      data.grades[bid]=copy(grades);data.deliveries[bid]=copy(deliveries);
+      if(sealed)data.seals[bid]={by:'coord',at:Date.now()};if(elapsedMs!==null)data.timers[bid]={elapsedMs,startedAt:0,revision:1};
+    }
+    appTest.mount('coord');appTest.go('relatorios');
+  });
+  await page.locator('#report-course-filter').selectOption('ADS');await page.locator('#report-filter').selectOption('2A');await page.locator('#report-date-filter').fill('2026-10-18');
+  const panel=page.locator('.analytics-panel');
+  assert.equal(await panel.locator('svg[role="img"]').count(),3);
+  assert.equal(await panel.locator('svg title').count(),3);assert.equal(await panel.locator('svg desc').count(),3);
+  const text=await panel.textContent();
+  for(const included of ['GRUPO_ALFA','GRUPO_BETA','00:00,00','Não registrado'])assert.ok(text.includes(included),included);
+  for(const excluded of ['PENDENTE','OUTRO_DIA','OUTRO_CURSO'])assert.ok(!text.includes(excluded),excluded);
+  assert.equal(await page.locator('#analytics-board-filter option').count(),3);
+  for(const width of [320,390,768,1440]){
+    await page.setViewportSize({width,height:950});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`analytics overflow at ${width}px`);
+    if(process.env.BANCAFLOW_SCREENSHOT_DIR&&[320,390,1440].includes(width))await panel.screenshot({path:join(process.env.BANCAFLOW_SCREENSHOT_DIR,`banca-flow-analytics-${width}.png`),style:'.topbar,.mobile-nav{visibility:hidden!important}'});
+  }
+  const qa=process.env.BANCAFLOW_QA_DIR;if(qa)mkdirSync(qa,{recursive:true});
+  let downloading=page.waitForEvent('download');await page.locator('[data-print-analytics]').click();let file=await downloading;
+  if(qa)await file.saveAs(join(qa,'analytics-overview.pdf'));
+  const overviewPdf=readFileSync(await file.path(),'ascii');
+  for(const included of ['%PDF-1.4','GRUPO_ALFA','GRUPO_BETA','Notas por banca','Tempo de apresenta','Professor Um'])assert.ok(overviewPdf.includes(included),included);
+  for(const excluded of ['PENDENTE','OUTRO_DIA','OUTRO_CURSO','/Subtype /Image'])assert.ok(!overviewPdf.includes(excluded),excluded);
+  await page.locator('#analytics-board-filter').selectOption('b1');
+  assert.ok((await panel.textContent()).includes('Notas dos avaliadores'));assert.ok((await panel.textContent()).includes('Ana'));
+  assert.ok((await panel.textContent()).includes('Professora Dois'));
+  if(process.env.BANCAFLOW_SCREENSHOT_DIR)await panel.screenshot({path:join(process.env.BANCAFLOW_SCREENSHOT_DIR,'banca-flow-analytics-detail-1440.png'),style:'.topbar,.mobile-nav{visibility:hidden!important}'});
+  downloading=page.waitForEvent('download');await page.locator('[data-print-analytics]').click();file=await downloading;
+  if(qa)await file.saveAs(join(qa,'analytics-selected.pdf'));
+  const selectedPdf=readFileSync(await file.path(),'ascii');assert.ok(selectedPdf.includes('GRUPO_ALFA'));assert.ok(!selectedPdf.includes('GRUPO_BETA'));
+  downloading=page.waitForEvent('download');await page.locator('[data-print-one="b1"]').click();file=await downloading;
+  if(qa)await file.saveAs(join(qa,'official-with-graphs.pdf'));
+  assert.ok(readFileSync(await file.path(),'ascii').includes('Notas por banca'));
+  await page.locator('#report-charts').uncheck();
+  downloading=page.waitForEvent('download');await page.locator('[data-print-one="b1"]').click();file=await downloading;
+  assert.ok(!readFileSync(await file.path(),'ascii').includes('Notas por banca'));
+  await page.evaluate(()=>{appTest.mount('t1');appTest.go('relatorios');});
+  assert.equal(await page.locator('.analytics-panel').count(),0);assert.equal(await page.locator('[data-print-analytics]').count(),0);
+  assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('analytics empty state disables PDF and fully removes stale detail selection after filter changes', {skip}, async t=>{
+  const{page,errors,cspErrors}=await openApp(t);
+  await page.evaluate(()=>{appTest.mount('coord');appTest.go('relatorios');});
+  assert.equal(await page.locator('[data-print-analytics]').isDisabled(),true);
+  assert.equal(await page.locator('.analytics-panel svg[role="img"]').count(),0);
+  assert.ok((await page.locator('.analytics-panel').textContent()).includes('Nenhuma banca completa'));
+  await page.evaluate(()=>{firebaseMock.write('seals/b1',{by:'coord',at:Date.now()});firebaseMock.emit('seals/b1');});
+  await page.locator('#analytics-board-filter').selectOption('b1');
+  assert.ok((await page.locator('.analytics-panel').textContent()).includes('Notas dos avaliadores'));
+  await page.locator('#report-date-filter').fill('2099-01-01');
+  assert.equal(await page.locator('[data-print-analytics]').isDisabled(),true);assert.equal(await page.locator('.analytics-panel svg[role="img"]').count(),0);
+  await page.locator('[data-date-clear="reports"]').click();
+  assert.equal(await page.locator('#analytics-board-filter').inputValue(),'','stale selected board is reset when the report filters change');
+  assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});

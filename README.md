@@ -59,6 +59,23 @@ O relatório PDF baixa diretamente e contém os dados da banca, o tempo com cent
 
 O PDF da agenda e o sorteio continuam disponíveis. O CSV de avaliação também contém o tempo registrado.
 
+## Gráficos da coordenação
+
+Em **Relatórios**, o painel **Resultados em gráficos** acompanha os filtros de data, curso e turma. Ele inclui apenas bancas encerradas com todas as notas completas e mostra:
+
+- Médias da banca, entregas e nota final por grupo, na escala fixa de 0 a 10.
+- Tempo de apresentação com centésimos comparado ao intervalo reservado na agenda. Esse intervalo inclui o horário completo da banca, podendo conter arguição e transição; não é uma meta de tempo de fala.
+- Composição da nota final de cada aluno, separando banca × 60% e entregas × 40%.
+- Ao escolher uma banca em **Explorar os gráficos**, comparação dos alunos e notas individuais de cada professor nos quatro critérios.
+
+Os valores exatos também ficam disponíveis em tabelas expansíveis. A média geral considera cada aluno uma vez, sem fazer uma média das médias dos grupos. O tempo médio considera cada banca com cronômetro uma vez; um registro zerado é válido, e ausência de tempo aparece como **Não registrado**.
+
+**Incluir gráficos nos relatórios PDF** vem marcado e acrescenta a análise aos relatórios individuais, ao consolidado e aos PDFs oficiais preparados para compartilhar. Desmarque para emitir apenas as tabelas. O botão **Baixar PDF dos gráficos** gera um documento analítico da seleção atual: visão geral e detalhes das bancas completas do filtro, ou somente da banca escolhida. Os dados são conferidos novamente no Firebase antes do download; o documento não inclui bancas abertas ou notas pendentes. O consolidado oficial mantém sua exigência de conclusão de todos os grupos selecionados.
+
+O PDF oficial de compartilhamento inclui gráficos apenas dos alunos selecionados na prévia. PDFs parciais de professores preservam o acesso exclusivo às próprias notas. Os gráficos são vetoriais nos PDFs, com texto selecionável e paginação para listas e nomes extensos.
+
+Esta melhoria não altera dados nem regras do Firebase. Publique também `assets/analytics.js`, `assets/analytics-pdf.js` e `assets/analytics.css`, junto dos HTMLs. Não é necessário instalar bibliotecas de gráficos ou usar serviços externos.
+
 ## Compartilhar no WhatsApp
 
 ### Resultado oficial da coordenação

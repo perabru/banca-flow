@@ -1,0 +1,73 @@
+/* Shared, responsive chart styling. SVG assets and tables work without a CDN. */
+.ba-chart {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  margin: 0;
+  padding: clamp(14px, 2.4vw, 24px);
+  overflow: hidden;
+  border: 1px solid #dce5ef;
+  border-radius: 20px;
+  background: #fff;
+  color: #18324e;
+  box-shadow: 0 8px 26px #173c6510;
+}
+.ba-chart-heading {
+  margin: 0;
+  color: #18324e;
+  font-size: clamp(1.02rem, 2.5vw, 1.2rem);
+  font-weight: 750;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+.ba-chart-caption {
+  margin: 8px 0 0;
+  color: #526277;
+  font-size: .85rem;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+.ba-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 18px 0 8px;
+  padding: 0;
+  list-style: none;
+  color: #344b65;
+  font-size: .79rem;
+  line-height: 1.5;
+}
+.ba-chart-legend li { display: flex; align-items: flex-start; gap: 6px; min-width: 0; max-width: 100%; }
+.ba-chart-legend li > svg { flex: 0 0 14px; margin-top: 2px; }
+.ba-chart-legend li > span { overflow-wrap: anywhere; }
+.ba-chart-svg { display: block; width: 100%; max-width: 540px; height: auto; margin: 10px auto 0; }
+.ba-chart-data { margin-top: 8px; border-top: 1px solid #e5ebf2; padding-top: 12px; }
+.ba-chart-data > summary {
+  width: fit-content;
+  max-width: 100%;
+  color: #174b8e;
+  cursor: pointer;
+  font-size: .81rem;
+  font-weight: 650;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+.ba-chart-data > summary:focus-visible, .ba-chart-table-wrap:focus-visible { outline: 3px solid #087f8c; outline-offset: 4px; border-radius: 4px; }
+.ba-chart-table-wrap { width: 100%; max-width: 100%; overflow-x: auto; margin-top: 12px; border-radius: 10px; }
+.ba-chart-table-wrap table { width: 100%; border-collapse: collapse; font-size: .78rem; line-height: 1.55; }
+.ba-chart-table-wrap caption { padding: 0 0 9px; text-align: left; color: #526277; font-size: .76rem; }
+.ba-chart-table-wrap th, .ba-chart-table-wrap td { padding: 9px 10px; border-bottom: 1px solid #e5ebf2; text-align: right; vertical-align: top; }
+.ba-chart-table-wrap thead th { background: #f0f5fa; color: #18324e; font-weight: 650; }
+.ba-chart-table-wrap th:first-child { min-width: 120px; max-width: 260px; text-align: left; white-space: normal; overflow-wrap: anywhere; }
+.ba-chart-table-wrap td { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ba-chart-footnote { margin: 14px 0 0; color: #687586; font-size: .73rem; line-height: 1.6; }
+.ba-chart-empty { margin: 20px 0; color: #526277; font-size: .9rem; line-height: 1.6; }
+@media (max-width: 380px) {
+  .ba-chart { padding: 12px 8px; border-radius: 14px; }
+  .ba-chart-legend { gap: 7px 11px; font-size: .75rem; }
+}
+@media print {
+  .ba-chart { box-shadow: none; break-inside: avoid; border-color: #becddd; }
+  .ba-chart-data { display: none; }
+}

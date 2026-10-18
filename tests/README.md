@@ -22,6 +22,18 @@ node --test tests/import.test.cjs
 
 Ela lê arquivos XLSX, XLS e CSV reais com a biblioteca local, verifica cabeçalhos e orientadores, agrupamento e identidades estáveis, importações repetidas, cursos distintos, fórmulas e limites de arquivo.
 
+## Gráficos e PDFs analíticos
+
+As duas suítes dos gráficos também usam apenas Node.js e os arquivos locais:
+
+```bash
+node --test tests/analytics.test.cjs tests/analytics-pdf.test.cjs
+```
+
+A primeira verifica as médias por aluno e por banca, composição de 60%/40%, notas individuais por professor e critério, tempo com centésimos, ausência de cronômetro distinta de tempo zero, escalas, rótulos, tabelas acessíveis e escape de conteúdo nos gráficos SVG. A segunda valida a saída vetorial no PDF, sua paginação e o tratamento de dados ausentes e rótulos extensos.
+
+A suíte `app.test.cjs` também verifica que somente a coordenação acessa a análise oficial, que apenas bancas encerradas e completas entram nos gráficos e que PDFs respeitam os filtros de data, curso, turma e banca. A emissão relê as notas salvas e é cancelada quando a banca é reaberta ou a seleção muda durante a leitura. Os relatórios oficiais podem incluir ou omitir gráficos; o compartilhamento individual inclui apenas o aluno selecionado, e o PDF parcial do professor nunca incorpora a análise oficial.
+
 ## Navegador real
 
 Instale Playwright em um ambiente de desenvolvimento e indique um executável Chromium existente:
@@ -32,16 +44,18 @@ BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/browser.test.cjs
 
 Sem Playwright ou sem essa variável, os testes de navegador aparecem como ignorados. Eles executam a página real com Firebase em memória e requisições interceptadas localmente. Verificam larguras de 320 a 1440 px, os eventos reais de formulário e botões, cronômetro compartilhado, encerramento e reabertura por professores/coordenador, permissão das entregas, rascunhos durante atualizações e confirmação de salvamento, além do download efetivo do PDF com notas e médias ponderadas.
 
+Os testes dos gráficos conferem o carregamento dos recursos locais sob a política CSP, rótulos e descrições dos SVGs, estado vazio, distinção entre tempo zero e não registrado, filtros, exploração de uma banca e os downloads reais dos PDFs analíticos e oficiais com ou sem gráficos. Também conferem a ausência de rolagem horizontal e o bloqueio da análise no perfil de professor.
+
 O compartilhamento é verificado com `navigator.share`, clipboard e links do WhatsApp interceptados: arquivo PDF real, notas individuais, ativação por clique, cancelamento sem envio automático, alternativa de download/texto, escolha de um aluno, privacidade do relatório parcial e bloqueio de dados desatualizados. Os testes não abrem conversas reais nem enviam mensagens.
 
 Os fluxos de administração cobrem cadastro, edição e reativação de professor, criação e arquivamento de grupo e carregamento de um arquivo Excel real com prévia, cancelamento, confirmação e preservação do catálogo na reimportação. O HTML de produção também é aberto sem alterações, com módulos Firebase simulados, para conferir os hashes da política CSP, os recursos locais e o formulário de acesso. Os demais cenários usam o mesmo CSP com o hash recalculado apenas para o módulo de teste.
 
-Para usar um pacote Chromium de servidor, `BANCAFLOW_CHROMIUM_MODULE` pode apontar para o módulo que exporta `default.args`. `FONTCONFIG_PATH` pode indicar o diretório de fontes desse pacote. Para salvar capturas da página real em 390 e 1440 px, defina `BANCAFLOW_SCREENSHOT_DIR`.
+Para usar um pacote Chromium de servidor, `BANCAFLOW_CHROMIUM_MODULE` pode apontar para o módulo que exporta `default.args`. `FONTCONFIG_PATH` pode indicar o diretório de fontes desse pacote. Para salvar capturas da página real, inclusive dos gráficos em 320, 390 e 1440 px, defina `BANCAFLOW_SCREENSHOT_DIR`. Para guardar os PDFs reais gerados nos testes de gráficos, defina também `BANCAFLOW_QA_DIR` com o diretório de destino. As capturas isoladas dos gráficos ocultam temporariamente a navegação fixa durante a captura, sem modificar o aplicativo.
 
-As duas suítes podem rodar juntas:
+As suítes da aplicação, importação, gráficos e navegador podem rodar juntas:
 
 ```bash
-BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/app.test.cjs tests/import.test.cjs tests/browser.test.cjs
+BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/app.test.cjs tests/import.test.cjs tests/analytics.test.cjs tests/analytics-pdf.test.cjs tests/browser.test.cjs
 ```
 
 ## Regras do Firebase

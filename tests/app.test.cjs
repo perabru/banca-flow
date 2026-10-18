@@ -107,7 +107,7 @@ function harness(uid = 't1') {
       return { committed: true, snapshot: snapshot(read(path)) };
     }
   });
-  vm.runInContext(readFileSync(join(__dirname,'..','assets','roster-import.js'),'utf8'),context,{filename:'assets/roster-import.js'});
+  for(const asset of ['roster-import.js','analytics.js','analytics-pdf.js'])vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
   vm.runInContext(source + `
     render = () => {};
     refreshTimerUi = () => {};
@@ -118,6 +118,7 @@ function harness(uid = 't1') {
       createBoardShareSnapshot, assertShareSnapshotCurrent, buildSharePdf, buildBoardShareText, whatsappTextUrl, boardShareFilename,
       assertBoardAccess, hasUnsavedDrafts, saveGrade, saveDelivery, reportHtml, refreshReportData,
       printReports, exportCsv, csvCell, boardActions, timerHtml,
+      analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,
       localDayKey,boardMatchesDay,filteredBoards,filteredReportBoards,reportGroups,setBancaDateFilter,resetAppData,boardsView,reportsView,exportSchedulePdf,
       teacherIdentity,teacherEditIdentity,teacherProfileFingerprint,addTeacher,changeTeacherAccess,saveTeacherEdit,
       validatedGroupDraft,groupRelatedBoards,groupAdminFingerprint,resetGroupAdmin,editGroup,saveGroup,changeGroupAccess,addGroupStudentRow,removeGroupStudentRow,
@@ -645,4 +646,82 @@ test('date-filtered agenda export includes exactly the visible boards and change
   for(const included of ['DAY18','OTHERTEACHER18'])assert.ok(pdf.includes(included),included);
   for(const excluded of ['DAY19','ENGINEERING18','CLASS3A18','NOTSCHEDULED'])assert.ok(!pdf.includes(excluded),excluded);
   assert.deepEqual(h.data,before);assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
+});
+
+test('official analytics require coordinator access even with complete data loaded',async()=>{
+  const h=harness('t1'),{app}=h;
+  app.state.seals.b1={by:'t1',at:h.now()};
+  assert.equal(app.analyticsView(),'');
+  assert.throws(()=>app.analyticsBoards(['b1']),/exclusivos da coordenação/);
+  assert.throws(()=>app.buildAnalyticsPdf(['b1']),/exclusivos da coordenação/);
+  await assert.rejects(app.printAnalytics(),/exclusivos da coordenação/);
+  assert.equal(h.downloads.length,0);assert.equal(h.calls.reads.length,0);
+});
+
+test('analytics include only sealed complete boards, retain individual zeroes, and distinguish missing from zero time',()=>{
+  const h=harness('coord');installDateCatalog(h);const{app}=h,before=clone(h.data);
+  app.state.seals.b2=null;delete app.state.grades.b3.t2.s1.code;
+  app.state.timers.b1={elapsedMs:0,startedAt:0};
+  app.state.timers.b5={elapsedMs:123456,startedAt:0};
+  const boards=app.analyticsBoards(['b1','b1','b2','b3','b4','b5','missing']);
+  assert.deepEqual(clone(boards.map(board=>board.id)),['b1','b4','b5']);
+  assert.equal(boards[0].elapsedMs,0);assert.equal(boards[1].elapsedMs,null);assert.equal(boards[2].elapsedMs,123456);
+  assert.equal(boards[0].students.find(student=>student.id==='s2').evaluators[0].presentation,0);
+  assert.ok(Math.abs(boards[0].students[0].result.final-7.8)<1e-12);
+  const summary=h.context.BancaAnalytics.summary(boards);
+  assert.equal(summary.timedCount,2);assert.equal(summary.meanElapsedMs,61728);
+  assert.throws(()=>app.analyticsBoards(['b1','b2'],{strict:true}),/bancas encerradas/);
+  assert.deepEqual(h.data,before);assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
+});
+
+test('analytics-only PDF refreshes selected date/course/class results and refuses stale reopened banks',async()=>{
+  const h=harness('coord');installDateCatalog(h);const{app}=h;
+  Object.assign(app.state,{reportCourseFilter:'ADS',reportFilter:'2A',reportDateFilter:'2026-10-18',analyticsBoard:'b1'});
+  h.data.deliveries.b1.s1=10;
+  await app.printAnalytics();
+  assert.equal(h.downloads.length,1);assert.match(h.downloads[0].filename,/^graficos_bancas_/);
+  const pdf=await h.downloads[0].blob.text();
+  for(const text of ['%PDF-1.4','DAY18','Notas por banca','Tempo de apresenta','8,20','Professor Um'])assert.ok(pdf.includes(text),text);
+  for(const excluded of ['DAY19','ENGINEERING18','CLASS3A18','OTHERTEACHER18','NOTSCHEDULED'])assert.ok(!pdf.includes(excluded),excluded);
+  for(const path of ['seals/b1','grades/b1','deliveries/b1','timers/b1'])assert.ok(h.calls.reads.includes(path),path);
+  assert.equal(h.calls.reads.some(path=>path.includes('/b5')),false,'one selected board stays private to its export');
+  h.write('seals/b1',null);
+  await assert.rejects(app.printAnalytics(),/banca está aberta/);assert.equal(h.downloads.length,1);
+  assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
+});
+
+test('official reports optionally embed vector graphs and official individual shares contain only selected students',async()=>{
+  const h=harness('coord'),{app}=h;
+  h.write('seals/b1',{by:'coord',at:h.now()});app.state.seals.b1=clone(h.data.seals.b1);
+  app.state.timers.b1={elapsedMs:123456,startedAt:0};h.write('timers/b1',app.state.timers.b1);
+  const withCharts=await app.buildEvaluationPdf(['b1']).text(),withoutCharts=await app.buildEvaluationPdf(['b1'],{charts:false}).text();
+  assert.ok(withCharts.includes('Notas por banca'));assert.ok(!withoutCharts.includes('Notas por banca'));
+  for(const text of ['Ana','Bruno','Professor Um','Professora Dois','7,80'])assert.ok(withCharts.includes(text)&&withoutCharts.includes(text),text);
+  const selected=await app.createBoardShareSnapshot('b1',{studentId:'s1'}),shared=await app.buildSharePdf(selected).text();
+  assert.ok(shared.includes('Notas por banca'));assert.ok(shared.includes('Ana'));assert.ok(!shared.includes('Bruno'));
+  assert.ok(!shared.includes('/Subtype /Image'),'chart output retains vector data and searchable text');
+  app.state.reportCharts=false;await app.printReports(['b1']);
+  assert.ok(!(await h.downloads.at(-1).blob.text()).includes('Notas por banca'));
+});
+
+test('teacher partial PDF never contains official chart sections and analytics preferences reset on account change',async()=>{
+  const h=harness('t1'),{app}=h;
+  const snapshot=await app.createBoardShareSnapshot('b1',{studentId:'s1'});
+  snapshot.includeCharts=true;
+  const pdf=await app.buildSharePdf(snapshot).text();
+  for(const leaked of ['Notas por banca','Intervalo reservado','Professora Dois','Bruno'])assert.ok(!pdf.includes(leaked),leaked);
+  app.state.analyticsBoard='b1';app.state.reportCharts=false;app.resetAppData();
+  assert.equal(app.state.analyticsBoard,'');assert.equal(app.state.reportCharts,true);
+});
+
+test('analytics export aborts without a download when its date, course, class or board selection changes during refresh',async()=>{
+  for(const [field,value] of [['reportDateFilter','2026-10-19'],['reportCourseFilter','Engenharia'],['reportFilter','3A'],['analyticsBoard','b5']]){
+    const h=harness('coord');installDateCatalog(h);const{app}=h,before=clone(h.data);
+    Object.assign(app.state,{reportCourseFilter:'ADS',reportFilter:'2A',reportDateFilter:'2026-10-18',analyticsBoard:'b1'});
+    h.options.onRead=path=>{if(path==='grades/b1')app.state[field]=value;};
+    await assert.rejects(app.printAnalytics(),/A seleção dos gráficos mudou durante a emissão/,field);
+    assert.equal(h.downloads.length,0,field);assert.ok(h.calls.reads.includes('grades/b1'),field);
+    assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0,field);
+    assert.deepEqual(h.data,before,field);
+  }
 });
