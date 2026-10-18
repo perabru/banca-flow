@@ -1,47 +1,57 @@
 # BancaFlow — Avaliação de TCC Univap
 
-Aplicação estática em HTML, CSS e JavaScript, conectada ao projeto Firebase existente `avaliadortcc`. `index.html` é a entrada principal; `BancaFlow_TCC_2026_Unico.html` mantém o mesmo conteúdo para preservar os acessos por esse endereço. O layout começa em 320 px e se adapta a tablets e computadores.
+Aplicação estática em HTML, CSS e JavaScript, conectada ao projeto Firebase existente `avaliadortcc`. A atualização mantém os dados, a configuração do Firebase e as regras originais. Não exige publicar regras nem cria novos caminhos no banco.
 
-## Publicar a atualização
+`index.html` é a entrada principal. `BancaFlow_TCC_2026_Unico.html` oferece a mesma interface e funcionalidades, preservando o bloco de regras que já existia nesse arquivo. Os dois blocos de regras são mantidos byte a byte, sem uniformizar políticas diferentes. O layout começa em 320 px e se adapta a tablets e computadores.
 
-1. Publique os dois arquivos HTML da atualização no mesmo local em que o site já está hospedado (ou integre o pull request se a hospedagem acompanha `main`).
-2. No Console do Firebase, abra **avaliadortcc → Realtime Database → Regras**. Publique o conteúdo de `database.rules.json`. A mesma política está no botão **Copiar política de acesso** do site.
-3. Atualize a página e entre novamente. Professores que já estavam conectados devem atualizar o site.
+## Publicação
 
-Publicar somente o HTML não altera as regras do Firebase. O cronômetro e o encerramento/reabertura pelos professores precisam da política atualizada. Os cadastros, grupos, alunos, agendas, notas e entregas existentes são mantidos; não há migração, importação automática nem limpeza do banco. O cadastro criptografado de grupos permanece intacto.
+Integre o pull request ou publique os dois HTMLs na hospedagem existente. Atualize a página. Nenhuma alteração de permissões ou configuração no Console do Firebase faz parte desta atualização.
 
-## Permissões e avaliação
+Os cadastros, grupos, alunos, agendas, notas e entregas existentes são mantidos; não há migração, importação automática nem limpeza do banco. O cadastro criptografado de grupos permanece intacto.
 
-| Ação | Professor avaliador da banca | Coordenador |
-| --- | --- | --- |
-| Consultar/alterar suas notas com banca aberta | Sim | Sim, quando participa como avaliador |
-| Consultar notas dos demais avaliadores | Não | Sim |
-| Encerrar/reabrir a banca com confirmação | Sim | Sim, em qualquer banca |
-| Iniciar, pausar, continuar e zerar o cronômetro | Sim | Sim |
-| Consultar e lançar notas de entregas | Não | Sim |
-| Emitir relatório final PDF/CSV | Não | Sim |
+## Encerramento e reabertura
 
-Professores sem vínculo com uma banca não podem encerrá-la, reabri-la nem controlar seu cronômetro. O encerramento bloqueia as notas e pausa o tempo. Pode ocorrer antes de todas as entregas; a emissão do relatório final exige a banca encerrada e todas as notas válidas. Reabrir preserva as notas e permite correções. Notas em edição precisam ser salvas antes de encerrar a banca. Se outro avaliador encerrar enquanto você edita, o rascunho é preservado e pode ser recuperado ao reabrir, sem bloquear a reabertura.
+As ações usam somente o caminho `seals/BANCA`, que já existe no sistema. O site pede confirmação e só confirma o sucesso após a resposta do Firebase. Uma recusa de permissão exibe uma mensagem específica e preserva o estado oficial e as notas. O site não simula encerramento ou reabertura local.
 
-O cronômetro é compartilhado e aparece em **minutos:segundos,centésimos**, por exemplo `12:34,56`. O relógio é ajustado ao servidor e continua contando após trocar de tela, suspender a aba ou recarregar a página. Apenas as ações dos controles gravam no banco; cada centésimo é calculado na tela. Iniciar/pausar/zerar e encerrar/reabrir exigem conexão. Ao reabrir, o tempo permanece pausado até clicar em **Continuar**. Zerar pede confirmação e substitui o tempo anterior.
+**Limitação das regras originais incluídas no `index.html`:** somente o coordenador pode encerrar uma banca; nem o coordenador nem professores podem remover o encerramento para reabri-la. Os botões de solicitação respeitam as permissões que já estão publicadas no banco. Se a política em produção já permitir essas ações, elas funcionarão; esta atualização não amplia permissões.
 
-O PDF de avaliação baixa diretamente, sem depender da janela de impressão. Inclui os dados da banca, o tempo com centésimos, cada aluno, as quatro notas de cada professor, a média de cada avaliador, a média da banca, a nota bruta das entregas e as parcelas ponderadas. Bancas antigas sem registro de tempo apresentam **Não registrado**.
+Para evitar concluir uma banca incompleta que não possa ser reaberta, o coordenador precisa ter todas as notas individuais e as entregas antes do encerramento. Professores precisam salvar suas próprias notas antes de solicitar o encerramento. Notas em edição são preservadas durante atualizações da tela; trocar de conta limpa os campos da sessão anterior.
+
+Somente o coordenador continua lançando e consultando a nota de entregas e emitindo relatórios finais. Cada professor acessa apenas suas notas, como antes.
+
+## Cronômetro e tempo no PDF
+
+O cronômetro usa **minutos:segundos,centésimos**, por exemplo `12:34,56`. O tempo fica no armazenamento deste navegador, separado por conta e banca. Ele continua contando ao trocar de tela ou recarregar a página e funciona sem conexão. O cronômetro não é sincronizado entre dispositivos nem gravado no Firebase. Iniciar, pausar, continuar e zerar não acessam o banco. Zerar pede confirmação.
+
+Quando a banca é encerrada com sucesso ou o site recebe um encerramento oficial, o cronômetro local é pausado. Uma tentativa negada pelo Firebase não pausa permanentemente o tempo. Se o navegador bloquear o armazenamento, a tela informa que o tempo está temporário e orienta exportá-lo antes de sair.
+
+Para levar o tempo medido pelo professor ao PDF:
+
+1. O professor pausa o cronômetro e clica em **Exportar tempo atual**. O arquivo JSON contém o identificador da banca e o tempo medido, sem notas dos alunos.
+2. O professor entrega esse arquivo à coordenação por um meio escolhido por ele.
+3. O coordenador abre **Relatórios → Tempo / detalhes → Importar tempo do professor** e escolhe o arquivo da mesma banca.
+4. O tempo fica disponível no navegador da coordenação para o PDF. Também é possível digitar o valor em **Tempo para o relatório PDF** e clicar em **Registrar tempo neste navegador**.
+
+A importação verifica o projeto e a banca para impedir registros trocados. O coordenador pode registrar ou importar o tempo mesmo depois do encerramento; isso não modifica as notas nem o banco. Uma duração de `00:00,00` é aceita. Sem um tempo registrado na conta e navegador da coordenação, o PDF informa **Não registrado**.
+
+## Relatórios e cálculo
+
+O PDF de avaliação baixa diretamente. Inclui os dados da banca, tempo com centésimos, cada aluno, as quatro notas de cada professor, a média de cada avaliador, a média da banca, a nota bruta das entregas, as parcelas ponderadas e a nota final. A emissão exige uma banca oficialmente encerrada e todas as notas válidas.
 
 - Média do avaliador: média aritmética de Apresentação, Parte prática, Domínio do código e Domínio do tempo.
 - Média da banca: média aritmética das médias dos avaliadores.
 - Nota final: **média da banca × 0,60 + entregas × 0,40**.
-- O cálculo usa os valores completos; o relatório exibe duas casas decimais. Zero é uma nota válida; campo ausente mantém o relatório pendente.
+- O cálculo usa os valores completos; o relatório exibe duas casas decimais. Zero é uma nota válida; campos ausentes mantêm o relatório pendente.
 
-O PDF da agenda e o sorteio continuam disponíveis. O CSV de avaliação também inclui o tempo registrado.
-
-## Dados e compatibilidade
-
-As coleções originais `users`, `groups`, `boards`, `groupBoards`, `locks`, `roomLocks`, `grades`, `deliveries` e `seals` conservam seus caminhos e formatos. Encerrar cria `seals/BANCA` com `by` e `at`; reabrir remove somente esse bloqueio, preservando as avaliações.
-
-A única coleção nova é `timers/BANCA`, com `elapsedMs`, `startedAt` (zero quando pausado), `updatedBy`, `updatedAt` e `revision`. As regras verificam a revisão para impedir que uma ação antiga sobrescreva um controle mais recente. A alteração do estado da banca e a pausa do cronômetro são atômicas.
-
-A configuração pública do Firebase é mantida. As permissões são verificadas no banco, incluindo a exclusividade da coordenação sobre `deliveries`. A atualização não usa acesso administrativo aos dados de produção.
+O PDF da agenda e o sorteio continuam disponíveis. O CSV de avaliação também inclui o tempo local disponível na coordenação.
 
 ## Verificação local
 
-O site continua sem etapa de compilação. Sirva os HTMLs por HTTPS ou por um servidor local; o acesso real usa Firebase Authentication, perfis já cadastrados e as regras publicadas. Para alterações de código, execute a suíte de lógica com `node --test tests/app.test.cjs`. As instruções para as verificações de regras e navegador estão em `tests/README.md`; todas usam dados fictícios e o emulador, sem gravar no banco de produção.
+O site continua sem etapa de compilação. Sirva os HTMLs por HTTPS ou por um servidor local. Os testes usam apenas dados fictícios e o emulador local, sem acessar o banco de produção:
+
+```bash
+node --test tests/app.test.cjs
+```
+
+As instruções para o navegador real e a verificação das permissões originais estão em `tests/README.md`.
