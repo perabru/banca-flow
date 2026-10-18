@@ -1,57 +1,81 @@
 # BancaFlow — Avaliação de TCC Univap
 
-Aplicação estática em HTML, CSS e JavaScript, conectada ao projeto Firebase existente `avaliadortcc`. A atualização mantém os dados, a configuração do Firebase e as regras originais. Não exige publicar regras nem cria novos caminhos no banco.
+Aplicação estática em HTML, CSS e JavaScript, conectada ao projeto Firebase existente `avaliadortcc`. A atualização preserva os cadastros, grupos, alunos, agenda, notas, entregas, configuração Firebase e lista criptografada de grupos. Não faz migração destrutiva nem importação automática.
 
-`index.html` é a entrada principal. `BancaFlow_TCC_2026_Unico.html` oferece a mesma interface e funcionalidades, preservando o bloco de regras que já existia nesse arquivo. Os dois blocos de regras são mantidos byte a byte, sem uniformizar políticas diferentes. O layout começa em 320 px e se adapta a tablets e computadores.
+`index.html` e `BancaFlow_TCC_2026_Unico.html` oferecem a mesma versão, incluindo a mesma política de acesso atualizada. O layout começa em 320 px e se adapta a tablets e computadores. O site continua sem etapa de compilação.
 
-## Publicação
+## Ativar a atualização
 
-Integre o pull request ou publique os dois HTMLs na hospedagem existente. Atualize a página. Nenhuma alteração de permissões ou configuração no Console do Firebase faz parte desta atualização.
+1. No Console do Firebase, abra **avaliadortcc → Realtime Database → Regras** e publique o conteúdo completo de **database.rules.json**. A mesma política fica incorporada aos HTMLs e disponível no botão **Copiar política de acesso**.
+2. Integre o pull request ou publique os dois HTMLs na hospedagem existente, usando HTTPS. Atualize a página e entre novamente; os demais professores também devem atualizar o site.
+3. Mantenha os perfis já cadastrados em `users` e os dados existentes. Não reimporte os grupos nem substitua o conteúdo do banco.
 
-Os cadastros, grupos, alunos, agendas, notas e entregas existentes são mantidos; não há migração, importação automática nem limpeza do banco. O cadastro criptografado de grupos permanece intacto.
+O arquivo `firebase.json` também permite publicar somente as regras com `firebase deploy --only database --project avaliadortcc`, após autenticar uma conta autorizada.
 
-## Encerramento e reabertura
+Publicar arquivos no GitHub não publica as regras no Firebase. A nova política é necessária para o cronômetro compartilhado e para o encerramento/reabertura pelos avaliadores. As regras preservam a privacidade e os demais caminhos originais; não existe acesso público ao banco nem cadastro público de coordenadores.
 
-As ações usam somente o caminho `seals/BANCA`, que já existe no sistema. O site pede confirmação e só confirma o sucesso após a resposta do Firebase. Uma recusa de permissão exibe uma mensagem específica e preserva o estado oficial e as notas. O site não simula encerramento ou reabertura local.
+## Permissões e bancas
 
-**Limitação das regras originais incluídas no `index.html`:** somente o coordenador pode encerrar uma banca; nem o coordenador nem professores podem remover o encerramento para reabri-la. Os botões de solicitação respeitam as permissões que já estão publicadas no banco. Se a política em produção já permitir essas ações, elas funcionarão; esta atualização não amplia permissões.
+| Ação | Avaliador da banca | Coordenador |
+| --- | --- | --- |
+| Lançar suas próprias notas com banca aberta | Sim | Sim, quando participa como avaliador |
+| Consultar notas dos demais avaliadores | Não | Sim |
+| Encerrar e reabrir com confirmação | Sim | Sim, em qualquer banca |
+| Controlar o cronômetro compartilhado | Sim | Sim |
+| Consultar e lançar entregas | Não | Sim |
+| Emitir/compartilhar resultado oficial completo | Não | Sim |
+| Compartilhar sua própria avaliação parcial | Sim | Usa o resultado oficial, após a finalização |
 
-Para evitar concluir uma banca incompleta que não possa ser reaberta, o coordenador precisa ter todas as notas individuais e as entregas antes do encerramento. Professores precisam salvar suas próprias notas antes de solicitar o encerramento. Notas em edição são preservadas durante atualizações da tela; trocar de conta limpa os campos da sessão anterior.
+Somente professores ativos que participam da banca podem controlar essa banca. O coordenador pode agir mesmo sem ser um avaliador dela. Encerrar bloqueia as notas e pausa o cronômetro. Reabrir preserva todas as avaliações e permite correções; o tempo fica pausado até clicar em **Continuar**. O coordenador pode reabrir para lançar ou corrigir entregas e encerrar novamente depois.
 
-Somente o coordenador continua lançando e consultando a nota de entregas e emitindo relatórios finais. Cada professor acessa apenas suas notas, como antes.
+O encerramento pode ocorrer antes de todos os lançamentos. O relatório e o resultado oficial só ficam disponíveis com a banca encerrada e todas as notas completas, incluindo as entregas. Campos em edição devem ser salvos antes do encerramento. Rascunhos são preservados durante atualizações da tela e salvamentos pendentes; a troca de conta limpa os campos e qualquer prévia de compartilhamento da sessão anterior.
 
-## Cronômetro e tempo no PDF
+## Cronômetro com centésimos
 
-O cronômetro usa **minutos:segundos,centésimos**, por exemplo `12:34,56`. O tempo fica no armazenamento deste navegador, separado por conta e banca. Ele continua contando ao trocar de tela ou recarregar a página e funciona sem conexão. O cronômetro não é sincronizado entre dispositivos nem gravado no Firebase. Iniciar, pausar, continuar e zerar não acessam o banco. Zerar pede confirmação.
+O tempo aparece em **minutos:segundos,centésimos**, por exemplo `12:34,56`. Ele é compartilhado entre os avaliadores e a coordenação pelo Firebase e continua contando após trocar de tela ou recarregar a página. Apenas os controles de iniciar, pausar, continuar e zerar gravam no banco; os centésimos são calculados na tela usando o relógio ajustado ao servidor.
 
-Quando a banca é encerrada com sucesso ou o site recebe um encerramento oficial, o cronômetro local é pausado. Uma tentativa negada pelo Firebase não pausa permanentemente o tempo. Se o navegador bloquear o armazenamento, a tela informa que o tempo está temporário e orienta exportá-lo antes de sair.
+Os controles exigem conexão. Durante uma interrupção, o tempo já iniciado continua sendo contado; ao reconectar, o site recebe o registro compartilhado. Zerar pede confirmação. Encerramento e pausa são gravados juntos; revisões impedem que uma ação antiga sobrescreva um controle mais recente.
 
-Para levar o tempo medido pelo professor ao PDF:
+Os caminhos originais conservam seus formatos. A coleção nova `timers/BANCA` contém `elapsedMs`, `startedAt` (zero quando pausado), `updatedAt`, `updatedBy` e `revision`. Registros antigos sem tempo continuam válidos e aparecem no relatório como **Não registrado**.
 
-1. O professor pausa o cronômetro e clica em **Exportar tempo atual**. O arquivo JSON contém o identificador da banca e o tempo medido, sem notas dos alunos.
-2. O professor entrega esse arquivo à coordenação por um meio escolhido por ele.
-3. O coordenador abre **Relatórios → Tempo / detalhes → Importar tempo do professor** e escolhe o arquivo da mesma banca.
-4. O tempo fica disponível no navegador da coordenação para o PDF. Também é possível digitar o valor em **Tempo para o relatório PDF** e clicar em **Registrar tempo neste navegador**.
+## PDF, notas e cálculo
 
-A importação verifica o projeto e a banca para impedir registros trocados. O coordenador pode registrar ou importar o tempo mesmo depois do encerramento; isso não modifica as notas nem o banco. Uma duração de `00:00,00` é aceita. Sem um tempo registrado na conta e navegador da coordenação, o PDF informa **Não registrado**.
-
-## Relatórios e cálculo
-
-O PDF de avaliação baixa diretamente. Inclui os dados da banca, tempo com centésimos, cada aluno, as quatro notas de cada professor, a média de cada avaliador, a média da banca, a nota bruta das entregas, as parcelas ponderadas e a nota final. A emissão exige uma banca oficialmente encerrada e todas as notas válidas.
+O relatório PDF baixa diretamente e contém os dados da banca, o tempo com centésimos, cada aluno, as quatro notas de cada professor, a média de cada avaliador, a média da banca, a nota bruta das entregas, as parcelas ponderadas e a nota final.
 
 - Média do avaliador: média aritmética de Apresentação, Parte prática, Domínio do código e Domínio do tempo.
 - Média da banca: média aritmética das médias dos avaliadores.
 - Nota final: **média da banca × 0,60 + entregas × 0,40**.
-- O cálculo usa os valores completos; o relatório exibe duas casas decimais. Zero é uma nota válida; campos ausentes mantêm o relatório pendente.
+- O cálculo usa os valores completos; a exibição usa duas casas decimais. Zero é uma nota válida; campos ausentes mantêm o resultado oficial pendente.
 
-O PDF da agenda e o sorteio continuam disponíveis. O CSV de avaliação também inclui o tempo local disponível na coordenação.
+O PDF da agenda e o sorteio continuam disponíveis. O CSV de avaliação também contém o tempo registrado.
+
+## Compartilhar no WhatsApp
+
+### Resultado oficial da coordenação
+
+Em **Relatórios → WhatsApp / compartilhar** ou **Bancas → Ver detalhes → Compartilhar resultado**, prepare a prévia de uma banca encerrada e completa. O seletor permite incluir todos os alunos ou somente um. O PDF e a mensagem usam exatamente a mesma seleção e incluem as notas por professor, médias e nota final ponderada.
+
+### Avaliação de um professor
+
+Na avaliação, use **Compartilhar minhas avaliações** para o grupo ou **Compartilhar avaliação deste aluno**. A prévia contém somente as notas salvas desse professor e a média de seus quatro critérios, identificadas como **parciais**, sem nota final, entregas ou avaliações de outros professores. Um aluno já avaliado pode ser compartilhado mesmo se os demais ainda estiverem pendentes.
+
+### Escolher o envio
+
+1. **Compartilhar PDF (escolha WhatsApp):** em aparelho/navegador compatível, abre o compartilhamento do sistema com arquivo PDF e texto. Escolha WhatsApp e o contato ou grupo. Se o WhatsApp não incluir o texto junto do arquivo, envie as notas pelo botão de texto.
+2. **Abrir notas no WhatsApp:** abre o WhatsApp com o texto preparado. Você escolhe o destinatário e confirma o envio. O link de texto não anexa arquivos.
+3. **Baixar PDF para anexar:** alternativa para computadores ou navegadores sem compartilhamento de arquivos. Abra a conversa e anexe o PDF como documento.
+4. **Copiar notas individuais:** copia o texto completo. Se o navegador bloquear a cópia, a prévia é selecionada para copiar manualmente. Mensagens extensas também podem ser copiadas e coladas, sem cortar notas; é possível escolher um aluno por vez.
+
+Nada é enviado automaticamente. A prévia é preparada antes do clique que abre o compartilhamento, para manter a ativação exigida pelo navegador. Se notas, tempo, sessão ou estado da banca mudarem, prepare uma nova prévia antes de compartilhar. O site não guarda números de telefone nem pede acesso aos contatos.
+
+Compatibilidade: [Web Share](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/share), [canShare](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/canShare) e [WhatsApp click to chat](https://faq.whatsapp.com/425247423114725/).
 
 ## Verificação local
 
-O site continua sem etapa de compilação. Sirva os HTMLs por HTTPS ou por um servidor local. Os testes usam apenas dados fictícios e o emulador local, sem acessar o banco de produção:
+Sirva os HTMLs por HTTPS ou um servidor local. Os testes usam dados fictícios, um adaptador Firebase em memória ou o emulador local, sem acessar o banco de produção e sem enviar mensagens reais:
 
 ```bash
 node --test tests/app.test.cjs
 ```
 
-As instruções para o navegador real e a verificação das permissões originais estão em `tests/README.md`.
+As instruções para navegador e emulador estão em `tests/README.md`.

@@ -10,7 +10,7 @@ Requer apenas Node.js atual; não precisa instalar pacotes:
 node --test tests/app.test.cjs
 ```
 
-A suíte executa o JavaScript do próprio `index.html` com adaptadores de DOM, armazenamento local e Firebase em memória. Verifica notas individuais e médias ponderadas, nota zero, dados incompletos, cronômetro local com centésimos e funcionamento offline, persistência após recarregar, separação entre contas, importação/exportação e registro manual de tempo, confirmação/cancelamento, tratamento de permissões negadas sem simular encerramento/reabertura, preservação de rascunhos, atualização consistente do relatório e o PDF nativo. O cronômetro não usa nenhum caminho no Firebase.
+A suíte executa o JavaScript do próprio `index.html` com adaptadores de DOM e Firebase em memória. Verifica notas individuais e médias ponderadas, nota zero, dados incompletos, cronômetro compartilhado com centésimos, repetição de transações, confirmação/cancelamento, encerramento/reabertura por avaliadores e coordenação, exclusividade das entregas, preservação de rascunhos, atualização consistente do relatório e PDF nativo. Também verifica snapshots oficiais e parciais, filtro por aluno, privacidade das notas de outros professores, bloqueio de prévias desatualizadas e mudança de sessão durante operações assíncronas.
 
 ## Navegador real
 
@@ -20,7 +20,9 @@ Instale Playwright em um ambiente de desenvolvimento e indique um executável Ch
 BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/browser.test.cjs
 ```
 
-Sem Playwright ou sem essa variável, os testes de navegador aparecem como ignorados. Eles executam a página real com Firebase em memória, armazenamento local real e requisições interceptadas localmente. Verificam larguras de 320 a 1440 px, incluindo o formulário de tempo da coordenação, os eventos reais de formulário e botões, recarregamento do cronômetro e separação entre contas, download/importação do registro de tempo, permissão das entregas e download efetivo do PDF com notas e centésimos. Também verificam a negação de encerramento por professor e de reabertura pelas permissões originais, a reversão de alterações otimistas do Firebase sem pausar o tempo, rascunhos durante atualizações, recebimento inicial das notas, confirmação de salvamento e troca de conta.
+Sem Playwright ou sem essa variável, os testes de navegador aparecem como ignorados. Eles executam a página real com Firebase em memória e requisições interceptadas localmente. Verificam larguras de 320 a 1440 px, os eventos reais de formulário e botões, cronômetro compartilhado, encerramento e reabertura por professores/coordenador, permissão das entregas, rascunhos durante atualizações e confirmação de salvamento, além do download efetivo do PDF com notas e médias ponderadas.
+
+O compartilhamento é verificado com `navigator.share`, clipboard e links do WhatsApp interceptados: arquivo PDF real, notas individuais, ativação por clique, cancelamento sem envio automático, alternativa de download/texto, escolha de um aluno, privacidade do relatório parcial e bloqueio de dados desatualizados. Os testes não abrem conversas reais nem enviam mensagens.
 
 Para usar um pacote Chromium de servidor, `BANCAFLOW_CHROMIUM_MODULE` pode apontar para o módulo que exporta `default.args`. `FONTCONFIG_PATH` pode indicar o diretório de fontes desse pacote. Para salvar capturas da página real em 390 e 1440 px, defina `BANCAFLOW_SCREENSHOT_DIR`.
 
@@ -41,4 +43,4 @@ npx firebase emulators:exec --project demo-banca-flow --only database --config t
 
 O primeiro uso baixa o emulador. Nenhum login no Firebase é necessário. As dependências também podem ser instaladas fora do repositório com `npm install --prefix DIRETORIO ...`. Nesse caso, defina `BANCAFLOW_RULES_DEPS` com o caminho absoluto desse diretório e use o executável Firebase instalado nele. Para conectar a um emulador já iniciado, defina `FIREBASE_DATABASE_EMULATOR_HOST=127.0.0.1:9000`.
 
-A suíte confirma a identidade exata das regras originais incorporadas aos dois arquivos HTML e executa a política original do `index.html` no emulador. Verifica a leitura restrita de notas, exclusividade da coordenação nas entregas, encerramento permitido à coordenação, encerramento negado aos professores, reabertura negada inclusive à coordenação, rejeição de novos caminhos de cronômetro e preservação dos dados em gravações rejeitadas. Os testes não publicam nem alteram regras no projeto real. O projeto `demo-banca-flow` e o endereço explícito do emulador mantêm essas verificações locais.
+A suíte carrega a política atualizada incorporada ao `index.html` e confirma sua correspondência com `database.rules.json`. Verifica a leitura restrita das notas individuais, exclusividade da coordenação nas entregas, encerramento/reabertura por membros ativos da banca e coordenador, cronômetro compartilhado com validação de revisão e rejeição atômica de gravações antigas. As permissões das demais coleções existentes são verificadas para evitar alterações não relacionadas. Os testes não publicam regras nem alteram dados no projeto real. O projeto `demo-banca-flow` e o endereço explícito do emulador mantêm essas verificações locais.

@@ -1,7 +1,6 @@
 /**
- * Regression tests for the ORIGINAL, UNCHANGED Realtime Database permissions.
- * Uses an isolated local emulator and fictional data. The pinned hash is from
- * the firebase-rules script in the original HEAD:index.html.
+ * Tests the exact Firebase rules embedded in index.html against a local emulator.
+ * All accounts and grades are fictional. No production project is accessed.
  * Dependencies: firebase, @firebase/rules-unit-testing, firebase-tools@14.22.0.
  * BANCAFLOW_RULES_DEPS may point to an external npm installation prefix.
  */
@@ -21,14 +20,6 @@ const { ref, set, get, update, remove } = require('firebase/database');
 const rootDir = dirname(dirname(fileURLToPath(import.meta.url)));
 const html = await readFile(join(rootDir, 'index.html'), 'utf8');
 const embedded = html.match(/<script[^>]*id="firebase-rules"[^>]*>([\s\S]*?)<\/script>/)[1];
-const ORIGINAL_RULES_SHA256 = 'c7d4435f72c0c99c805dafdd4204bbbe75a64ff24cab633932bcdef5a6486347';
-assert.equal(createHash('sha256').update(embedded).digest('hex'), ORIGINAL_RULES_SHA256,
-  'The embedded Firebase rules must remain byte-for-byte identical to the original rules.');
-const legacyHtml = await readFile(join(rootDir, 'BancaFlow_TCC_2026_Unico.html'), 'utf8');
-const legacyEmbedded = legacyHtml.match(/<script[^>]*id="firebase-rules"[^>]*>([\s\S]*?)<\/script>/)[1];
-const ORIGINAL_LEGACY_RULES_SHA256 = '4645e05401fe881dc2bd06d661128c2f4f4f66f7124765876bfee96f29536d30';
-assert.equal(createHash('sha256').update(legacyEmbedded).digest('hex'), ORIGINAL_LEGACY_RULES_SHA256,
-  'The legacy HTML must preserve its own original embedded Firebase rules byte-for-byte.');
 const rules = JSON.parse(embedded);
 const [host = '127.0.0.1', port = '9000'] = (process.env.FIREBASE_DATABASE_EMULATOR_HOST || '127.0.0.1:9000').split(':');
 // The Node RTDB WebSocket SDK ignores NO_PROXY. Keep emulator requests local.
@@ -54,7 +45,8 @@ const fixture = () => ({
   deliveries: { b1: { s1: 9, s2: 8 } }
 });
 const db = uid => uid ? env.authenticatedContext(uid).database() : env.unauthenticatedContext().database();
-const seal = (uid = 'coord') => ({ by: uid, at: Date.now() });
+const timer = (uid = 'teacher1', revision = 1, extra = {}) => ({ elapsedMs: 12345, startedAt: 0, updatedAt: Date.now(), updatedBy: uid, revision, ...extra });
+const seal = (uid = 'teacher1') => ({ by: uid, at: Date.now() });
 const bypass = async (path, value) => env.withSecurityRulesDisabled(async ctx => set(ref(ctx.database(), path), value));
 const readPrivileged = async path => {
   let value;
@@ -68,85 +60,120 @@ before(async () => {
 beforeEach(async () => { await env.clearDatabase(); await bypass('/', fixture()); }, { timeout: 15000 });
 after(async () => { await env?.cleanup(); });
 
-test('original rules preserve exactly the original application data branches', () => {
-  assert.deepEqual(Object.keys(rules.rules).filter(key => !key.startsWith('.')).sort(),
-    ['users', 'groups', 'boards', 'groupBoards', 'locks', 'roomLocks', 'grades', 'deliveries', 'seals'].sort());
-  assert.equal(rules.rules['.read'], false);
-  assert.equal(rules.rules['.write'], false);
-  assert.equal(rules.rules.timers, undefined);
+test('published JSON matches embedded rules; unrelated original permissions are unchanged', async () => {
+  assert.deepEqual(JSON.parse(await readFile(join(rootDir, 'database.rules.json'), 'utf8')), rules);
+  const unchanged = Object.fromEntries(Object.entries(rules.rules).filter(([key]) => !['seals', 'timers'].includes(key)));
+  assert.equal(createHash('sha256').update(JSON.stringify(unchanged)).digest('hex'),
+    '2c615c5766f7118797e0f31fd1d19fcb26415e5c4efa9c8364a25f7fc6e58270');
 });
 
-test('professor reads and updates only own individual grades while board is open', async () => {
-  await assertSucceeds(get(ref(db('teacher1'), 'grades/b1/teacher1')));
-  await assertSucceeds(set(ref(db('teacher1'), 'grades/b1/teacher1/s1'), { ...grade, presentation: 0 }));
-  await assertFails(get(ref(db('teacher1'), 'grades/b1/teacher2')));
-  await assertFails(get(ref(db('teacher1'), 'grades/b1')));
-  await assertFails(set(ref(db('teacher1'), 'grades/b1/teacher2/s1'), grade));
-  await assertSucceeds(get(ref(db('coord'), 'grades')));
+test('teacher reads only own evaluations before and after closure; coordinator reads all', async () => {
+  for (const closed of [false, true]) {
+    if (closed) await bypass('seals/b1', seal());
+    await assertSucceeds(get(ref(db('teacher1'), 'grades/b1/teacher1')));
+    await assertFails(get(ref(db('teacher1'), 'grades/b1/teacher2')));
+    await assertFails(get(ref(db('teacher1'), 'grades/b1')));
+    await assertFails(get(ref(db('teacher1'), 'deliveries/b1')));
+    await assertSucceeds(get(ref(db('coord'), 'grades')));
+  }
 });
 
-test('only coordinator reads or writes delivery grades', async () => {
+test('only coordinator reads and writes delivery grades; zero remains valid', async () => {
   await assertFails(get(ref(db('teacher1'), 'deliveries/b1')));
   await assertFails(set(ref(db('teacher1'), 'deliveries/b1/s1'), 10));
-  await assertSucceeds(set(ref(db('coord'), 'deliveries/b1/s1'), 10));
+  await assertSucceeds(set(ref(db('coord'), 'deliveries/b1/s1'), 0));
   await assertFails(set(ref(db('coord'), 'deliveries/b1/s1'), 11));
 });
 
-test('original policy denies official closure by a professor, including assigned evaluators', async () => {
-  for (const uid of ['teacher1', 'teacher2', 'outsider', 'disabled', null]) {
-    await assertFails(set(ref(db(uid), 'seals/b1'), seal(uid || 'anonymous')));
-  }
-  assert.equal(await readPrivileged('seals/b1'), null);
-  await assertSucceeds(set(ref(db('teacher1'), 'grades/b1/teacher1/s1'), grade));
-});
-
-test('coordinator can officially close a board once, locking grades and deliveries', async () => {
-  await assertSucceeds(set(ref(db('coord'), 'seals/b1'), seal()));
+test('assigned teacher closes and another reopens, preserving every existing record', async () => {
+  const beforeData = await readPrivileged('/');
+  await assertSucceeds(set(ref(db('teacher1'), 'seals/b1'), seal()));
   await assertFails(set(ref(db('teacher1'), 'grades/b1/teacher1/s1'), grade));
   await assertFails(set(ref(db('coord'), 'deliveries/b1/s1'), 10));
-  await assertFails(set(ref(db('coord'), 'seals/b1'), seal()));
-});
-
-test('original policy denies reopening to professors and coordinator without changing saved data', async () => {
-  const savedSeal = seal();
-  await bypass('seals/b1', savedSeal);
-  const beforeData = await readPrivileged('/');
-  for (const uid of ['coord', 'teacher1', 'teacher2', 'outsider', 'disabled', null]) {
-    await assertFails(remove(ref(db(uid), 'seals/b1')));
-  }
+  await assertSucceeds(remove(ref(db('teacher2'), 'seals/b1')));
   assert.deepEqual(await readPrivileged('/'), beforeData);
+  await assertSucceeds(set(ref(db('teacher1'), 'grades/b1/teacher1/s1'), grade));
+  await assertSucceeds(set(ref(db('coord'), 'deliveries/b1/s1'), 10));
 });
 
-test('original policy denies any timer database writes or reads, including coordinator', async () => {
-  const timer = { elapsedMs: 12345, startedAt: 0, updatedBy: 'coord', updatedAt: Date.now(), revision: 1 };
-  for (const uid of ['coord', 'teacher1', 'teacher2', 'outsider', null]) {
-    await assertFails(set(ref(db(uid), 'timers/b1'), timer));
-    await assertFails(get(ref(db(uid), 'timers/b1')));
+test('coordinator closes and reopens even when not a board evaluator', async () => {
+  await assertSucceeds(set(ref(db('coord'), 'seals/b1'), seal('coord')));
+  await assertSucceeds(remove(ref(db('coord'), 'seals/b1')));
+});
+
+test('unassigned, disabled and unauthenticated accounts cannot close or reopen', async () => {
+  for (const uid of ['outsider', 'disabled', null]) await assertFails(set(ref(db(uid), 'seals/b1'), seal(uid || 'anonymous')));
+  await bypass('seals/b1', seal());
+  for (const uid of ['outsider', 'disabled', null]) await assertFails(remove(ref(db(uid), 'seals/b1')));
+});
+
+test('seal validates board, author, current timestamp and exact schema; cannot overwrite closure', async () => {
+  await assertFails(set(ref(db('teacher1'), 'seals/missing'), seal()));
+  await assertFails(set(ref(db('teacher1'), 'seals/b1'), seal('teacher2')));
+  for (const change of [{ at: 1 }, { at: Date.now() + 120000 }, { at: Date.now() + 0.5 }, { extra: true }]) {
+    await assertFails(set(ref(db('teacher1'), 'seals/b1'), { ...seal(), ...change }));
   }
-  assert.equal(await readPrivileged('timers'), null);
+  await assertSucceeds(set(ref(db('teacher1'), 'seals/b1'), seal()));
+  await assertFails(set(ref(db('teacher2'), 'seals/b1'), seal('teacher2')));
 });
 
-test('no lifecycle or timer metadata can be hidden inside existing board or grades', async () => {
-  const beforeData = await readPrivileged('/');
+test('closure may precede deliveries and legacy by/at seals still reopen', async () => {
+  await bypass('deliveries/b1', null);
+  await assertSucceeds(set(ref(db('teacher1'), 'seals/b1'), seal()));
+  await assertSucceeds(remove(ref(db('coord'), 'seals/b1')));
+  await bypass('seals/b1', { by: 'coord', at: 1 });
+  await assertSucceeds(remove(ref(db('teacher2'), 'seals/b1')));
+});
+
+test('timer branch does not grant teacher writes to board, membership or other grades', async () => {
+  await assertSucceeds(set(ref(db('teacher1'), 'timers/b1'), timer()));
   await assertFails(set(ref(db('teacher1'), 'boards/b1/members/outsider'), true));
-  await assertFails(set(ref(db('teacher1'), 'boards/b1/timer'), { elapsedMs: 12345 }));
-  await assertFails(set(ref(db('coord'), 'boards/b1/timer'), { elapsedMs: 12345 }));
-  await assertFails(set(ref(db('teacher1'), 'grades/b1/teacher1/s1'), { ...grade, closed: true }));
-  await assertFails(set(ref(db('coord'), 'deliveries/b1/s1'), { grade: 9, elapsedMs: 12345 }));
+  await assertFails(set(ref(db('teacher1'), 'boards/b1/timer'), timer()));
+  await assertFails(set(ref(db('teacher1'), 'boards/b1'), fixture().boards.b1));
   await assertFails(remove(ref(db('teacher1'), 'boards/b1')));
-  assert.deepEqual(await readPrivileged('/'), beforeData);
+  await assertFails(set(ref(db('teacher1'), 'grades/b1/teacher2/s1'), grade));
 });
 
-test('unauthorized multipath operation is atomic and preserves the original records', async () => {
+test('timer is shared only with active board members or coordinator', async () => {
+  await bypass('timers/b1', timer());
+  await assertSucceeds(get(ref(db('teacher2'), 'timers/b1')));
+  await assertSucceeds(get(ref(db('coord'), 'timers/b1')));
+  for (const uid of ['outsider', 'disabled', null]) {
+    await assertFails(get(ref(db(uid), 'timers/b1')));
+    await assertFails(set(ref(db(uid), 'timers/b1'), timer(uid, 2)));
+  }
+  await assertFails(set(ref(db('teacher1'), 'timers/missing'), timer()));
+});
+
+test('timer rejects malformed, fractional, oversized and stale updates', async () => {
+  await assertSucceeds(set(ref(db('teacher1'), 'timers/b1'), timer()));
+  for (const change of [
+    { revision: 1 }, { revision: 3 }, { elapsedMs: -1 }, { elapsedMs: 1.5 },
+    { elapsedMs: 31536000001 }, { startedAt: Date.now() + 120000 },
+    { updatedAt: Date.now() + 120000 }, { updatedBy: 'teacher2' }, { extra: true }
+  ]) await assertFails(set(ref(db('teacher1'), 'timers/b1'), timer('teacher1', 2, change)));
+  await assertSucceeds(set(ref(db('teacher2'), 'timers/b1'), timer('teacher2', 2)));
+  await assertFails(remove(ref(db('teacher2'), 'timers/b1')));
+});
+
+test('running timer closes atomically frozen and reopens without losing elapsed time', async () => {
+  await bypass('timers/b1', timer('teacher1', 1, { startedAt: Date.now() - 1000 }));
+  await assertFails(set(ref(db('teacher1'), 'seals/b1'), seal()));
+  await assertSucceeds(update(ref(db('teacher1')), {
+    'seals/b1': seal(), 'timers/b1': timer('teacher1', 2, { elapsedMs: 13345 })
+  }));
+  await assertFails(set(ref(db('teacher2'), 'timers/b1'), timer('teacher2', 3)));
+  await assertSucceeds(update(ref(db('teacher2')), {
+    'seals/b1': null, 'timers/b1': timer('teacher2', 3, { elapsedMs: 13345 })
+  }));
+  assert.equal((await readPrivileged('timers/b1')).elapsedMs, 13345);
+});
+
+test('stale atomic close is rejected entirely, preserving current timer and open board', async () => {
+  await bypass('timers/b1', timer('teacher1', 2));
   const beforeData = await readPrivileged('/');
-  await assertFails(update(ref(db('teacher1')), {
-    'grades/b1/teacher1/s1': { ...grade, presentation: 10 },
-    'seals/b1': seal('teacher1')
+  await assertFails(update(ref(db('teacher2')), {
+    'seals/b1': seal('teacher2'), 'timers/b1': timer('teacher2', 2)
   }));
   assert.deepEqual(await readPrivileged('/'), beforeData);
-});
-
-test('coordinator closure rejects nonexistent board and seal impersonation', async () => {
-  await assertFails(set(ref(db('coord'), 'seals/missing'), seal()));
-  await assertFails(set(ref(db('coord'), 'seals/b1'), seal('teacher1')));
 });

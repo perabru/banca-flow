@@ -388,6 +388,24 @@ button.avatar{width:44px;height:44px;padding:0}
   .print-footer{margin-top:25px;font-size:8pt;color:#555}
 }
 
+.share-dialog{width:calc(100% - 24px);max-width:680px;max-height:calc(100dvh - 24px);padding:0;border:0;border-radius:22px;background:#fff;color:var(--texto);overflow-y:auto;overscroll-behavior:contain;box-shadow:0 20px 80px #092c5840}
+    .share-dialog::backdrop{background:#092c5880;backdrop-filter:blur(3px)}
+    .share-panel{padding:max(20px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left));min-width:0}
+    .share-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+    .share-header h2{margin:0;color:var(--azul-profundo);font-size:1.22rem;line-height:1.35}
+    .share-dialog p,.share-dialog label,.share-dialog .share-file{overflow-wrap:anywhere}
+    .share-dialog .share-description{font-size:.84rem;line-height:1.65;margin:0 0 16px;color:var(--cinza)}
+    .share-dialog .share-file{padding:12px;background:var(--azul-claro);border-radius:12px;font-size:.83rem;line-height:1.5;margin:14px 0}
+    .share-dialog .share-actions{display:grid;grid-template-columns:minmax(0,1fr);gap:10px;margin:14px 0}
+    .share-dialog .share-actions>.btn{width:100%;min-height:46px;white-space:normal;text-align:center;justify-content:center;line-height:1.4}
+    .share-dialog textarea{width:100%;min-height:210px;max-height:42dvh;resize:vertical;box-sizing:border-box;font:inherit;font-size:16px;line-height:1.6;border:1px solid var(--borda);border-radius:12px;padding:12px;color:var(--texto);background:#f8fafc}
+    .share-dialog select{width:100%;max-width:100%;min-height:46px}
+    .share-dialog .share-status{min-height:24px;font-size:.82rem;line-height:1.6;margin:12px 0 0;color:var(--azul-profundo)}
+    .share-dialog .share-guide{font-size:.79rem;line-height:1.65;color:var(--cinza);margin:12px 0 0}
+    @media(min-width:560px){.share-panel{padding:26px}.share-dialog .share-actions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.btn.whatsapp{background:#e9f7ee;border-color:#b8dec6;color:#145f36}
+.btn.whatsapp:hover:not(:disabled){background:#d8efdf;border-color:#86bd98}
 </style>
 </head><body>
 <div id="toast" role="status" aria-live="polite"></div>
@@ -442,16 +460,47 @@ button.avatar{width:44px;height:44px;padding:0}
     ".read": false,
     ".write": false,
     "users": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$uid": {
         ".read": "auth !== null && auth.uid === $uid",
-        ".write": false
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('key').val() === 'alberson' && auth.uid !== $uid && (!data.exists() || data.child('role').val() === 'teacher') && newData.exists() && newData.child('role').val() === 'teacher' && (!data.exists() || (newData.child('email').val() === data.child('email').val() && newData.child('key').val() === data.child('key').val()))",
+        ".validate": "newData.hasChildren(['name','email','role','key','active']) && newData.child('role').val() === 'teacher' && newData.child('key').val() !== 'alberson'",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 254"
+        },
+        "key": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60"
+        },
+        "role": {
+          ".validate": "newData.val() === 'teacher'"
+        },
+        "active": {
+          ".validate": "newData.isBoolean()"
+        },
+        "createdBy": {
+          ".validate": "newData.isString() && (data.exists() ? newData.val() === data.val() : newData.val() === auth.uid)"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && (data.exists() ? newData.val() === data.val() : newData.val() <= now + 60000)"
+        },
+        "disabledBy": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "disabledAt": {
+          ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+        },
+        "$other": {
+          ".validate": false
+        }
       }
     },
     "groups": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).exists()",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).exists()",
       "$groupId": {
-        ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
         ".validate": "newData.hasChildren(['id','name','className','title','advisorUid','students']) && newData.child('id').val() === $groupId && root.child('users').child(newData.child('advisorUid').val()).exists()",
         "id": {
           ".validate": "newData.isString()"
@@ -479,10 +528,10 @@ button.avatar{width:44px;height:44px;padding:0}
       }
     },
     "boards": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).exists()",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).exists()",
       "$bid": {
-        ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
-        ".validate": "newData.hasChildren(['groupId','advisorUid','advisorName','members','memberNames','startAt','durationMin','room','createdBy','createdAt']) && root.child('groups').child(newData.child('groupId').val()).exists() && newData.child('advisorUid').val() === root.child('groups').child(newData.child('groupId').val()).child('advisorUid').val() && newData.child('members').child(newData.child('advisorUid').val()).val() === true && newData.child('createdBy').val() === auth.uid && newData.child('durationMin').val() % 15 === 0 && newData.child('startAt').val() % 900000 === 0 && newData.child('startAt').val() > now - 60000",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['groupId','advisorUid','advisorName','members','memberNames','startAt','durationMin','room','createdBy','createdAt']) && root.child('groups').child(newData.child('groupId').val()).exists() && newData.child('advisorUid').val() === root.child('groups').child(newData.child('groupId').val()).child('advisorUid').val() && newData.child('members').hasChildren() && newData.child('createdBy').val() === auth.uid && newData.child('durationMin').val() % 15 === 0 && newData.child('startAt').val() % 900000 === 0 && newData.child('startAt').val() > now - 60000",
         "groupId": {
           ".validate": "newData.isString()"
         },
@@ -494,12 +543,12 @@ button.avatar{width:44px;height:44px;padding:0}
         },
         "members": {
           "$uid": {
-            ".validate": "newData.val() === true && root.child('users').child($uid).exists()"
+            ".validate": "newData.val() === true && root.child('users').child($uid).exists() && root.child('users').child($uid).child('active').val() !== false && (root.child('users').child($uid).child('role').val() === 'teacher' || root.child('users').child($uid).child('role').val() === 'coordinator')"
           }
         },
         "memberNames": {
           "$uid": {
-            ".validate": "newData.isString() && root.child('users').child($uid).exists()"
+            ".validate": "newData.isString() && root.child('users').child($uid).exists() && root.child('users').child($uid).child('active').val() !== false && (root.child('users').child($uid).child('role').val() === 'teacher' || root.child('users').child($uid).child('role').val() === 'coordinator')"
           }
         },
         "startAt": {
@@ -523,28 +572,37 @@ button.avatar{width:44px;height:44px;padding:0}
       }
     },
     "groupBoards": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$groupId": {
-        ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('groups').child($groupId).exists() && !data.exists() && newData.exists()",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('groups').child($groupId).exists() && !data.exists() && newData.exists()",
         ".validate": "newData.isString()"
       }
     },
+    "roomLocks": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      "$slice": {
+        "$roomKey": {
+          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
+          ".validate": "newData.isString()"
+        }
+      }
+    },
     "locks": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$slice": {
         "$uid": {
-          ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child($uid).exists() && !data.exists() && newData.exists()",
+          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child($uid).exists() && !data.exists() && newData.exists()",
           ".validate": "newData.isString()"
         }
       }
     },
     "grades": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$bid": {
         "$uid": {
-          ".read": "auth !== null && auth.uid === $uid && root.child('boards').child($bid).child('members').child($uid).val() === true",
+          ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && auth.uid === $uid && root.child('boards').child($bid).child('members').child($uid).val() === true",
           "$sid": {
-            ".write": "auth !== null && auth.uid === $uid && root.child('boards').child($bid).child('members').child($uid).val() === true && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('students').child($sid).exists() && !root.child('seals').child($bid).exists() && newData.exists()",
+            ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && auth.uid === $uid && root.child('boards').child($bid).child('members').child($uid).val() === true && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('students').child($sid).exists() && !root.child('seals').child($bid).exists() && newData.exists()",
             ".validate": "newData.hasChildren(['presentation','practice','code','time'])",
             "presentation": {
               ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10"
@@ -566,25 +624,51 @@ button.avatar{width:44px;height:44px;padding:0}
       }
     },
     "deliveries": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$bid": {
         "$sid": {
-          ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('students').child($sid).exists() && !root.child('seals').child($bid).exists() && newData.exists()",
+          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('students').child($sid).exists() && !root.child('seals').child($bid).exists() && newData.exists()",
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10"
         }
       }
     },
     "seals": {
-      ".read": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$bid": {
-        ".read": "auth !== null && root.child('boards').child($bid).child('members').child(auth.uid).val() === true",
-        ".write": "auth !== null && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('boards').child($bid).exists() && !data.exists() && newData.exists()",
-        ".validate": "newData.hasChildren(['by','at']) && newData.child('by').val() === auth.uid",
+        ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).child('members').child(auth.uid).val() === true",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).exists() && (root.child('users').child(auth.uid).child('role').val() === 'coordinator' || root.child('boards').child($bid).child('members').child(auth.uid).val() === true) && ((!data.exists() && newData.exists()) || (data.exists() && !newData.exists()))",
+        ".validate": "newData.hasChildren(['by','at']) && newData.child('by').val() === auth.uid && (!newData.parent().parent().child('timers').child($bid).exists() || newData.parent().parent().child('timers').child($bid).child('startedAt').val() === 0)",
         "by": {
           ".validate": "newData.isString()"
         },
         "at": {
-          ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+          ".validate": "newData.isNumber() && newData.val() >= now - 60000 && newData.val() <= now + 60000 && newData.val() % 1 === 0"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "timers": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      "$bid": {
+        ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).exists() && (root.child('users').child(auth.uid).child('role').val() === 'coordinator' || root.child('boards').child($bid).child('members').child(auth.uid).val() === true)",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).exists() && (root.child('users').child(auth.uid).child('role').val() === 'coordinator' || root.child('boards').child($bid).child('members').child(auth.uid).val() === true) && newData.exists() && (!root.child('seals').child($bid).exists() || !newData.parent().parent().child('seals').child($bid).exists())",
+        ".validate": "newData.hasChildren(['elapsedMs','startedAt','updatedAt','updatedBy','revision']) && (!newData.parent().parent().child('seals').child($bid).exists() || newData.child('startedAt').val() === 0)",
+        "elapsedMs": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 31536000000 && newData.val() % 1 === 0"
+        },
+        "startedAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 60000 && newData.val() % 1 === 0"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() >= now - 60000 && newData.val() <= now + 60000"
+        },
+        "updatedBy": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "revision": {
+          ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1)"
         },
         "$other": {
           ".validate": false
@@ -592,7 +676,8 @@ button.avatar{width:44px;height:44px;padding:0}
       }
     }
   }
-}</script>
+}
+</script>
 <script type="module">
 // Configuração pública do app Firebase (não é uma chave administrativa).
 // A segurança das notas depende das regras do Realtime Database.
@@ -664,7 +749,7 @@ const fmt = value => Number(value).toLocaleString('pt-BR', { minimumFractionDigi
 
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import { getAuth, initializeAuth, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, deleteUser } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
+import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 
 
 
@@ -692,7 +777,7 @@ const ICON_PATHS={
 };
 const icon=name=>`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name]||ICON_PATHS.bancas}</svg>`;
 const ROSTER_PROTEGIDO = JSON.parse(document.getElementById('roster-criptografado').textContent);
-const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, unsubs:[], teacherSubs:new Map() };
+const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, unsubs:[], teacherSubs:new Map() };
 const isActiveTeacher = profile => !!profile && ['coordinator','teacher'].includes(profile.role) && profile.active !== false;
 const activeTeachers = () => Object.entries(state.users).filter(([,profile])=>isActiveTeacher(profile));
 const isCoord = () => state.profile?.role === 'coordinator' && state.profile.active !== false;
@@ -725,7 +810,7 @@ function showAccessProblem(message,user=auth.currentUser){
 }
 function resetAppData(){
  for(const key of ['users','groups','boards','groupBoards','locks','roomLocks','grades','deliveries','seals','timers','timerErrors'])state[key]={};
- state.drafts.clear();state.busyBoards.clear();$('#view').innerHTML='';
+ state.drafts.clear();state.busyBoards.clear();if(typeof closeBoardShare==='function')closeBoardShare();$('#view').innerHTML='';
  state.plan=[];state.planMeta=null;state.planUnassigned=[];state.selectedBoard='';
 }
 function dataReadFailed(error,revision){
@@ -764,8 +849,8 @@ $('#retry-access').addEventListener('click',async()=>{
  try{await verificarAcesso(auth.currentUser);}finally{button.disabled=false;}
 });
 $('#switch-access-account').addEventListener('click',()=>signOut(auth).catch(fail));
-function clearListeners(){state.unsubs.forEach(unsub=>unsub());state.unsubs=[];state.teacherSubs.forEach(unsubs=>unsubs.forEach(fn=>fn()));state.teacherSubs.clear();}
-function listen(path, key, allow=true){if(!allow)return;const revision=accessRevision;state.unsubs.push(onValue(ref(db,path),snap=>{if(revision!==accessRevision)return;const next=snap.val()||{};if(state.plan.length && ['groups','users','boards','groupBoards','locks','roomLocks'].includes(key) && JSON.stringify(next)!==JSON.stringify(state[key])){state.plan=[];state.planMeta=null;state.planUnassigned=[];notice('A agenda foi atualizada. Gere novamente o sorteio para evitar conflitos.',true);}state[key]=next;if(key==='boards'){if(!isCoord())syncTeacherSubs();syncLocalTimers();}render();},error=>dataReadFailed(error,revision)));}
+function clearListeners(){state.unsubs.forEach(unsub=>unsub());state.unsubs=[];state.teacherSubs.forEach(unsubs=>unsubs.forEach(fn=>fn()));state.teacherSubs.clear();state.timerSubs.forEach(unsub=>unsub());state.timerSubs.clear();}
+function listen(path, key, allow=true){if(!allow)return;const revision=accessRevision;state.unsubs.push(onValue(ref(db,path),snap=>{if(revision!==accessRevision)return;const next=snap.val()||{};if(state.plan.length && ['groups','users','boards','groupBoards','locks','roomLocks'].includes(key) && JSON.stringify(next)!==JSON.stringify(state[key])){state.plan=[];state.planMeta=null;state.planUnassigned=[];notice('A agenda foi atualizada. Gere novamente o sorteio para evitar conflitos.',true);}state[key]=next;if(key==='boards'){if(!isCoord())syncTeacherSubs();syncTimerSubs();}render();},error=>dataReadFailed(error,revision)));}
 function syncTeacherSubs(){if(!state.user||isCoord())return;const uid=state.user.uid;for(const [bid,board] of activeBoards()){
  if(state.teacherSubs.has(bid))continue;
  const revision=accessRevision,subs=[onValue(ref(db,`grades/${bid}/${uid}`),s=>{if(revision!==accessRevision)return;state.grades[bid]={[uid]:s.val()||{}};render();},error=>dataReadFailed(error,revision)),onValue(ref(db,`seals/${bid}`),s=>{if(revision!==accessRevision)return;state.seals[bid]=s.val()||null;render();},error=>dataReadFailed(error,revision))];state.teacherSubs.set(bid,subs);
@@ -803,7 +888,7 @@ function openMobileMenu(){
  menu.showModal();document.body.classList.add('menu-open');
 }
 function go(route,board=''){closeMobileMenu();if(board)state.selectedBoard=board;state.route=route;render();$('#view').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
-function render(){if(!state.user)return;captureDrafts();syncLocalTimers();const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'))state.route='inicio';
+function render(){if(!state.user)return;captureDrafts();const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'))state.route='inicio';
  const pageTitles={inicio:'Visão geral',bancas:'Bancas de avaliação',sortear:'Sorteio de bancas',entregas:'Notas de entregas',relatorios:'Relatórios finais',professores:'Professores',avaliar:'Avaliação individual'};
  $('#page-title').textContent=pageTitles[state.route];$('#page-eyebrow').textContent=isCoord()?'COORDENAÇÃO • TCC 2026':'CORPO DOCENTE • TCC 2026';
  const active=route=>state.route===route||(route==='bancas'&&state.route==='avaliar'&&isCoord());
@@ -878,17 +963,17 @@ function manualMemberPicker(){
 function gradeView(){let id=state.selectedBoard;let board=state.boards[id];if(!board||(!isCoord()&&!board.members?.[state.user.uid])){const first=activeBoards()[0];id=first?.[0];board=first?.[1];state.selectedBoard=id||'';}
  if(!board)return empty('Nenhuma banca atribuída','Você verá sua avaliação quando o coordenador criar uma banca.');const g=groupOf(board);if(!g)return empty('Grupo ainda não importado');const sealed=!!state.seals[id];const selfMember=!!board.members[state.user.uid];const own=state.grades[id]?.[state.user.uid]||{};
  return `<div class="row space">${heading(g.name,g.title)}<select class="filter" id="board-switch" aria-label="Selecionar banca para avaliação">${opts(activeBoards().map(([bid,b])=>[bid,`${groupOf(b)?.name||bid} · ${dateStr(b.startAt)}`]),id)}</select></div>
- <div class="card"><div class="row space"><div class="board-details"><div><b>Orientador:</b> ${esc(board.advisorName)} · ${board.members?.[board.advisorUid]?"participa da banca":"não participa da banca"}</div><div><b>Horário:</b> ${dateStr(board.startAt)} · ${esc(board.room)} · ${board.durationMin} min</div><div><b>Banca:</b> ${Object.keys(board.members).map(uid=>esc(board.memberNames?.[uid]||who(uid))).join(', ')}</div></div>${badge(sealed?'Avaliação encerrada':'Em avaliação',sealed?'green':'orange')}</div><div class="board-actions">${boardActions(id)}</div><p class="tiny">Encerramento e reabertura dependem das permissões atuais da sua conta. Se a operação for negada, o estado da banca será preservado.</p></div>${timerHtml(id)}
+ <div class="card"><div class="row space"><div class="board-details"><div><b>Orientador:</b> ${esc(board.advisorName)} · ${board.members?.[board.advisorUid]?"participa da banca":"não participa da banca"}</div><div><b>Horário:</b> ${dateStr(board.startAt)} · ${esc(board.room)} · ${board.durationMin} min</div><div><b>Banca:</b> ${Object.keys(board.members).map(uid=>esc(board.memberNames?.[uid]||who(uid))).join(', ')}</div></div>${badge(sealed?'Avaliação encerrada':'Em avaliação',sealed?'green':'orange')}</div><div class="board-actions">${boardActions(id)}<button type="button" class="btn whatsapp" data-share-board="${esc(id)}">${isCoord()?'Compartilhar resultado':'Compartilhar minhas avaliações'}</button></div></div>${timerHtml(id)}
  ${!selfMember?'<div class="notice">Você pode consultar esta banca, mas não está entre seus avaliadores.</div>':sealed?'<div class="notice good">Banca encerrada. As notas estão bloqueadas para edição.</div>':'<div class="notice">As notas são individuais por aluno. Apenas você e o coordenador podem acessar as avaliações que você envia.</div>'}
- ${selfMember?studentsOf(g).map(([sid,name])=>`<form class="student" data-grade-form="${esc(id)}" data-student="${esc(sid)}"><h4>${esc(name)}</h4><p>${esc(g.name)} · ${esc(g.title)}</p><div class="grade-grid">${CRITERIOS.map(([key,label])=>`<div class="field"><label for="${esc(id)}-${esc(sid)}-${key}">${label}</label><input id="${esc(id)}-${esc(sid)}-${key}" name="${key}" type="number" inputmode="decimal" min="0" max="10" step="0.1" required ${sealed?'disabled':''} value="${own[sid]?.[key]??''}" placeholder="0 a 10"></div>`).join('')}</div><div class="grade-foot"><span class="muted tiny">Média deste avaliador: <strong>${mediaAvaliador(own[sid])===null?'—':fmt(mediaAvaliador(own[sid]))}</strong></span>${!sealed?'<button class="btn primary" type="submit">Salvar notas</button>':''}</div></form>`).join(''):empty('Apenas os avaliadores podem lançar notas nesta banca')}`;
+ ${selfMember?studentsOf(g).map(([sid,name])=>`<form class="student" data-grade-form="${esc(id)}" data-student="${esc(sid)}"><h4>${esc(name)}</h4><p>${esc(g.name)} · ${esc(g.title)}</p><div class="grade-grid">${CRITERIOS.map(([key,label])=>`<div class="field"><label for="${esc(id)}-${esc(sid)}-${key}">${label}</label><input id="${esc(id)}-${esc(sid)}-${key}" name="${key}" type="number" inputmode="decimal" min="0" max="10" step="0.1" required ${sealed?'disabled':''} value="${own[sid]?.[key]??''}" placeholder="0 a 10"></div>`).join('')}</div><div class="grade-foot"><span class="muted tiny">Média deste avaliador: <strong>${mediaAvaliador(own[sid])===null?'—':fmt(mediaAvaliador(own[sid]))}</strong></span>${!sealed?'<button class="btn primary" type="submit">Salvar notas</button>':''}<button class="btn whatsapp" type="button" data-share-board="${esc(id)}" data-share-student="${esc(sid)}">Compartilhar avaliação deste aluno</button></div></form>`).join(''):empty('Apenas os avaliadores podem lançar notas nesta banca')}`;
 }
-function deliveriesView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const boards=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);return `${heading('Entregas · 40%','Somente o coordenador lança e visualiza esta nota. Cada aluno tem sua própria nota.')}<div class="notice">A nota de entregas é de 0 a 10; ela representa 40% da nota final. Ao encerrar a banca, as notas são bloqueadas. Confira todas as notas antes do encerramento: as permissões atuais podem impedir a reabertura.</div>${boards.length?boards.map(([bid,b])=>{const g=groupOf(b);if(!g)return '';const sealed=!!state.seals[bid];return `<section class="card">${heading(g.name,g.title,boardStatus(bid,b))}<p class="muted tiny">Orientador: ${esc(b.advisorName)}</p><div class="board-actions">${boardActions(bid)}</div>${studentsOf(g).map(([sid,name])=>`<form class="student" data-delivery-form="${esc(bid)}" data-student="${esc(sid)}"><div class="row space delivery-row"><div><h4>${esc(name)}</h4><p>Avaliação de entregas</p></div><div class="row delivery-controls"><input style="width:110px" class="filter" aria-label="Nota de entregas de ${esc(name)}" type="number" name="delivery" step="0.1" min="0" max="10" required ${sealed?'disabled':''} value="${state.deliveries[bid]?.[sid]??''}" placeholder="0 a 10"><button class="btn soft" type="submit" ${sealed?'disabled':''}>Salvar</button></div></div></form>`).join('')}</section>`;}).join(''):empty('Nenhuma banca criada')}`;}
+function deliveriesView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const boards=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);return `${heading('Entregas · 40%','Somente o coordenador lança e visualiza esta nota. Cada aluno tem sua própria nota.')}<div class="notice">A nota de entregas é de 0 a 10; ela representa 40% da nota final. Ao encerrar a banca, as notas são bloqueadas. Reabra a banca para lançar ou corrigir entregas; depois encerre novamente.</div>${boards.length?boards.map(([bid,b])=>{const g=groupOf(b);if(!g)return '';const sealed=!!state.seals[bid];return `<section class="card">${heading(g.name,g.title,boardStatus(bid,b))}<p class="muted tiny">Orientador: ${esc(b.advisorName)}</p><div class="board-actions">${boardActions(bid)}</div>${studentsOf(g).map(([sid,name])=>`<form class="student" data-delivery-form="${esc(bid)}" data-student="${esc(sid)}"><div class="row space delivery-row"><div><h4>${esc(name)}</h4><p>Avaliação de entregas</p></div><div class="row delivery-controls"><input style="width:110px" class="filter" aria-label="Nota de entregas de ${esc(name)}" type="number" name="delivery" step="0.1" min="0" max="10" required ${sealed?'disabled':''} value="${state.deliveries[bid]?.[sid]??''}" placeholder="0 a 10"><button class="btn soft" type="submit" ${sealed?'disabled':''}>Salvar</button></div></div></form>`).join('')}</section>`;}).join(''):empty('Nenhuma banca criada')}`;}
 function reportsView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const ids=Object.entries(state.boards).sort((a,b)=>a[1].startAt-b[1].startAt);const filtered=ids.filter(([,b])=>state.reportFilter==='todas'||groupOf(b)?.className===state.reportFilter);
  const finished=filtered.filter(([id,b])=>state.seals[id]&&groupOf(b)&&situacao(b,groupOf(b),boardGrades(id),state.deliveries[id]).pronta);const targetGroups=Object.values(state.groups).filter(g=>state.reportFilter==='todas'||g.className===state.reportFilter);const allReady=targetGroups.length>0&&targetGroups.every(g=>state.groupBoards[g.id]&&finished.some(([id])=>id===state.groupBoards[g.id]))&&filtered.length===targetGroups.length;
  return `${heading('Relatórios oficiais','Detalhamento por aluno e professor avaliador, com a participação de 60% / 40%.',`<button class="btn dark" data-export-csv="1" ${!finished.length?'disabled':''}>Exportar CSV (concluídas)</button>`)}
  <div class="toolbar"><select id="report-filter" class="filter" aria-label="Filtrar relatórios por turma">${opts([['todas','Todas as turmas'],...new Set(Object.values(state.groups).map(g=>g.className))].map(x=>Array.isArray(x)?x:[x,`Turma ${x}`]),state.reportFilter)}</select><button class="btn primary" data-print-all="1" ${!allReady?'disabled':''}>Baixar PDF consolidado</button></div>
  ${!allReady?'<div class="notice">O relatório consolidado só será habilitado quando todas as bancas do filtro estiverem encerradas e com todas as notas, incluindo as entregas. É possível emitir individualmente o relatório de uma banca encerrada e com notas completas.</div>':'<div class="notice good">Todas as bancas do filtro estão encerradas e com notas completas.</div>'}
- ${filtered.length?filtered.map(([id,b])=>{const g=groupOf(b);const s=g?situacao(b,g,boardGrades(id),state.deliveries[id]):{pronta:false,pendencias:[]};const sealed=!!state.seals[id];return `<article class="group-card"><div><div class="row">${badge(g?.className||'', 'blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||id)} — ${esc(g?.title||'')}</h4><p>${esc(b.advisorName)} · ${s.pendencias.length} lançamento(s) pendente(s) · ${dateStr(b.startAt)}</p></div><div class="row">${boardActions(id)}<button class="btn soft" data-open-board="${esc(id)}">Tempo / detalhes</button><button class="btn primary" data-print-one="${esc(id)}" ${!sealed||!s.pronta?'disabled':''}>Baixar relatório PDF</button></div></article>`;}).join(''):empty('Nenhuma banca encontrada')}`;
+ ${filtered.length?filtered.map(([id,b])=>{const g=groupOf(b);const s=g?situacao(b,g,boardGrades(id),state.deliveries[id]):{pronta:false,pendencias:[]};const sealed=!!state.seals[id];return `<article class="group-card"><div><div class="row">${badge(g?.className||'', 'blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||id)} — ${esc(g?.title||'')}</h4><p>${esc(b.advisorName)} · ${s.pendencias.length} lançamento(s) pendente(s) · ${dateStr(b.startAt)}</p></div><div class="row">${boardActions(id)}<button class="btn primary" data-print-one="${esc(id)}" ${!sealed||!s.pronta?'disabled':''}>Baixar relatório PDF</button><button class="btn whatsapp" type="button" data-share-board="${esc(id)}" ${!sealed||!s.pronta?'disabled':''}>WhatsApp / compartilhar</button></div></article>`;}).join(''):empty('Nenhuma banca encontrada')}`;
 }
 function teachersView(){
  if(!isCoord())return empty('Acesso exclusivo da coordenação');
@@ -912,7 +997,7 @@ function teachersView(){
  ${removed.length?`<details class="teacher-archive"><summary>Professores removidos (${removed.length})</summary><div class="teacher-list">${removed.map(teacherRow).join('')}</div></details>`:''}</section>
  <div class="card">${heading('Grupos e alunos','Importe a lista de grupos da planilha. Grupos já cadastrados serão preservados.')}
  <button class="btn primary" data-import-roster="1" type="button">Importar grupos</button></div>
- <div class="card">${heading('Configuração de permissões','As permissões atuais do banco são mantidas nesta versão.')}
+ <div class="card">${heading('Configuração de permissões','Publique a política atualizada para habilitar o cronômetro e a reabertura pelos avaliadores.')}
  <button class="btn soft" data-copy-policy="1" type="button">Copiar política de acesso</button>
  <details class="policy-guide"><summary>Como aplicar no Firebase</summary><ol><li>No projeto <code>avaliadortcc</code>, abra <b>Realtime Database → Regras</b>.</li><li>Cole a política copiada acima e clique em <b>Publicar</b>.</li><li>Em <b>Dados → users → UID do Alberson</b>, confirme <code>role: "coordinator"</code> e <code>key: "alberson"</code>.</li><li>Em <b>Authentication → Método de login</b>, mantenha <b>E-mail/senha</b> habilitado.</li></ol><p>A política está incluída neste mesmo index.html. Não é necessário criar outro arquivo.</p></details></div>`;
 }
@@ -1111,33 +1196,33 @@ function makeLottery(data){
  const config={className,perDay,maxDays,size,rooms,durationMin,prefix,skipWeekends,dateRaw,startRaw,endRaw};
  return {plan:best.plan,unassigned,config};
 }
-async function saveGrade(form){const bid=form.dataset.gradeForm,sid=form.dataset.student;const board=state.boards[bid];if(!board?.members?.[state.user.uid]||state.seals[bid])throw Error('Banca não disponível para avaliação.');const entries=new FormData(form);if(CRITERIOS.some(([key])=>!String(entries.get(key)??'').trim()))throw Error('Preencha todos os critérios.');const scores=Object.fromEntries(CRITERIOS.map(([key])=>[key,Number(String(entries.get(key)).replace(',','.'))]));if(!CRITERIOS.every(([k])=>notaValida(scores[k])))throw Error('Informe quatro notas entre 0 e 10.');await set(ref(db,`grades/${bid}/${state.user.uid}/${sid}`),scores);clearSavedDraft(form,scores);notice(`Notas de ${state.groups[board.groupId].students[sid]} salvas.`);}
-async function saveDelivery(form){if(!isCoord())throw Error('Acesso restrito.');const bid=form.dataset.deliveryForm,sid=form.dataset.student;if(state.seals[bid])throw Error('Banca já concluída.');const raw=new FormData(form).get('delivery');if(!String(raw).trim())throw Error('Digite uma nota.');const value=Number(String(raw).replace(',','.'));if(!notaValida(value))throw Error('Nota deve estar entre 0 e 10.');await set(ref(db,`deliveries/${bid}/${sid}`),value);clearSavedDraft(form,{delivery:value});notice('Nota de entregas salva.');}
+async function saveGrade(form){const uid=state.user?.uid,revision=accessRevision;const bid=form.dataset.gradeForm,sid=form.dataset.student;const board=state.boards[bid];if(!board?.members?.[state.user.uid]||state.seals[bid])throw Error('Banca não disponível para avaliação.');const entries=new FormData(form);if(CRITERIOS.some(([key])=>!String(entries.get(key)??'').trim()))throw Error('Preencha todos os critérios.');const scores=Object.fromEntries(CRITERIOS.map(([key])=>[key,Number(String(entries.get(key)).replace(',','.'))]));if(!CRITERIOS.every(([k])=>notaValida(scores[k])))throw Error('Informe quatro notas entre 0 e 10.');await set(ref(db,`grades/${bid}/${uid}/${sid}`),scores);assertCurrentSession(uid,revision);clearSavedDraft(form,scores);notice(`Notas de ${state.groups[board.groupId].students[sid]} salvas.`);}
+async function saveDelivery(form){if(!isCoord())throw Error('Acesso restrito.');const uid=state.user.uid,revision=accessRevision;const bid=form.dataset.deliveryForm,sid=form.dataset.student;if(state.seals[bid])throw Error('Banca já concluída.');const raw=new FormData(form).get('delivery');if(!String(raw).trim())throw Error('Digite uma nota.');const value=Number(String(raw).replace(',','.'));if(!notaValida(value))throw Error('Nota deve estar entre 0 e 10.');await set(ref(db,`deliveries/${bid}/${sid}`),value);assertCurrentSession(uid,revision);clearSavedDraft(form,{delivery:value});notice('Nota de entregas salva.');}
 async function changeBoardStatus(bid,reopen){
  assertBoardAccess(bid);if(state.busyBoards.has(bid))return;
  if(!state.connected)throw Error('Conecte-se à internet para alterar a banca.');
- const board=state.boards[bid],group=groupOf(board);
+ const uid=state.user.uid,revision=accessRevision,group=groupOf(state.boards[bid]);
  if(!reopen&&hasUnsavedDrafts(bid))throw Error('Salve as notas em edição antes de encerrar a banca.');
- if(!reopen&&isCoord()&&!situacao(board,group,boardGrades(bid),state.deliveries[bid]).pronta)throw Error('Complete todas as notas dos avaliadores e das entregas antes de encerrar. As permissões atuais podem impedir a reabertura.');
- if(!reopen&&!isCoord()&&studentsOf(group).some(([sid])=>mediaAvaliador(state.grades[bid]?.[state.user.uid]?.[sid])===null))throw Error('Salve suas notas de todos os alunos antes de solicitar o encerramento.');
- const message=reopen?`Solicitar a reabertura de ${group.name}? As notas serão preservadas. A ação só será concluída se as permissões atuais da sua conta autorizarem a reabertura.`:`Encerrar a avaliação de ${group.name}? As notas serão bloqueadas. A reabertura depende das permissões atuais e pode não estar disponível. Confirme que os lançamentos estão completos.`;
+ const message=reopen?`Reabrir ${group.name}? As notas já salvas serão preservadas e voltarão a aceitar alterações. O cronômetro ficará pausado. Somente o coordenador poderá alterar as entregas.`:`Encerrar a avaliação de ${group.name}? As notas já salvas serão bloqueadas e o cronômetro será pausado. Se houver lançamentos pendentes, os avaliadores e o coordenador poderão reabrir a banca. O resultado final exige todas as notas, incluindo as entregas.`;
  if(!confirm(message))return;
- state.busyBoards.add(bid);refreshTimerUi(bid);let previousSeal=state.seals[bid]||null;
+ state.busyBoards.add(bid);refreshTimerUi(bid);
  try{
-  const snap=await get(ref(db,`seals/${bid}`)),seal=snap.val();previousSeal=seal;
+  const [sealSnap,timerSnap]=await Promise.all([get(ref(db,`seals/${bid}`)),get(ref(db,`timers/${bid}`))]);
+  assertCurrentSession(uid,revision);assertBoardAccess(bid);
+  const seal=sealSnap.val(),timer=timerSnap.val();
   if(reopen?!seal:!!seal)throw Error('O estado da banca mudou. Atualize a tela e tente novamente.');
-  // Apenas o caminho de encerramento que já existe no sistema. Nenhuma regra é alterada.
-  await set(ref(db,`seals/${bid}`),reopen?null:{by:state.user.uid,at:serverTimestamp()});
-  state.seals[bid]=reopen?null:{by:state.user.uid,at:serverNow()};
-  pauseSealedTimer(bid,true);
-  notice(reopen?`${group.name} reaberto. As notas foram preservadas.`:`${group.name}: avaliação encerrada.`);
+  const changes={[`seals/${bid}`]:reopen?null:{by:uid,at:serverTimestamp()}};
+  if(timer)changes[`timers/${bid}`]=timerRecord(timer,elapsedAt(timer,reopen?Math.min(serverNow(),seal.at):serverNow()),0);
+  await update(ref(db),changes);assertCurrentSession(uid,revision);
+  state.seals[bid]=reopen?null:{by:uid,at:serverNow()};
+  if(timer)state.timers[bid]={...changes[`timers/${bid}`],updatedAt:serverNow()};
+  notice(reopen?`${group.name} reaberto. As notas foram preservadas.`:`${group.name}: avaliação encerrada. O resultado oficial será liberado quando todas as notas estiverem completas.`);
  }catch(error){
-  if(isPermissionDenied(error)){
-   try{state.seals[bid]=(await get(ref(db,`seals/${bid}`))).val();}catch{state.seals[bid]=previousSeal;}
-   throw Error(reopen?'As permissões atuais do banco não autorizam a reabertura. A banca continua encerrada e as notas foram preservadas.':'As permissões atuais do banco não autorizam seu perfil a encerrar esta banca. O estado da banca e as notas foram preservados.');
+  if(state.user?.uid===uid&&accessRevision===revision){
+   try{const snaps=await Promise.all(['seals','timers'].map(path=>get(ref(db,`${path}/${bid}`))));assertCurrentSession(uid,revision);state.seals[bid]=snaps[0].val();state.timers[bid]=snaps[1].val();}catch{}
   }
   throw error;
- }finally{state.busyBoards.delete(bid);render();}
+ }finally{if(state.user?.uid===uid&&accessRevision===revision){state.busyBoards.delete(bid);render();}}
 }
 
 const closeBoard=bid=>changeBoardStatus(bid,false);
@@ -1362,6 +1447,96 @@ function buildEvaluationPdf(ids){
  return pdf.finish();
 }
 
+// PDF de compartilhamento: recebe um retrato dos dados e não consulta state.
+class ShareEvaluationPdf extends EvaluationPdf {
+ constructor(snapshot){
+  super(false,new Date(snapshot.issuedAt).toLocaleString('pt-BR'),snapshot.preparedByName||snapshot.teacherName||'Coordenação');
+  this.shareScope=snapshot.scope;
+  // O construtor herdado cria a primeira página antes de conhecer o escopo.
+  this.pages=[];
+  this.newPage();
+ }
+ newPage(){
+  this.pages.push([]);
+  this.rect(0,0,this.width,6,'#e0001a');
+  this.rect(0,6,this.width,83,'#014996');
+  this.text('UNIVERSIDADE DO VALE DO PARAÍBA',this.margin,20,10,true,'#ffffff');
+  const partial=this.shareScope==='teacher';
+  this.text(partial?'Avaliação deste professor':'Relatório de avaliação de TCC',this.margin,43,19,true,'#ffffff');
+  this.text(partial?'PARCIAL · Notas individuais deste avaliador':'Resultado oficial · Notas individuais e médias ponderadas',this.margin,69,9,false,'#ffffff');
+  const issued=this.wrap(`Emissão: ${this.issued} · Responsável: ${this.responsible}`,this.width-2*this.margin,9);
+  issued.forEach((line,i)=>this.text(line,this.margin,102+i*12,9,false,'#60738a'));
+  this.y=109+issued.length*12;
+  if(this.activeBoardLabel){
+   this.text(`${this.activeBoardLabel} · continuação`,this.margin+10,this.y,9,true,'#014996');
+   this.y+=20;
+  }
+  this.contentTop=this.y;
+ }
+ finish(){
+  const partial=this.shareScope==='teacher';
+  this.footerLabel=partial?'Avaliação deste professor · PARCIAL · Univap':'Resultado oficial · Banca 60% + entregas 40% · Univap';
+  this.documentTitle=partial?'Avaliação deste professor - parcial - Univap':'Relatório oficial de avaliação de TCC - Univap';
+  // EvaluationPdf.finish define títulos oficiais; aqui o escopo é preservado.
+  return SchedulePdf.prototype.finish.call(this);
+ }
+}
+
+function buildSharePdf(snapshot){
+ if(!snapshot||!['official','teacher'].includes(snapshot.scope))throw Error('Tipo de relatório de compartilhamento inválido.');
+ if(!Number.isFinite(snapshot.issuedAt))throw Error('Data de emissão inválida.');
+ if(!Array.isArray(snapshot.students)||!snapshot.students.length)throw Error('Selecione pelo menos um aluno para compartilhar.');
+ const partial=snapshot.scope==='teacher';
+ if(!partial&&!Number.isFinite(snapshot.closedAt))throw Error('O relatório oficial exige uma banca encerrada.');
+ let teacherUid=null;
+ for(const student of snapshot.students){
+  if(!student?.name||!Array.isArray(student.evaluators)||!student.evaluators.length)throw Error('Há alunos sem avaliação completa no relatório.');
+  if(partial){
+   if(student.evaluators.length!==1)throw Error('O relatório parcial deve conter somente a avaliação deste professor.');
+   const uid=student.evaluators[0].uid;
+   if(!uid||(teacherUid!==null&&teacherUid!==uid))throw Error('As notas do relatório parcial devem pertencer ao mesmo professor.');
+   teacherUid=uid;
+  }
+  for(const evaluator of student.evaluators){
+   if(!evaluator?.name||!CRITERIOS.every(([key])=>notaValida(evaluator.scores?.[key]))||!notaValida(evaluator.mean))throw Error('Há critérios ou médias incompletas no relatório.');
+  }
+  if(!partial){
+   const result=student.result;
+   if(!result||!['banca','entrega','parcelaBanca','parcelaEntrega','final'].every(key=>notaValida(result[key]))||result.parcelaBanca>6||result.parcelaEntrega>4)throw Error('O resultado oficial exige todas as notas dos avaliadores e de entregas.');
+  }
+ }
+ const normalized=partial&&!snapshot.teacherName?{...snapshot,teacherName:snapshot.students[0].evaluators[0].name}:snapshot;
+ const pdf=new ShareEvaluationPdf(normalized);
+ const totalWidth=pdf.width-2*pdf.margin;
+ const reportLabel=snapshot.students.length===1?'Relatório individual':'Relatório do grupo';
+ pdf.paragraph(`${reportLabel} · ${snapshot.groupName||'Grupo'}`,13,true,'#014996',8);
+ pdf.activeBoardLabel=reportLabel;
+ pdf.paragraph(`Projeto: ${snapshot.projectTitle||'Não informado'}`,11,true);
+ pdf.paragraph(`Turma: ${snapshot.className||'TCC'} · Data da banca: ${Number.isFinite(snapshot.startAt)?new Date(snapshot.startAt).toLocaleString('pt-BR'):'Não informada'}`,10);
+ pdf.paragraph(`Sala / link: ${snapshot.room||'Não informado'} · Orientador: ${snapshot.advisorName||'Não informado'}`,10);
+ pdf.paragraph(`Tempo de apresentação (minutos:segundos,centésimos): ${Number.isFinite(snapshot.elapsedMs)&&snapshot.elapsedMs>=0?formatElapsed(snapshot.elapsedMs):'Não registrado'}`,10,true,'#014996');
+ if(Number.isFinite(snapshot.closedAt))pdf.paragraph(`Banca encerrada em: ${new Date(snapshot.closedAt).toLocaleString('pt-BR')}`,9,false,'#60738a');
+ if(partial){
+  pdf.paragraph(`Avaliação deste professor — parcial. Professor: ${normalized.teacherName}. Este documento não representa a nota final da banca. Apresenta os quatro critérios e a média individual deste avaliador para cada aluno selecionado.`,10,true,'#aa2534',9);
+  pdf.paragraph('Critérios de 0 a 10: apresentação, parte prática, domínio do código e domínio do tempo, com pesos iguais na média deste professor.',9,false,'#60738a',14);
+ }else{
+  pdf.paragraph('Critérios de 0 a 10: apresentação, parte prática, domínio do código e domínio do tempo, com pesos iguais na média do avaliador. A média da banca é a média dos avaliadores. Nota final = média da banca × 0,60 + entregas × 0,40. Notas de entregas lançadas exclusivamente pela coordenação.',9,false,'#60738a',14);
+ }
+ snapshot.students.forEach((student,index)=>{
+  const studentLabel=`Aluno(a) ${String(index+1).padStart(2,'0')}`;
+  pdf.ensure(90);
+  pdf.paragraph(`${studentLabel}: ${student.name}`,11,true,'#014996',9);
+  const nameWidth=195,noteWidth=(totalWidth-nameWidth)/5;
+  const rows=student.evaluators.map(evaluator=>[evaluator.name,...CRITERIOS.map(([key])=>fmt(evaluator.scores[key])),fmt(evaluator.mean)]);
+  pdf.table(['Professor avaliador','Apresent.','Parte prática','Domínio do código','Domínio do tempo','Média do avaliador'],rows,[nameWidth,noteWidth,noteWidth,noteWidth,noteWidth,noteWidth],{context:`${studentLabel} · Notas individuais`,align:['left','center','center','center','center','center']});
+  if(!partial){
+   const result=student.result;
+   pdf.table(['Média da banca (0–10)','Banca × 60% (0–6)','Entregas (0–10)','Entregas × 40% (0–4)','Nota final (0–10)'],[[fmt(result.banca),fmt(result.parcelaBanca),fmt(result.entrega),fmt(result.parcelaEntrega),fmt(result.final)]],Array(5).fill(totalWidth/5),{context:`${studentLabel} · Resultado ponderado`,size:10,headerSize:9,align:Array(5).fill('center'),bold:true});
+  }
+ });
+ return pdf.finish();
+}
+
 function buildSchedulePdf(boards,{preview=false,unassigned=[],className='todas'}={},groups=state.groups,responsible=state.profile?.name||'Coordenação'){
  if(!boards.length)throw Error('Não há bancas para gerar o PDF.');
  const sorted=boards.slice().sort((a,b)=>a.startAt-b.startAt||a.room.localeCompare(b.room,'pt-BR'));
@@ -1465,10 +1640,10 @@ async function copiarPoliticaDeAcesso(){
  try {await navigator.clipboard.writeText(content);notice('Política copiada. Publique em Firebase → Realtime Database → Regras.');}
  catch {downloadBlob(new Blob([content],{type:'application/json'}),'politica-de-acesso.json');notice('Política baixada. Publique em Firebase → Realtime Database → Regras.');}
 }
-// Cronômetro local: não cria caminhos nem grava metadados no Firebase.
-// Cada conta mantém o tempo neste navegador; a coordenação pode importar o registro.
+// Tempo compartilhado: apenas iniciar, pausar e zerar gravam no banco.
+// A tela calcula centésimos pelo relógio ajustado ao servidor, inclusive após recarregar.
 const serverNow=()=>Date.now()+state.serverOffset;
-function elapsedAt(timer,at=Date.now()){
+function elapsedAt(timer,at=serverNow()){
  if(!timer)return 0;
  return Math.max(0,Math.floor((Number(timer.elapsedMs)||0)+(timer.startedAt?Math.max(0,at-timer.startedAt):0)));
 }
@@ -1476,105 +1651,71 @@ function formatElapsed(ms){
  const cs=Math.floor(Math.max(0,Number(ms)||0)/10);
  return `${String(Math.floor(cs/6000)).padStart(2,'0')}:${String(Math.floor(cs/100)%60).padStart(2,'0')},${String(cs%100).padStart(2,'0')}`;
 }
-function parseElapsed(value){
- const match=String(value??'').trim().match(/^(\d{1,6}):([0-5]\d)[,.](\d{2})$/);
- if(!match)throw Error('Informe minutos:segundos,centésimos, por exemplo 12:34,56.');
- const ms=(Number(match[1])*60+Number(match[2]))*1000+Number(match[3])*10;
- if(ms>31536000000)throw Error('O tempo excede o limite de um ano.');
- return ms;
-}
-function boardElapsed(bid){
- const seal=state.seals[bid],cutoff=Number.isFinite(seal?.at)?Math.min(Date.now(),seal.at-state.serverOffset):Date.now();
- return elapsedAt(state.timers[bid],cutoff);
-}
+function boardElapsed(bid){const seal=state.seals[bid];return elapsedAt(state.timers[bid],seal?Math.min(serverNow(),seal.at):serverNow());}
 function assertBoardAccess(bid){
  const board=state.boards[bid];
  if(!state.user||!isActiveTeacher(state.profile)||!board||(!isCoord()&&!board.members?.[state.user.uid]))throw Error('Somente os avaliadores desta banca e o coordenador podem realizar esta ação.');
  if(!groupOf(board))throw Error('Grupo não encontrado.');
 }
-function localTimerKey(bid){return `bancaflow:time:v1:${firebaseConfig.projectId}:${encodeURIComponent(state.user.uid)}:${encodeURIComponent(bid)}`;}
-function validLocalTimer(timer){return !!timer&&Number.isSafeInteger(timer.elapsedMs)&&timer.elapsedMs>=0&&timer.elapsedMs<=31536000000&&Number.isSafeInteger(timer.startedAt)&&timer.startedAt>=0;}
-function loadLocalTimer(bid,force=false){
- if(!force&&Object.hasOwn(state.timers,bid))return state.timers[bid];
- try{
-  const raw=localStorage.getItem(localTimerKey(bid)),timer=raw?JSON.parse(raw):null;
-  state.timers[bid]=validLocalTimer(timer)?timer:null;delete state.timerErrors[bid];
- }catch{state.timerErrors[bid]=true;if(!Object.hasOwn(state.timers,bid))state.timers[bid]=null;}
- return state.timers[bid];
-}
-function timerRecord(previous,elapsedMs,startedAt,source='stopwatch'){
- if(!Number.isSafeInteger(elapsedMs)||elapsedMs<0||elapsedMs>31536000000)throw Error('Tempo inválido; o limite é de um ano.');
- return {elapsedMs,startedAt,updatedAt:Date.now(),revision:(previous?.revision||0)+1,source};
-}
-function storeLocalTimer(bid,timer){
- state.timers[bid]=timer;
- try{localStorage.setItem(localTimerKey(bid),JSON.stringify(timer));delete state.timerErrors[bid];}
- catch{state.timerErrors[bid]=true;}
- return timer;
-}
-function pauseSealedTimer(bid,confirmed=false){
- if(state.busyBoards.has(bid)&&!confirmed)return;
- const timer=state.timers[bid];
- if(state.seals[bid]&&timer?.startedAt)storeLocalTimer(bid,timerRecord(timer,boardElapsed(bid),0,timer.source));
-}
-function syncLocalTimers(){
- if(!state.user)return;
- for(const [bid] of activeBoards()){loadLocalTimer(bid);pauseSealedTimer(bid);}
+function timerRecord(previous,elapsedMs,startedAt){
+ if(elapsedMs>31536000000)throw Error('O tempo registrado excede o limite de um ano. Confira o relógio do dispositivo.');
+ return {elapsedMs:Math.floor(elapsedMs),startedAt,updatedBy:state.user.uid,updatedAt:serverTimestamp(),revision:(previous?.revision||0)+1};
 }
 function boardActions(bid){
  const busy=state.busyBoards.has(bid);
- return state.seals[bid]?`<button type="button" class="btn soft" data-reopen="${esc(bid)}" ${busy?'disabled':''}>Solicitar reabertura</button>`:`<button type="button" class="btn dark" data-seal="${esc(bid)}" ${busy?'disabled':''}>Encerrar avaliação da banca</button>`;
+ return state.seals[bid]?`<button type="button" class="btn soft" data-reopen="${esc(bid)}" ${busy?'disabled':''}>Reabrir banca</button>`:`<button type="button" class="btn dark" data-seal="${esc(bid)}" ${busy?'disabled':''}>Encerrar avaliação da banca</button>`;
 }
 function timerHtml(bid){
- const timer=loadLocalTimer(bid),sealed=!!state.seals[bid],busy=state.busyBoards.has(bid),disabled=sealed||busy;
- const formId=`duration-${bid}`;
- return `<section class="board-timer" data-timer-panel="${esc(bid)}" aria-labelledby="timer-heading"><div class="timer-head"><div><p class="eyebrow">TEMPO DA APRESENTAÇÃO</p><h3 id="timer-heading">Cronômetro da banca</h3></div>${badge(timer?.startedAt?'Em andamento':'Pausado',timer?.startedAt?'green':'gray')}</div><div class="timer-display" data-timer-display="${esc(bid)}" aria-label="Tempo em minutos, segundos e centésimos">${formatElapsed(boardElapsed(bid))}</div><p class="timer-status" role="status">${esc(state.timerErrors[bid]?'O navegador bloqueou o armazenamento. O tempo está temporário; exporte o registro antes de sair.':'Tempo salvo neste navegador, separado por conta. Para enviar à coordenação, exporte o registro. O tempo não é sincronizado entre dispositivos.')}</p><div class="timer-controls"><button type="button" class="btn primary" data-timer-action="${timer?.startedAt?'pause':'start'}" data-board="${esc(bid)}" ${disabled?'disabled':''}>${timer?.startedAt?'Pausar':timer?.elapsedMs?'Continuar':'Iniciar'}</button><button type="button" class="btn danger" data-timer-action="reset" data-board="${esc(bid)}" ${disabled||!timer?'disabled':''}>Zerar cronômetro</button><button type="button" class="btn soft" data-export-timer="${esc(bid)}" ${!timer?'disabled':''}>Exportar tempo atual</button></div><p class="tiny">Formato: minutos:segundos,centésimos. O PDF utiliza o tempo disponível na conta da coordenação neste navegador.</p>${isCoord()?`<form data-timer-form="${esc(bid)}" class="form-grid"><div class="field wide"><label for="${esc(formId)}">Tempo para o relatório PDF</label><input id="${esc(formId)}" name="duration" type="text" required placeholder="12:34,56" value="${timer?formatElapsed(boardElapsed(bid)):''}" pattern="[0-9]{1,6}:[0-5][0-9][,.][0-9]{2}"><small>Você pode registrar ou importar o tempo mesmo após o encerramento; as notas permanecem preservadas.</small></div><div class="wide row"><button class="btn primary" type="submit">Registrar tempo neste navegador</button><button class="btn soft" type="button" data-choose-timer-file="${esc(bid)}">Importar tempo do professor</button><input class="hidden" type="file" accept="application/json,.json" data-timer-import="${esc(bid)}" aria-label="Importar arquivo de tempo desta banca"></div></form>`:''}</section>`;
+ const timer=state.timers[bid],sealed=!!state.seals[bid],busy=state.busyBoards.has(bid),loaded=Object.hasOwn(state.timers,bid);
+ const problem=state.timerErrors[bid];
+ const disabled=sealed||busy||!loaded||!!problem||!state.connected;
+ return `<section class="board-timer" data-timer-panel="${esc(bid)}" aria-labelledby="timer-heading"><div class="timer-head"><div><p class="eyebrow">TEMPO DA APRESENTAÇÃO</p><h3 id="timer-heading">Cronômetro da banca</h3></div>${badge(sealed?'Encerrado':timer?.startedAt?'Em andamento':'Pausado',timer?.startedAt&&!sealed?'green':'gray')}</div><div class="timer-display" data-timer-display="${esc(bid)}" aria-label="Tempo em minutos, segundos e centésimos">${formatElapsed(boardElapsed(bid))}</div><p class="timer-status" role="status">${esc(problem?'Não foi possível acessar o cronômetro. Publique a política de acesso atualizada no Firebase e entre novamente.':!state.connected?'Sem conexão. O tempo em andamento continua a ser contado; reconecte para usar os controles.':!loaded?'Carregando o tempo salvo…':sealed?'Tempo registrado. Reabra a banca para retomar ou corrigir a avaliação.':'Tempo compartilhado entre os avaliadores, salvo ao iniciar, pausar e zerar.')}</p><div class="timer-controls"><button type="button" class="btn primary" data-timer-action="${timer?.startedAt?'pause':'start'}" data-board="${esc(bid)}" ${disabled?'disabled':''}>${timer?.startedAt?'Pausar':timer?.elapsedMs?'Continuar':'Iniciar'}</button><button type="button" class="btn danger" data-timer-action="reset" data-board="${esc(bid)}" ${disabled||!timer?'disabled':''}>Zerar cronômetro</button></div><p class="tiny">Formato: minutos:segundos,centésimos. O tempo registrado também aparece no relatório PDF.</p></section>`;
 }
-function refreshTimerUi(bid,keepTimeDraft=true){
- captureDrafts();if(!keepTimeDraft)state.drafts.delete(`time/${bid}`);
+function refreshTimerUi(bid){
  for(const button of document.querySelectorAll('[data-seal],[data-reopen]'))if((button.dataset.seal||button.dataset.reopen)===bid)button.disabled=state.busyBoards.has(bid);
  const panel=[...document.querySelectorAll('[data-timer-panel]')].find(el=>el.dataset.timerPanel===bid);
- if(panel){panel.outerHTML=timerHtml(bid);restoreDrafts();}
+ if(panel)panel.outerHTML=timerHtml(bid);
+}
+function syncTimerSubs(){
+ const allowed=new Set(activeBoards().map(([bid])=>bid));
+ for(const [bid,unsub] of state.timerSubs)if(!allowed.has(bid)){unsub();state.timerSubs.delete(bid);delete state.timers[bid];}
+ for(const bid of allowed){
+  if(state.timerSubs.has(bid))continue;
+  const revision=accessRevision;
+  state.timerSubs.set(bid,onValue(ref(db,`timers/${bid}`),snap=>{
+   if(revision!==accessRevision)return;
+   state.timers[bid]=snap.val();delete state.timerErrors[bid];refreshTimerUi(bid);
+  },error=>{if(revision!==accessRevision)return;state.timerErrors[bid]=error.code||'unavailable';refreshTimerUi(bid);}));
+ }
 }
 async function controlTimer(bid,action){
  assertBoardAccess(bid);
- if(state.seals[bid])throw Error('A banca está encerrada. O cronômetro permanece pausado.');
+ if(state.seals[bid])throw Error('Reabra a banca para usar o cronômetro.');
+ if(!state.connected)throw Error('Conecte-se à internet para usar os controles do cronômetro.');
  if(state.busyBoards.has(bid))return;
  if(!['start','pause','reset'].includes(action))throw Error('Ação inválida.');
- if(action==='reset'&&!confirm('Zerar o cronômetro desta banca neste navegador? O tempo anterior será substituído por 00:00,00.'))return;
- const current=loadLocalTimer(bid,true);
- if(action==='start'&&!current?.startedAt)storeLocalTimer(bid,timerRecord(current,current?.elapsedMs||0,Date.now()));
- if(action==='pause'&&current?.startedAt)storeLocalTimer(bid,timerRecord(current,elapsedAt(current),0));
- if(action==='reset')storeLocalTimer(bid,timerRecord(current,0,0));
- refreshTimerUi(bid);
+ if(action==='reset'&&!confirm('Zerar o cronômetro desta banca? O tempo anterior será substituído por 00:00,00 para todos os avaliadores.'))return;
+ const uid=state.user.uid,revision=accessRevision;
+ state.busyBoards.add(bid);refreshTimerUi(bid);
+ try{
+  const result=await runTransaction(ref(db,`timers/${bid}`),current=>{
+   if(state.user?.uid!==uid||accessRevision!==revision||state.seals[bid])return;
+   if(action==='start')return current?.startedAt?undefined:timerRecord(current,current?.elapsedMs||0,serverTimestamp());
+   if(action==='pause')return !current?.startedAt?undefined:timerRecord(current,elapsedAt(current),0);
+   return timerRecord(current,0,0);
+  },{applyLocally:false});
+  assertCurrentSession(uid,revision);
+  if(result.committed)state.timers[bid]=result.snapshot.val();
+ }finally{if(state.user?.uid===uid&&accessRevision===revision){state.busyBoards.delete(bid);refreshTimerUi(bid);}}
 }
-function exportTimer(bid){
- assertBoardAccess(bid);loadLocalTimer(bid);
- if(!state.timers[bid])throw Error('Não há tempo registrado para exportar.');
- const record={type:'bancaflow-time',version:1,projectId:firebaseConfig.projectId,boardId:bid,groupName:groupOf(state.boards[bid]).name,elapsedMs:boardElapsed(bid),capturedAt:serverNow()};
- downloadBlob(new Blob([JSON.stringify(record,null,2)],{type:'application/json'}),`tempo_banca_${bid}.json`);
-}
-function importTimerData(bid,record){
- assertBoardAccess(bid);if(!isCoord())throw Error('A importação do tempo para o relatório é exclusiva da coordenação.');
- if(record?.type!=='bancaflow-time'||record.version!==1||record.projectId!==firebaseConfig.projectId||record.boardId!==bid||!Number.isSafeInteger(record.elapsedMs)||record.elapsedMs<0||record.elapsedMs>31536000000)throw Error('Arquivo inválido ou de outra banca. Importe o registro exportado para esta banca.');
- storeLocalTimer(bid,timerRecord(loadLocalTimer(bid),record.elapsedMs,0,'imported'));refreshTimerUi(bid,false);
-}
-function saveManualTime(bid,value){
- assertBoardAccess(bid);if(!isCoord())throw Error('O registro de tempo para o relatório é exclusivo da coordenação.');
- storeLocalTimer(bid,timerRecord(loadLocalTimer(bid),parseElapsed(value),0,'manual'));refreshTimerUi(bid,false);notice('Tempo registrado neste navegador e disponível para o PDF.');
-}
-window.addEventListener('storage',event=>{
- if(!state.user)return;
- for(const [bid] of activeBoards())if(event.key===null||event.key===localTimerKey(bid)){loadLocalTimer(bid,true);pauseSealedTimer(bid);refreshTimerUi(bid);}
-});
 
-function draftKey(form){if(form.dataset.timerForm)return `time/${form.dataset.timerForm}`;return `${form.dataset.gradeForm?'grade':'delivery'}/${form.dataset.gradeForm||form.dataset.deliveryForm}/${form.dataset.student}`;}
+function draftKey(form){return `${form.dataset.gradeForm?'grade':'delivery'}/${form.dataset.gradeForm||form.dataset.deliveryForm}/${form.dataset.student}`;}
 function clearSavedDraft(form,saved){
  captureDrafts();const key=draftKey(form),draft=state.drafts.get(key);
  if(draft&&Object.entries(draft).every(([name,value])=>String(value).trim()&&Number(String(value).replace(',','.'))===saved[name]))state.drafts.delete(key);
 }
 function captureDrafts(){
- for(const form of document.querySelectorAll('#view form[data-grade-form],#view form[data-delivery-form],#view form[data-timer-form]')){
+ for(const form of document.querySelectorAll('#view form[data-grade-form],#view form[data-delivery-form]')){
   const inputs=[...form.querySelectorAll('input[name]:not(:disabled)')];
   if(!inputs.length)continue; // Keep drafts when another evaluator closes the board.
   const key=draftKey(form);
@@ -1584,7 +1725,7 @@ function captureDrafts(){
 }
 
 function restoreDrafts(){
- for(const form of document.querySelectorAll('#view form[data-grade-form],#view form[data-delivery-form],#view form[data-timer-form]')){
+ for(const form of document.querySelectorAll('#view form[data-grade-form],#view form[data-delivery-form]')){
   const draft=state.drafts.get(draftKey(form));if(!draft)continue;
   for(const input of form.querySelectorAll('input[name]:not(:disabled)'))if(Object.hasOwn(draft,input.name))input.value=draft[input.name];
  }
@@ -1592,29 +1733,303 @@ function restoreDrafts(){
 function hasUnsavedDrafts(bid){
  captureDrafts();
  for(const [key,values] of state.drafts){
-  const [kind,id,sid]=key.split('/');if(id!==bid||kind==='time')continue;
+  const [kind,id,sid]=key.split('/');if(id!==bid)continue;
   const saved=kind==='grade'?state.grades[bid]?.[state.user.uid]?.[sid]:{delivery:state.deliveries[bid]?.[sid]};
   if(Object.entries(values).some(([name,value])=>String(value).trim()?(saved?.[name]===undefined||Number(String(value).replace(',','.'))!==saved[name]):saved?.[name]!==undefined))return true;
  }
  return false;
 }
 async function refreshReportData(ids){
+ if(!isCoord())throw Error('O resultado oficial é exclusivo da coordenação.');
  if(!state.connected)throw Error('Conecte-se à internet para gerar um relatório atualizado.');
  if(!ids.length)throw Error('Não há bancas completas para exportar.');
+ const uid=state.user.uid,revision=accessRevision;
  await Promise.all(ids.map(async bid=>{
-  const before=await get(ref(db,`seals/${bid}`));
-  if(!before.exists())throw Error('A banca foi reaberta. Encerre novamente antes de emitir o relatório.');
-  const paths=['grades','deliveries'];
+  const before=await get(ref(db,`seals/${bid}`));assertCurrentSession(uid,revision);
+  if(!before.exists())throw Error('A banca está aberta. Encerre novamente antes de emitir o resultado oficial.');
+  const paths=['grades','deliveries','timers'];
   const snapshots=await Promise.all(paths.map(path=>get(ref(db,`${path}/${bid}`))));
-  const after=await get(ref(db,`seals/${bid}`));
+  const after=await get(ref(db,`seals/${bid}`));assertCurrentSession(uid,revision);
   if(JSON.stringify(before.val())!==JSON.stringify(after.val()))throw Error('A banca mudou durante a emissão. Gere o relatório novamente.');
-  paths.forEach((path,i)=>state[path][bid]=snapshots[i].val());state.seals[bid]=after.val();loadLocalTimer(bid);pauseSealedTimer(bid);
+  paths.forEach((path,i)=>state[path][bid]=snapshots[i].val());state.seals[bid]=after.val();
  }));
 }
 
 onValue(ref(db,'.info/serverTimeOffset'),snap=>{state.serverOffset=snap.val()||0;});
-onValue(ref(db,'.info/connected'),snap=>{state.connected=!!snap.val();});
+onValue(ref(db,'.info/connected'),snap=>{state.connected=!!snap.val();if(state.selectedBoard)refreshTimerUi(state.selectedBoard);});
 setInterval(()=>{if(document.hidden)return;for(const el of document.querySelectorAll('[data-timer-display]'))el.textContent=formatElapsed(boardElapsed(el.dataset.timerDisplay));},10);
+
+function assertCurrentSession(uid,revision){
+ if(!uid||state.user?.uid!==uid||accessRevision!==revision||!isActiveTeacher(state.profile))throw Error('A sessão mudou durante a operação. Entre novamente ou prepare os dados nesta conta.');
+}
+function shareStateFingerprint(bid,scope,studentIds){
+ const board=state.boards[bid],group=groupOf(board),uid=state.user?.uid;
+ const evaluators=scope==='official'?Object.keys(board?.members||{}):[uid];
+ return JSON.stringify({board,group,actorName:state.profile?.name,grades:studentIds.map(sid=>[sid,...evaluators.map(id=>state.grades[bid]?.[id]?.[sid]||null)]),deliveries:scope==='official'?studentIds.map(sid=>[sid,state.deliveries[bid]?.[sid]??null]):null,seal:state.seals[bid]||null,timer:state.timers[bid]||null});
+}
+function assertShareSnapshotCurrent(snapshot){
+ assertCurrentSession(snapshot?.actorUid,snapshot?.accessRevision);assertBoardAccess(snapshot.boardId);
+ if(snapshot.scope==='official'&&!isCoord())throw Error('O resultado oficial é exclusivo da coordenação.');
+ if(state.busyBoards.has(snapshot.boardId))throw Error('Aguarde a alteração da banca e prepare o compartilhamento novamente.');
+ if(shareStateFingerprint(snapshot.boardId,snapshot.scope,snapshot.fingerprintStudentIds)!==snapshot.fingerprint)throw Error('As notas, o tempo ou o estado da banca mudaram. Feche esta prévia e prepare novamente para compartilhar os dados atuais.');
+}
+async function createBoardShareSnapshot(bid,{studentId=''}={}){
+ assertBoardAccess(bid);
+ const uid=state.user.uid,revision=accessRevision,scope=isCoord()?'official':'teacher';
+ if(!state.connected)throw Error('Conecte-se à internet para preparar os resultados salvos.');
+ if(state.busyBoards.has(bid))throw Error('Aguarde a alteração da banca para compartilhar.');
+ if(hasUnsavedDrafts(bid))throw Error('Salve as notas em edição antes de compartilhar os resultados.');
+ const initialStudents=studentsOf(groupOf(state.boards[bid]));
+ if(studentId&&!initialStudents.some(([sid])=>sid===studentId))throw Error('Aluno não encontrado nesta banca.');
+ if(scope==='official')await refreshReportData([bid]);
+ else{
+  const paths=[`grades/${bid}/${uid}`,`seals/${bid}`,`timers/${bid}`];
+  const snapshots=await Promise.all(paths.map(path=>get(ref(db,path))));assertCurrentSession(uid,revision);assertBoardAccess(bid);
+  state.grades[bid]={[uid]:snapshots[0].val()||{}};state.seals[bid]=snapshots[1].val();state.timers[bid]=snapshots[2].val();
+ }
+ assertCurrentSession(uid,revision);assertBoardAccess(bid);
+ const board=state.boards[bid],group=groupOf(board),available=studentsOf(group);
+ if(studentId&&!available.some(([sid])=>sid===studentId))throw Error('Aluno não encontrado nesta banca.');
+ if(hasUnsavedDrafts(bid))throw Error('Há notas em edição. Salve-as e prepare o compartilhamento novamente.');
+ const grades=boardGrades(bid),deliveries=state.deliveries[bid]||{};
+ if(scope==='official'&&(!state.seals[bid]||!situacao(board,group,grades,deliveries).pronta))throw Error('O resultado oficial exige banca encerrada e todas as notas completas, incluindo as entregas.');
+ const selected=studentId?available.filter(([sid])=>sid===studentId):available;
+ const students=selected.map(([sid,name])=>{
+  const members=scope==='official'?Object.keys(board.members):[uid];
+  const evaluators=members.map(id=>{
+   const scores=grades[id]?.[sid],mean=mediaAvaliador(scores);
+   if(mean===null)throw Error(`Complete e salve as quatro notas de ${name} antes de compartilhar.`);
+   return {uid:id,name:board.memberNames?.[id]||who(id),scores:{...scores},mean};
+  });
+  return {id:sid,name,evaluators,result:scope==='official'?resultadoAluno(board,sid,grades,deliveries):null};
+ });
+ const fingerprintStudentIds=selected.map(([sid])=>sid);
+ const snapshot={scope,actorUid:uid,accessRevision:revision,fingerprintStudentIds,boardId:bid,groupName:group.name,projectTitle:group.title,className:group.className,advisorName:board.advisorName,room:board.room,startAt:board.startAt,issuedAt:Date.now(),closedAt:state.seals[bid]?.at||null,preparedByName:state.profile.name,...(scope==='teacher'?{teacherName:state.profile.name}:{}),elapsedMs:state.timers[bid]?boardElapsed(bid):null,students};
+ snapshot.fingerprint=shareStateFingerprint(bid,scope,fingerprintStudentIds);
+ return JSON.parse(JSON.stringify(snapshot)); // Uma prévia usa somente os dados salvos na preparação.
+}
+
+// Compartilhamento preparado antes do clique nativo: preserva a ativação do usuário.
+// Dependências do aplicativo: createBoardShareSnapshot, assertShareSnapshotCurrent,
+// buildSharePdf, downloadBlob, CRITERIOS e fmt. Nenhuma mensagem é enviada pelo site.
+let boardShareSession = null;
+let boardShareRequest = 0;
+
+const shareSingleLine = value => String(value ?? '').replace(/\s+/g, ' ').trim();
+function shareDate(value) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? 'Não informado' : date.toLocaleString('pt-BR');
+}
+function shareElapsed(ms) {
+  if (typeof ms !== 'number' || !Number.isFinite(ms)) return 'Não registrado';
+  const centiseconds = Math.floor(Math.max(0, ms) / 10);
+  return `${String(Math.floor(centiseconds / 6000)).padStart(2, '0')}:${String(Math.floor(centiseconds / 100) % 60).padStart(2, '0')},${String(centiseconds % 100).padStart(2, '0')}`;
+}
+function buildBoardShareText(snapshot) {
+  const official = snapshot.scope === 'official';
+  if (!['official', 'teacher'].includes(snapshot.scope) || !snapshot.students?.length) throw Error('O registro de compartilhamento está incompleto.');
+  const lines = [
+    official ? '*UNIVAP — Resultado oficial da banca*' : '*UNIVAP — Avaliação deste professor (parcial)*',
+    ...(!official ? ['Não é a nota final da banca. Contém somente as notas salvas deste professor.'] : []),
+    `Grupo: ${shareSingleLine(snapshot.groupName)}`,
+    `Projeto: ${shareSingleLine(snapshot.projectTitle)}`,
+    `Turma: ${shareSingleLine(snapshot.className)}`,
+    `Banca: ${shareDate(snapshot.startAt)} · Sala: ${shareSingleLine(snapshot.room)}`,
+    `Orientador: ${shareSingleLine(snapshot.advisorName)}`,
+    `Tempo da apresentação (min:seg,centésimos): ${shareElapsed(snapshot.elapsedMs)}`,
+    ...(official ? [`Encerramento: ${shareDate(snapshot.closedAt)}`] : [`Professor: ${shareSingleLine(snapshot.teacherName)}`]),
+    `Emissão: ${shareDate(snapshot.issuedAt)}`,
+    ''
+  ];
+  for (const student of snapshot.students) {
+    lines.push(`*Aluno(a): ${shareSingleLine(student.name)}*`);
+    for (const evaluator of student.evaluators) {
+      lines.push(`Professor: ${shareSingleLine(evaluator.name)}`);
+      for (const [key, label] of CRITERIOS) lines.push(`${label}: ${fmt(evaluator.scores[key])}`);
+      lines.push(`Média deste professor (0–10): ${fmt(evaluator.mean)}`);
+    }
+    if (official) {
+      const result = student.result;
+      if (!result) throw Error('Há notas pendentes. Gere novamente o registro oficial.');
+      lines.push(
+        `Média da banca (0–10): ${fmt(result.banca)}`,
+        `Banca × 60% (0–6): ${fmt(result.parcelaBanca)}`,
+        `Entregas (0–10): ${fmt(result.entrega)}`,
+        `Entregas × 40% (0–4): ${fmt(result.parcelaEntrega)}`,
+        `*Nota final (0–10): ${fmt(result.final)}*`
+      );
+    }
+    lines.push('');
+  }
+  lines.push(official ? 'Cálculo: média da banca × 0,60 + entregas × 0,40. Entregas lançadas pela coordenação.' : 'A média acima considera os quatro critérios deste professor, com pesos iguais.');
+  return lines.join('\n');
+}
+function whatsappTextUrl(text) {
+  return `https://wa.me/?text=${encodeURIComponent(text)}`;
+}
+function boardShareFilename(snapshot) {
+  const slug = value => shareSingleLine(value).normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-zA-Z0-9_-]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 64) || 'banca';
+  const student = snapshot.students.length === 1 ? `_${slug(snapshot.students[0].name)}` : '';
+  return `${snapshot.scope === 'official' ? 'resultado' : 'avaliacao_parcial'}_${slug(snapshot.groupName)}${student}.pdf`;
+}
+function canShareBoardPdf(file) {
+  try { return !!file && typeof navigator.share === 'function' && typeof navigator.canShare === 'function' && navigator.canShare({ files: [file] }); }
+  catch { return false; }
+}
+function closeBoardShare() {
+  ++boardShareRequest;
+  const session = boardShareSession;
+  boardShareSession = null;
+  if (!session) return;
+  if (session.dialog.open) session.dialog.close();
+  session.dialog.remove();
+  session.prepared = null;
+  session.snapshot = null;
+}
+async function openBoardShare(boardId, { studentId = '' } = {}) {
+  closeBoardShare();
+  const request = boardShareRequest;
+  // Firebase e PDF são preparados antes da próxima ação explícita de compartilhar.
+  const snapshot = await createBoardShareSnapshot(boardId, { studentId });
+  if (request !== boardShareRequest) return;
+  assertShareSnapshotCurrent(snapshot);
+  const dialog = document.createElement('dialog');
+  dialog.id = 'board-share-dialog';
+  dialog.className = 'share-dialog';
+  dialog.setAttribute('aria-labelledby', 'board-share-title');
+  dialog.setAttribute('aria-describedby', 'board-share-description');
+  dialog.innerHTML = `<div class="share-panel">
+    <div class="share-header"><h2 id="board-share-title">Compartilhar resultados</h2><button type="button" class="icon-btn" data-share-close aria-label="Fechar compartilhamento" autofocus>×</button></div>
+    <p id="board-share-description" class="share-description"></p>
+    <div class="field"><label for="board-share-student">Alunos incluídos no PDF e na mensagem</label><select id="board-share-student"></select></div>
+    <p class="share-file" data-share-file></p>
+    <div class="share-actions">
+      <button type="button" class="btn primary" data-share-native>Compartilhar PDF (escolha WhatsApp)</button>
+      <button type="button" class="btn soft" data-share-download>Baixar PDF para anexar</button>
+      <button type="button" class="btn primary" data-share-whatsapp>Abrir notas no WhatsApp</button>
+      <button type="button" class="btn soft" data-share-copy>Copiar notas individuais</button>
+      <button type="button" class="btn soft hidden" data-share-paste>Abrir WhatsApp para colar</button>
+    </div>
+    <label for="board-share-preview" class="tiny"><b>Confira todas as notas antes de escolher o destinatário</b></label>
+    <textarea id="board-share-preview" readonly spellcheck="false" aria-label="Prévia das notas individuais para compartilhar"></textarea>
+    <p class="share-status" role="status" aria-live="polite" data-share-status></p>
+    <p class="share-guide">No celular compatível, o primeiro botão abre as opções do aparelho: escolha o WhatsApp e o destinatário. Se o texto não acompanhar o arquivo, envie as notas pelo botão de texto. No computador ou sem suporte ao arquivo, baixe o PDF e anexe-o como documento na conversa.</p>
+  </div>`;
+  const query = selector => dialog.querySelector(selector);
+  const select = query('#board-share-student'), preview = query('#board-share-preview');
+  query('#board-share-description').textContent = snapshot.scope === 'official'
+    ? 'Relatório oficial da banca encerrada: notas por professor e aluno, médias ponderadas e tempo de apresentação. Você escolhe o contato ou grupo e confirma o envio no WhatsApp.'
+    : 'Avaliação deste professor — parcial; não é nota final da banca. O PDF e a mensagem incluem apenas suas notas salvas. Você escolhe o destinatário e confirma o envio no WhatsApp.';
+  const option = (value, label) => { const item = document.createElement('option'); item.value = value; item.textContent = label; select.appendChild(item); };
+  if (snapshot.students.length > 1) option('', 'Todos os alunos deste registro');
+  for (const student of snapshot.students) option(student.id, student.name);
+  select.value = snapshot.students.length === 1 ? snapshot.students[0].id : '';
+  const session = { dialog, snapshot, prepared: null, sharing: false };
+  const current = () => boardShareSession === session && request === boardShareRequest;
+  const status = message => { if (current()) query('[data-share-status]').textContent = message; };
+  const invalidate = error => {
+    if (!current()) return;
+    for (const button of dialog.querySelectorAll('.share-actions button')) button.disabled = true;
+    select.disabled = true;
+    status(error?.message || 'Os dados foram atualizados. Feche esta janela e prepare o compartilhamento novamente.');
+  };
+  const assertCurrent = () => {
+    if (!current()) throw Error('Prepare o compartilhamento novamente.');
+    assertShareSnapshotCurrent(snapshot);
+  };
+  const prepare = () => {
+    assertCurrent();
+    const students = select.value ? snapshot.students.filter(student => student.id === select.value) : snapshot.students;
+    if (!students.length) throw Error('Selecione um aluno válido.');
+    const selected = { ...snapshot, students };
+    const blob = buildSharePdf(selected), filename = boardShareFilename(selected);
+    if (!blob || !blob.size) throw Error('Não foi possível preparar o PDF.');
+    const file = typeof File === 'function' ? new File([blob], filename, { type: 'application/pdf' }) : null;
+    session.prepared = { blob, file, filename, text: buildBoardShareText(selected) };
+    preview.value = session.prepared.text;
+    query('[data-share-paste]').classList.toggle('hidden', whatsappTextUrl(session.prepared.text).length <= 24000);
+    query('[data-share-file]').textContent = `PDF: ${filename} · ${students.length} aluno(s) · ${Math.max(1, Math.ceil(blob.size / 1024))} KB`;
+    query('[data-share-native]').disabled = !canShareBoardPdf(file);
+    status(canShareBoardPdf(file) ? 'PDF e notas prontos. Confira a prévia e escolha como compartilhar.' : 'Este navegador não compartilha arquivos diretamente. Baixe o PDF, abra as notas no WhatsApp e anexe o documento na conversa.');
+  };
+  const copyManually = () => {
+    preview.focus();
+    preview.select();
+    preview.setSelectionRange(0, preview.value.length);
+    status('O texto está selecionado. Use Copiar no celular ou Ctrl+C / ⌘C e cole na conversa do WhatsApp.');
+  };
+  select.addEventListener('change', () => { try { prepare(); } catch (error) { invalidate(error); } });
+  query('[data-share-close]').addEventListener('click', closeBoardShare);
+  dialog.addEventListener('close', () => { if (current()) closeBoardShare(); });
+  dialog.addEventListener('click', event => {
+    if (event.target === dialog) {
+      const rect = dialog.getBoundingClientRect();
+      if (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom) closeBoardShare();
+    }
+  });
+  query('[data-share-native]').addEventListener('click', () => {
+    try {
+      assertCurrent();
+      if (session.sharing) return;
+      const prepared = session.prepared;
+      if (!canShareBoardPdf(prepared.file)) { status('Use Baixar PDF para anexar o documento na conversa.'); return; }
+      // Não inserir await, busca no Firebase ou geração de PDF antes desta chamada.
+      let sharing;
+      try { sharing = navigator.share({ files: [prepared.file], title: 'Avaliação de TCC · UNIVAP', text: prepared.text }); }
+      catch { status('O aparelho não conseguiu compartilhar o arquivo. Baixe o PDF e anexe-o como documento; envie as notas pelo botão de texto.'); return; }
+      session.sharing = true;
+      select.disabled = true;
+      for (const button of dialog.querySelectorAll('.share-actions button')) button.disabled = true;
+      Promise.resolve(sharing).then(() => status('O compartilhamento do aparelho foi aberto. Confira o destinatário e finalize o envio no WhatsApp.')).catch(error => {
+        status(error?.name === 'AbortError' ? 'Compartilhamento cancelado. Você pode tentar novamente.' : 'O aparelho não conseguiu compartilhar o arquivo. Baixe o PDF e anexe-o como documento; envie as notas pelo botão de texto.');
+      }).finally(() => {
+        session.sharing = false;
+        if (!current()) return;
+        try {
+          assertCurrent();
+          select.disabled = false;
+          for (const button of dialog.querySelectorAll('.share-actions button')) button.disabled = false;
+          query('[data-share-native]').disabled = !canShareBoardPdf(session.prepared.file);
+        } catch (error) { invalidate(error); }
+      });
+    } catch (error) { invalidate(error); }
+  });
+  query('[data-share-download]').addEventListener('click', () => {
+    try { assertCurrent(); downloadBlob(session.prepared.blob, session.prepared.filename); status('PDF baixado. Abra a conversa no WhatsApp e anexe o arquivo como documento.'); }
+    catch (error) { invalidate(error); }
+  });
+  query('[data-share-whatsapp]').addEventListener('click', () => {
+    try {
+      assertCurrent();
+      const url = whatsappTextUrl(session.prepared.text);
+      // Textos extensos permanecem íntegros na prévia e no botão Copiar.
+      if (url.length > 24000) { copyManually(); status('A mensagem é extensa. Copie o texto completo e use Abrir WhatsApp para colar, ou escolha um aluno por vez.'); return; }
+      const link = document.createElement('a');
+      link.href = url; link.target = '_blank'; link.rel = 'noopener noreferrer';
+      document.body.appendChild(link); link.click(); link.remove();
+      status('O WhatsApp foi solicitado com as notas no campo de mensagem. Escolha o destinatário e confirme o envio. Para incluir o PDF, anexe o documento baixado.');
+    } catch (error) { invalidate(error); }
+  });
+  query('[data-share-paste]').addEventListener('click', () => {
+    try {
+      assertCurrent();
+      const link = document.createElement('a');
+      link.href = whatsappTextUrl(''); link.target = '_blank'; link.rel = 'noopener noreferrer';
+      document.body.appendChild(link); link.click(); link.remove();
+      status('Escolha a conversa no WhatsApp, cole o texto completo que você copiou e confirme o envio.');
+    } catch (error) { invalidate(error); }
+  });
+  query('[data-share-copy]').addEventListener('click', () => {
+    try {
+      assertCurrent();
+      if (!navigator.clipboard?.writeText) { copyManually(); return; }
+      Promise.resolve(navigator.clipboard.writeText(session.prepared.text)).then(() => status('Notas copiadas. Cole na conversa do WhatsApp e confira o destinatário antes de enviar.')).catch(() => { if (current()) copyManually(); });
+    } catch (error) { invalidate(error); }
+  });
+  boardShareSession = session;
+  try { prepare(); document.body.appendChild(dialog); dialog.showModal(); }
+  catch (error) { closeBoardShare(); throw error; }
+}
 
 const handle = async cb=>{try{await cb();}catch(err){fail(err);}};
 for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('click',e=>{const el=e.target.closest('button');if(!el)return;if(el.dataset.openMenu!==undefined)return openMobileMenu();if(!el.dataset.route)return;if(el.dataset.route==='sair')signOut(auth).catch(fail);else go(el.dataset.route);});
@@ -1633,8 +2048,7 @@ $('#view').addEventListener('click',e=>{
  if(el.dataset.seal)return handle(()=>closeBoard(el.dataset.seal));
  if(el.dataset.reopen)return handle(()=>reopenBoard(el.dataset.reopen));
  if(el.dataset.timerAction)return handle(()=>controlTimer(el.dataset.board,el.dataset.timerAction));
- if(el.dataset.exportTimer)return handle(()=>exportTimer(el.dataset.exportTimer));
- if(el.dataset.chooseTimerFile){const input=[...document.querySelectorAll('[data-timer-import]')].find(item=>item.dataset.timerImport===el.dataset.chooseTimerFile);input?.click();return;}
+ if(el.dataset.shareBoard)return handle(()=>openBoardShare(el.dataset.shareBoard,{studentId:el.dataset.shareStudent||''}));
  if(el.dataset.printOne)return handle(()=>printReports([el.dataset.printOne]));
  if(el.dataset.printAll)return handle(async()=>{
   const selected=Object.entries(state.boards).filter(([,b])=>state.reportFilter==='todas'||groupOf(b)?.className===state.reportFilter).map(([id])=>id);
@@ -1644,14 +2058,13 @@ $('#view').addEventListener('click',e=>{
  });
  if(el.dataset.exportCsv)return handle(async()=>{const ids=Object.keys(state.seals).filter(id=>state.seals[id]&&state.boards[id]&&groupOf(state.boards[id])&&situacao(state.boards[id],groupOf(state.boards[id]),boardGrades(id),state.deliveries[id]).pronta&&(state.reportFilter==='todas'||groupOf(state.boards[id])?.className===state.reportFilter));await refreshReportData(ids);exportCsv(ids);});
 });
-$('#view').addEventListener('change',e=>{if(e.target.dataset.timerImport){const file=e.target.files?.[0],bid=e.target.dataset.timerImport;if(file)handle(async()=>{if(file.size>4096)throw Error('O arquivo de tempo é muito grande.');importTimerData(bid,JSON.parse(await file.text()));notice('Tempo importado neste navegador. Ele será incluído no PDF desta banca.');});return;}if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='teacher-method')teacherRegistrationMethod();if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
+$('#view').addEventListener('change',e=>{if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='teacher-method')teacherRegistrationMethod();if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
 $('#view').addEventListener('submit',e=>{e.preventDefault();const f=e.target;handle(async()=>{
  if(f.id==='manual-form'){const d=new FormData(f);const g=state.groups[d.get('groupId')];if(!g||state.groupBoards[g.id])throw Error('Selecione um grupo ainda não agendado.');const startAt=new Date(d.get('date')).getTime(),durationMin=Number(d.get('duration')),size=Number(d.get('size')),room=String(d.get('room')||'').trim();const evaluators=d.getAll('evaluator');if(evaluators.length!==size||new Set(evaluators).size!==evaluators.length)throw Error(`Selecione exatamente ${size} professores avaliadores.`);if(evaluators.some(uid=>!state.users[uid]))throw Error('Há um professor sem cadastro.');if(!room)throw Error('Informe a sala.');await createBoards([makeBoard(g,startAt,durationMin,room,evaluators)]);}
  else if(f.id==='lottery-form'){if(!isCoord())throw Error('Sorteio exclusivo da coordenação.');const result=makeLottery(new FormData(f));state.plan=result.plan;state.planMeta=result.config;state.planUnassigned=result.unassigned;render();notice(result.unassigned.length?`${result.plan.length} bancas encaixadas; ${result.unassigned.length} grupo(s) sem horário. Ajuste as condições antes de confirmar.`:'Sorteio completo! Baixe o PDF da prévia ou confirme as bancas.',!!result.unassigned.length);}
  else if(f.id==='teacher-form')await addTeacher(f);
  else if(f.dataset.gradeForm)await saveGrade(f);
  else if(f.dataset.deliveryForm)await saveDelivery(f);
- else if(f.dataset.timerForm)saveManualTime(f.dataset.timerForm,new FormData(f).get('duration'));
  });});
 
 

@@ -26,14 +26,14 @@ const fixture = () => ({
   boards: { b1: { groupId: 'g1', advisorUid: 't1', advisorName: 'Professor Um', members: { t1: true, t2: true }, memberNames: { t1: 'Professor Um', t2: 'Professora Dois' }, startAt: 900000, durationMin: 30, room: 'Laboratório' } },
   grades: { b1: { t1: { s1: grade(10, 8, 6, 8), s2: grade(0, 0, 0, 0) }, t2: { s1: grade(6, 6, 6, 6), s2: grade(10, 10, 10, 10) } } },
   deliveries: { b1: { s1: 9, s2: 0 } },
-  seals: {},
+  seals: {}, timers: {},
 });
 
-function harness(uid = 't1', storage = new Map()) {
+function harness(uid = 't1') {
   let now = 1_800_000_000_000;
   const data = fixture();
   const calls = { reads: [], sets: [], updates: [], transactions: [], confirmations: [] };
-  const options = { confirm: true, setError: null, storageError: false };
+  const options = { confirm: true, setError: null, updateError: null, transactionError: null };
   const elements = new Map();
   const element = selector => {
     if (!elements.has(selector)) elements.set(selector, {
@@ -66,13 +66,9 @@ function harness(uid = 't1', storage = new Map()) {
     getAll(key) { return [].concat(this.values[key] || []); }
   }
   const context = vm.createContext({
-    console, Date: Clock, Blob, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
+    console, Date: Clock, Blob, File, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
     FormData: FormDataAdapter, URL, atob, btoa,
     window: { scrollTo() {}, addEventListener() {} }, navigator: {},
-    localStorage: {
-      getItem(key) { if (options.storageError) throw Error('Storage blocked'); return storage.get(key) ?? null; },
-      setItem(key, value) { if (options.storageError) throw Error('Storage blocked'); storage.set(key, String(value)); }
-    },
     document: {
       hidden: false, body: { classList: { add() {}, remove() {} } },
       querySelector: element, querySelectorAll: () => [],
@@ -89,9 +85,6 @@ function harness(uid = 't1', storage = new Map()) {
     set: async (path, value) => {
       calls.sets.push([path, clone(value)]);
       if (options.setError) throw options.setError;
-      if (path.startsWith('seals/') && (uid !== 'coord' || value === null || read(path))) {
-        const error = Error('PERMISSION_DENIED'); error.code = 'PERMISSION_DENIED'; throw error;
-      }
       write(path, value);
     },
     update: async (_path, changes) => {
@@ -115,16 +108,15 @@ function harness(uid = 't1', storage = new Map()) {
     globalThis.testDownloads = [];
     downloadBlob = (blob, filename) => globalThis.testDownloads.push({blob,filename});
     globalThis.appTest = { state, CRITERIOS, notaValida, mediaAvaliador, situacao, resultadoAluno,
-      elapsedAt, formatElapsed, parseElapsed, boardElapsed, timerRecord, controlTimer, closeBoard, reopenBoard,
-      localTimerKey, validLocalTimer, loadLocalTimer, storeLocalTimer, syncLocalTimers, pauseSealedTimer,
-      exportTimer, importTimerData, saveManualTime,
+      elapsedAt, formatElapsed, boardElapsed, timerRecord, controlTimer, closeBoard, reopenBoard,
+      createBoardShareSnapshot, assertShareSnapshotCurrent, buildSharePdf, buildBoardShareText, whatsappTextUrl, boardShareFilename,
       assertBoardAccess, hasUnsavedDrafts, saveGrade, saveDelivery, reportHtml, refreshReportData,
       printReports, exportCsv, boardActions, timerHtml,
       buildEvaluationPdf: typeof buildEvaluationPdf === 'function' ? buildEvaluationPdf : null };
   `, context, { filename: 'index.html.inline-module.js' });
   const app = context.appTest;
   Object.assign(app.state, clone(data), { user: { uid }, profile: clone(data.users[uid]), connected: true });
-  return { app, data, calls, options, elements, context, storage, downloads: context.testDownloads, now: () => now, advance: ms => { now += ms; }, read, write };
+  return { app, data, calls, options, elements, context, downloads: context.testDownloads, now: () => now, advance: ms => { now += ms; }, read, write };
 }
 
 test('individual averages require all four valid grades, including valid zeroes', () => {
@@ -165,141 +157,6 @@ test('centiseconds truncate milliseconds and roll over seconds and minutes', () 
   }
 });
 
-test('local elapsed time uses a server-adjusted sealed cutoff without changing clock duration', () => {
-  const h = harness(), { app } = h;
-  app.state.serverOffset = 500;
-  app.state.timers.b1 = { elapsedMs: 1234, startedAt: h.now() - 3000 };
-  assert.equal(app.boardElapsed('b1'), 4234);
-  app.state.seals.b1 = { by: 't2', at: h.now() - 1000 };
-  assert.equal(app.boardElapsed('b1'), 2734);
-  h.advance(60000);
-  assert.equal(app.boardElapsed('b1'), 2734);
-  assert.equal(app.elapsedAt({ elapsedMs: 1234, startedAt: 0 }), 1234);
-  assert.equal(app.elapsedAt({ elapsedMs: 1234, startedAt: h.now() + 10000 }), 1234);
-});
-
-test('local timer starts, pauses and resumes offline without any Firebase request', async () => {
-  const h = harness(), { app } = h;
-  app.state.connected = false;
-  await app.controlTimer('b1', 'start');
-  assert.equal(app.state.timers.b1.startedAt, h.now());
-  h.advance(12345);
-  await app.controlTimer('b1', 'pause');
-  assert.equal(app.state.timers.b1.elapsedMs, 12345);
-  assert.equal(app.state.timers.b1.startedAt, 0);
-  h.advance(10000);
-  await app.controlTimer('b1', 'start');
-  h.advance(555);
-  assert.equal(app.boardElapsed('b1'), 12900);
-  await app.controlTimer('b1', 'pause');
-  assert.equal(app.state.timers.b1.elapsedMs, 12900);
-  assert.equal(app.state.timers.b1.revision, 4);
-  assert.equal(h.calls.reads.length + h.calls.sets.length + h.calls.updates.length + h.calls.transactions.length, 0);
-  assert.equal(JSON.parse(h.storage.get(app.localTimerKey('b1'))).elapsedMs, 12900);
-});
-
-test('local timer survives application reload and stays separate for each account', async () => {
-  const h = harness();
-  await h.app.controlTimer('b1', 'start');
-  const reloaded = harness('t1', h.storage);
-  reloaded.advance(12345);
-  reloaded.app.syncLocalTimers();
-  assert.equal(reloaded.app.boardElapsed('b1'), 12345);
-  const other = harness('t2', h.storage);
-  other.app.syncLocalTimers();
-  assert.equal(other.app.boardElapsed('b1'), 0);
-  assert.notEqual(other.app.localTimerKey('b1'), h.app.localTimerKey('b1'));
-  assert.notEqual(h.app.localTimerKey('b2'), h.app.localTimerKey('b1'));
-  await reloaded.app.controlTimer('b1', 'pause');
-  assert.equal(JSON.parse(h.storage.get(h.app.localTimerKey('b1'))).elapsedMs, 12345);
-});
-
-test('local timer loads another tab update before applying controls and rejects malformed storage', async () => {
-  const h = harness(), { app } = h;
-  await app.controlTimer('b1', 'start');
-  const key = app.localTimerKey('b1');
-  h.storage.set(key, JSON.stringify({ elapsedMs: 9000, startedAt: 0, revision: 4 }));
-  await app.controlTimer('b1', 'start');
-  assert.equal(app.state.timers.b1.elapsedMs, 9000);
-  assert.equal(app.state.timers.b1.revision, 5);
-  for (const bad of [{ elapsedMs: -1, startedAt: 0 }, { elapsedMs: 1.5, startedAt: 0 }, { elapsedMs: 0, startedAt: -1 }]) {
-    h.storage.set(key, JSON.stringify(bad));
-    assert.equal(app.loadLocalTimer('b1', true), null);
-  }
-  h.storage.set(key, 'invalid JSON');
-  app.loadLocalTimer('b1', true);
-  assert.equal(app.state.timerErrors.b1, true);
-});
-
-test('reset requires confirmation and preserves other board data', async () => {
-  const h = harness(), { app } = h;
-  const saved = clone(h.data.grades);
-  app.storeLocalTimer('b1', { elapsedMs: 12345, startedAt: 0, revision: 1 });
-  h.options.confirm = false;
-  await app.controlTimer('b1', 'reset');
-  assert.equal(h.calls.transactions.length, 0);
-  assert.equal(app.state.timers.b1.elapsedMs, 12345);
-  h.options.confirm = true;
-  await app.controlTimer('b1', 'reset');
-  assert.equal(app.state.timers.b1.elapsedMs, 0);
-  assert.equal(app.state.timers.b1.startedAt, 0);
-  assert.deepEqual(h.data.grades, saved);
-  assert.match(h.calls.confirmations[0], /Zerar o cronômetro/);
-});
-
-test('teacher close attempts the real seal write and reports permission denial without fake closure', async () => {
-  const h = harness(), { app } = h;
-  const original = clone(h.data);
-  app.storeLocalTimer('b1', { elapsedMs: 12345, startedAt: h.now() - 1555, revision: 2 });
-  await assert.rejects(app.closeBoard('b1'), /permissões atuais do banco não autorizam seu perfil/);
-  assert.match(h.calls.confirmations[0], /Encerrar a avaliação de Grupo Árvore/);
-  assert.deepEqual(h.calls.reads, ['seals/b1', 'seals/b1']);
-  assert.deepEqual(h.calls.sets.map(([path]) => path), ['seals/b1']);
-  assert.equal(h.calls.updates.length, 0);
-  assert.equal(app.state.seals.b1, undefined);
-  assert.equal(app.state.timers.b1.startedAt, h.now() - 1555);
-  assert.deepEqual(h.data, original);
-});
-
-test('teacher reopening denied by original policy preserves seal, grades and local elapsed time', async () => {
-  const h = harness('t2'), { app } = h;
-  h.write('seals/b1', { by: 't1', at: h.now() - 10000 });
-  app.storeLocalTimer('b1', { elapsedMs: 500, startedAt: h.now() - 12000, revision: 1 });
-  app.state.seals.b1 = clone(h.data.seals.b1);
-  app.pauseSealedTimer('b1');
-  await assert.rejects(app.reopenBoard('b1'), /não autorizam a reabertura/);
-  assert.match(h.calls.confirmations[0], /reabertura de Grupo Árvore/);
-  assert.equal(h.data.seals.b1.by, 't1');
-  assert.equal(app.state.timers.b1.elapsedMs, 2500);
-  assert.equal(app.state.timers.b1.startedAt, 0);
-  assert.equal(app.state.seals.b1.by, 't1');
-  assert.ok(h.data.grades.b1.t1.s1);
-});
-
-test('coordinator closes only after all grades are complete and original policy denies reopening', async () => {
-  const h = harness('coord'), { app } = h;
-  delete app.state.deliveries.b1.s1;
-  await assert.rejects(app.closeBoard('b1'), /Complete todas as notas/);
-  assert.equal(h.calls.confirmations.length, 0);
-  app.state.deliveries.b1.s1 = 9;
-  app.storeLocalTimer('b1', { elapsedMs: 1000, startedAt: h.now() - 2000, revision: 1 });
-  await app.closeBoard('b1');
-  assert.equal(h.data.seals.b1.by, 'coord');
-  assert.equal(app.state.timers.b1.elapsedMs, 3000);
-  assert.equal(app.state.timers.b1.startedAt, 0);
-  await assert.rejects(app.reopenBoard('b1'), /não autorizam a reabertura/);
-  assert.equal(h.data.seals.b1.by, 'coord');
-  assert.deepEqual(h.data.boards.b1.members, { t1: true, t2: true });
-  assert.ok(h.calls.sets.every(([path]) => path === 'seals/b1'));
-});
-
-test('teacher must save every student grade before attempting a closure', async () => {
-  const { app, calls } = harness();
-  delete app.state.grades.b1.t1.s2;
-  await assert.rejects(app.closeBoard('b1'), /notas de todos os alunos/);
-  assert.equal(calls.confirmations.length + calls.sets.length, 0);
-});
-
 test('cancelling close or reopen performs no reads or writes', async () => {
   const h = harness(), { app } = h;
   h.options.confirm = false;
@@ -321,28 +178,6 @@ test('unsaved grade or delivery drafts block closing before confirmation', async
   assert.equal(h.calls.updates.length, 0);
 });
 
-test('denied reopening still preserves dirty drafts without claiming the board reopened', async () => {
-  const h = harness(), { app } = h;
-  const draft = { presentation: '9', practice: '8', code: '6', time: '8' };
-  app.state.drafts.set('grade/b1/s1', draft);
-  h.write('seals/b1', { by: 't2', at: h.now() });
-  app.state.seals.b1 = clone(h.data.seals.b1);
-  await assert.rejects(app.reopenBoard('b1'), /não autorizam a reabertura/);
-  assert.equal(h.data.seals.b1.by, 't2');
-  assert.deepEqual(clone(app.state.drafts.get('grade/b1/s1')), draft);
-  assert.equal(h.data.grades.b1.t1.s1.presentation, 10);
-  assert.equal(app.hasUnsavedDrafts('b1'), true);
-});
-
-test('unchanged numeric drafts and drafts from another board do not block closing', async () => {
-  const h = harness(), { app } = h;
-  app.state.drafts.set('grade/b1/s1', { presentation: '10.0', practice: '8', code: '6,0', time: '8' });
-  app.state.drafts.set('grade/other/s1', { presentation: '1' });
-  assert.equal(app.hasUnsavedDrafts('b1'), false);
-  await assert.rejects(app.closeBoard('b1'), /não autorizam seu perfil/);
-  assert.equal(h.calls.sets.length, 1);
-});
-
 test('unassigned, disabled and unauthenticated users cannot close, reopen or control time', async () => {
   for (const uid of ['outsider', 'disabled', 't1']) {
     const h = harness(uid);
@@ -356,19 +191,6 @@ test('unassigned, disabled and unauthenticated users cannot close, reopen or con
   }
 });
 
-test('seal changes need connection while local timer works offline and respects sealed state', async () => {
-  const h = harness(), { app } = h;
-  app.state.connected = false;
-  await assert.rejects(app.closeBoard('b1'), /Conecte-se/);
-  await app.controlTimer('b1', 'start');
-  assert.equal(app.state.timers.b1.startedAt, h.now());
-  app.state.connected = true;
-  await assert.rejects(app.controlTimer('b1', 'unknown'), /Ação inválida/);
-  app.state.seals.b1 = { by: 't1', at: h.now() };
-  await assert.rejects(app.controlTimer('b1', 'start'), /banca está encerrada/);
-  assert.equal(h.calls.transactions.length, 0);
-});
-
 test('status changes detect an already closed or reopened remote board', async () => {
   const h = harness(), { app } = h;
   h.write('seals/b1', { by: 't2', at: h.now() });
@@ -377,35 +199,6 @@ test('status changes detect an already closed or reopened remote board', async (
   await assert.rejects(app.reopenBoard('b1'), /O estado da banca mudou/);
   assert.equal(h.calls.updates.length, 0);
   assert.equal(app.state.busyBoards.has('b1'), false);
-});
-
-test('failed seal writes release busy state and local timer warns if browser storage is blocked', async () => {
-  const h = harness(), { app } = h;
-  const original = clone(app.state.grades);
-  h.options.setError = Error('offline');
-  await assert.rejects(app.closeBoard('b1'), /offline/);
-  assert.equal(app.state.seals.b1, undefined);
-  assert.equal(app.state.busyBoards.has('b1'), false);
-  h.options.storageError = true;
-  await app.controlTimer('b1', 'start');
-  assert.equal(app.state.timerErrors.b1, true);
-  assert.equal(app.state.timers.b1.startedAt, h.now());
-  assert.equal(app.state.busyBoards.has('b1'), false);
-  assert.deepEqual(clone(app.state.grades), original);
-});
-
-test('delivery editing is coordinator-only and remains blocked after denied reopening', async () => {
-  const form = { dataset: { deliveryForm: 'b1', student: 's1' }, values: { delivery: '9.5' } };
-  const teacher = harness();
-  await assert.rejects(teacher.app.saveDelivery(form), /Acesso restrito/);
-  assert.equal(teacher.calls.sets.length, 0);
-  const h = harness('coord');
-  h.write('seals/b1', { by: 't1', at: h.now() });
-  h.app.state.seals.b1 = clone(h.data.seals.b1);
-  await assert.rejects(h.app.saveDelivery(form), /Banca já concluída/);
-  await assert.rejects(h.app.reopenBoard('b1'), /não autorizam a reabertura/);
-  await assert.rejects(h.app.saveDelivery(form), /Banca já concluída/);
-  assert.equal(h.data.deliveries.b1.s1, 9);
 });
 
 test('individual grading stays assigned to the signed-in evaluator and is blocked after close', async () => {
@@ -419,56 +212,6 @@ test('individual grading stays assigned to the signed-in evaluator and is blocke
   app.state.seals.b1 = null;
   form.values.code = '';
   await assert.rejects(app.saveGrade(form), /Preencha todos os critérios/);
-});
-
-test('report refresh reads only original Firebase branches and keeps the local timer', async () => {
-  const h = harness('coord'), { app } = h;
-  h.data.grades.b1.t1.s1 = grade(1, 2, 3, 4);
-  h.data.deliveries.b1.s1 = 5;
-  h.write('seals/b1', { by: 't2', at: h.now() });
-  app.storeLocalTimer('b1', { elapsedMs: 123456, startedAt: 0, revision: 1 });
-  await app.refreshReportData(['b1']);
-  assert.deepEqual(h.calls.reads.sort(), ['deliveries/b1', 'grades/b1', 'seals/b1', 'seals/b1']);
-  assert.equal(app.state.grades.b1.t1.s1.code, 3);
-  assert.equal(app.state.deliveries.b1.s1, 5);
-  assert.equal(app.formatElapsed(app.boardElapsed('b1')), '02:03,45');
-});
-
-test('manual centisecond parsing is strict and coordinator can register time even after closure', () => {
-  const { app } = harness('coord');
-  assert.equal(app.parseElapsed('12:34,56'), 754560);
-  assert.equal(app.parseElapsed('00:00.01'), 10);
-  for (const value of ['12:60,00', '1:2,34', '00:00,1', '-1:00,00', '999999:00,00']) {
-    assert.throws(() => app.parseElapsed(value), /Informe|limite/);
-  }
-  app.state.seals.b1 = { by: 'coord', at: Date.now() };
-  app.saveManualTime('b1', '12:34,56');
-  assert.equal(app.state.timers.b1.elapsedMs, 754560);
-  assert.equal(app.state.timers.b1.startedAt, 0);
-  assert.equal(app.state.timers.b1.source, 'manual');
-  assert.throws(() => harness().app.saveManualTime('b1', '01:00,00'), /exclusivo da coordenação/);
-});
-
-test('export/import transfers exact centiseconds between account-local timers without Firebase', async () => {
-  const teacher = harness();
-  teacher.app.storeLocalTimer('b1', { elapsedMs: 123456, startedAt: teacher.now() - 100, revision: 1 });
-  teacher.app.exportTimer('b1');
-  assert.equal(teacher.downloads[0].filename, 'tempo_banca_b1.json');
-  const record = JSON.parse(await teacher.downloads[0].blob.text());
-  assert.equal(record.type, 'bancaflow-time');
-  assert.equal(record.elapsedMs, 123556);
-  assert.equal(record.boardId, 'b1');
-  const coordinator = harness('coord');
-  coordinator.app.state.seals.b1 = { by: 'coord', at: coordinator.now() };
-  coordinator.app.importTimerData('b1', record);
-  assert.equal(coordinator.app.state.timers.b1.elapsedMs, record.elapsedMs);
-  assert.equal(coordinator.app.state.timers.b1.startedAt, 0);
-  assert.equal(coordinator.app.state.timers.b1.source, 'imported');
-  assert.throws(() => teacher.app.importTimerData('b1', record), /exclusiva da coordenação/);
-  for (const invalid of [{...record, projectId:'other'}, {...record,boardId:'other'}, {...record,elapsedMs:-1}, {...record,elapsedMs:1.5}, {...record,elapsedMs:31536000001}, {...record,version:2}]) {
-    assert.throws(() => coordinator.app.importTimerData('b1', invalid), /Arquivo inválido/);
-  }
-  assert.equal(teacher.calls.reads.length + teacher.calls.sets.length + coordinator.calls.reads.length + coordinator.calls.sets.length, 0);
 });
 
 test('HTML report lists individual grades, weighted portions, final result and centiseconds', () => {
@@ -485,7 +228,7 @@ test('report refresh rejects an empty selection, an open board and reopening dur
   const h = harness('coord'), { app } = h;
   await assert.rejects(app.refreshReportData([]), /Não há bancas completas/);
   assert.equal(h.calls.reads.length, 0);
-  await assert.rejects(app.refreshReportData(['b1']), /foi reaberta/);
+  await assert.rejects(app.refreshReportData(['b1']), /banca está aberta/);
   assert.deepEqual(h.calls.reads, ['seals/b1']);
   h.calls.reads.length = 0;
   h.write('seals/b1', { by: 't1', at: h.now() });
@@ -528,4 +271,185 @@ test('native evaluation PDF supports legacy data and blocks open, incomplete or 
   assert.throws(() => app.buildEvaluationPdf(['b1']), /notas pendentes/);
   assert.throws(() => harness().app.buildEvaluationPdf(['b1']), /Somente a coordenação/);
   assert.throws(() => app.buildEvaluationPdf([]), /pelo menos uma banca/);
+});
+
+test('elapsed timer uses server offset, paused duration and sealed cutoff', () => {
+  const h = harness(), { app } = h;
+  app.state.serverOffset = 500;
+  app.state.timers.b1 = { elapsedMs: 1234, startedAt: h.now() - 3000 };
+  assert.equal(app.boardElapsed('b1'), 4734);
+  app.state.seals.b1 = { by: 't2', at: h.now() - 1000 };
+  assert.equal(app.boardElapsed('b1'), 3234);
+  h.advance(60000);
+  assert.equal(app.boardElapsed('b1'), 3234);
+  assert.equal(app.elapsedAt({ elapsedMs: 1234, startedAt: 0 }), 1234);
+});
+
+test('shared timer starts, pauses and resumes without losing milliseconds', async () => {
+  const h = harness(), { app } = h;
+  await app.controlTimer('b1', 'start');
+  assert.equal(h.data.timers.b1.startedAt, h.now());
+  h.advance(12345);
+  await app.controlTimer('b1', 'pause');
+  assert.equal(h.data.timers.b1.elapsedMs, 12345);
+  assert.equal(h.data.timers.b1.startedAt, 0);
+  h.advance(10000);
+  await app.controlTimer('b1', 'start');
+  h.advance(555);
+  assert.equal(app.boardElapsed('b1'), 12900);
+  await app.controlTimer('b1', 'pause');
+  assert.equal(h.data.timers.b1.elapsedMs, 12900);
+  assert.equal(h.data.timers.b1.revision, 4);
+  assert.ok(h.calls.transactions.every(call => call.config.applyLocally === false));
+});
+
+test('transaction retries respect another evaluator already starting or pausing', async () => {
+  const h = harness(), { app } = h;
+  h.options.transactionRetries = [null, { elapsedMs: 500, startedAt: h.now(), revision: 3 }];
+  await app.controlTimer('b1', 'start');
+  assert.equal(h.read('timers/b1'), undefined);
+  h.options.transactionRetries = [{ elapsedMs: 0, startedAt: h.now() - 5000, revision: 3 }, { elapsedMs: 5000, startedAt: 0, revision: 4 }];
+  await app.controlTimer('b1', 'pause');
+  assert.equal(h.read('timers/b1'), undefined);
+  assert.equal(app.state.busyBoards.has('b1'), false);
+});
+
+test('reset and status cancellation leave every saved grade untouched', async () => {
+  const h = harness(), { app } = h;
+  const saved = clone(h.data.grades);
+  h.write('timers/b1', { elapsedMs: 12345, startedAt: 0, revision: 1 });
+  h.options.confirm = false;
+  await app.controlTimer('b1', 'reset');
+  assert.equal(h.calls.transactions.length, 0);
+  assert.equal(h.data.timers.b1.elapsedMs, 12345);
+  h.options.confirm = true;
+  await app.controlTimer('b1', 'reset');
+  assert.equal(h.data.timers.b1.elapsedMs, 0);
+  assert.deepEqual(h.data.grades, saved);
+});
+
+test('assigned teacher closes atomically, freezes time and another teacher reopens without deleting grades', async () => {
+  const h = harness(), { app } = h;
+  const original = clone(h.data.grades);
+  h.write('timers/b1', { elapsedMs: 12345, startedAt: h.now() - 1555, revision: 2 });
+  await app.closeBoard('b1');
+  assert.equal(h.data.seals.b1.by, 't1');
+  assert.equal(h.data.timers.b1.elapsedMs, 13900);
+  assert.equal(h.data.timers.b1.startedAt, 0);
+  assert.deepEqual(Object.keys(h.calls.updates[0]).sort(), ['seals/b1', 'timers/b1']);
+  app.state.user.uid = 't2'; app.state.profile = clone(h.data.users.t2);
+  await app.reopenBoard('b1');
+  assert.equal(h.data.seals.b1, undefined);
+  assert.equal(h.data.timers.b1.elapsedMs, 13900);
+  assert.equal(h.data.timers.b1.startedAt, 0);
+  assert.deepEqual(h.data.grades, original);
+});
+
+test('coordinator may close incomplete board then reopen to finish delivery grades', async () => {
+  const h = harness('coord'), { app } = h;
+  delete h.data.deliveries.b1.s1; delete app.state.deliveries.b1.s1;
+  await app.closeBoard('b1');
+  assert.equal(h.data.seals.b1.by, 'coord');
+  await assert.rejects(app.saveDelivery({dataset:{deliveryForm:'b1',student:'s1'},values:{delivery:'9.5'}}),/Banca já concluída/);
+  await app.reopenBoard('b1');
+  await app.saveDelivery({dataset:{deliveryForm:'b1',student:'s1'},values:{delivery:'9.5'}});
+  assert.equal(h.data.deliveries.b1.s1, 9.5);
+  await assert.rejects(harness().app.saveDelivery({dataset:{deliveryForm:'b1',student:'s1'},values:{delivery:'9.5'}}),/Acesso restrito/);
+});
+
+test('reopening does not discard a draft made before another evaluator closed', async () => {
+  const h = harness(), { app } = h;
+  const draft = { presentation:'9',practice:'8',code:'6',time:'8' };
+  app.state.drafts.set('grade/b1/s1',draft);
+  h.write('seals/b1',{by:'t2',at:h.now()});app.state.seals.b1=clone(h.data.seals.b1);
+  await app.reopenBoard('b1');
+  assert.equal(h.data.seals.b1,undefined);
+  assert.deepEqual(clone(app.state.drafts.get('grade/b1/s1')),draft);
+});
+
+test('offline, sealed and failed writes do not fabricate state or leave actions busy', async () => {
+  const h = harness(), { app } = h;
+  app.state.connected=false;
+  await assert.rejects(app.closeBoard('b1'),/Conecte-se/);
+  await assert.rejects(app.controlTimer('b1','start'),/Conecte-se/);
+  app.state.connected=true;app.state.seals.b1={by:'t2',at:h.now()};
+  await assert.rejects(app.controlTimer('b1','start'),/Reabra/);
+  app.state.seals.b1=null;
+  h.options.updateError=Error('permission-denied');
+  await assert.rejects(app.closeBoard('b1'),/permission-denied/);
+  assert.equal(app.state.seals.b1,undefined);
+  assert.equal(app.state.busyBoards.has('b1'),false);
+  h.options.transactionError=Error('offline');
+  await assert.rejects(app.controlTimer('b1','start'),/offline/);
+  assert.equal(app.state.busyBoards.has('b1'),false);
+});
+
+test('official snapshot includes every individual note and exact weighted totals from refreshed data', async () => {
+  const h=harness('coord'),{app}=h;
+  h.write('seals/b1',{by:'t1',at:h.now()});h.write('timers/b1',{elapsedMs:123456,startedAt:0,revision:1});
+  const result=await app.createBoardShareSnapshot('b1');
+  assert.equal(result.scope,'official');assert.equal(result.students.length,2);
+  assert.equal(result.students[0].evaluators.length,2);
+  assert.ok(Math.abs(result.students[0].result.final-7.8)<1e-12);
+  assert.equal(result.elapsedMs,123456);
+  app.assertShareSnapshotCurrent(result);
+  const message=app.buildBoardShareText(result);
+  for(const text of ['Ana','Bruno','Professor Um','Professora Dois','Apresentação: 10,00','Média da banca (0–10): 7,00','Banca × 60% (0–6): 4,20','Entregas × 40% (0–4): 3,60','Nota final (0–10): 7,80','02:03,45'])assert.ok(message.includes(text),text);
+  assert.equal(new URL(app.whatsappTextUrl(message)).searchParams.get('text'),message);
+  const pdf=await app.buildSharePdf(result).text();
+  for(const text of ['Ana','Bruno','4,20','3,60','7,80','02:03,45'])assert.ok(pdf.includes(text),text);
+});
+
+test('teacher single-student snapshot works when another student is pending and never reads other grades or deliveries', async () => {
+  const h=harness(),{app}=h;
+  delete h.data.grades.b1.t1.s2;
+  h.write('timers/b1',{elapsedMs:123456,startedAt:0,revision:1});
+  const result=await app.createBoardShareSnapshot('b1',{studentId:'s1'});
+  assert.equal(result.scope,'teacher');assert.equal(result.students.length,1);
+  assert.equal(result.students[0].name,'Ana');assert.equal(result.students[0].evaluators.length,1);
+  assert.equal(result.students[0].evaluators[0].uid,'t1');assert.equal(result.students[0].result,null);
+  assert.deepEqual(h.calls.reads.sort(),['grades/b1/t1','seals/b1','timers/b1']);
+  const message=app.buildBoardShareText(result),pdf=await app.buildSharePdf(result).text();
+  assert.ok(message.includes('parcial'));assert.ok(message.includes('Apresentação: 10,00'));
+  for(const leak of ['Professora Dois','Bruno','Entregas (0–10)','Nota final (0–10)']){assert.ok(!message.includes(leak),leak);assert.ok(!pdf.includes(leak),leak);}
+  assert.ok(pdf.includes('PARCIAL'));
+  await assert.rejects(app.createBoardShareSnapshot('b1'),/quatro notas de Bruno/);
+});
+
+test('share preparation blocks official open/incomplete results, unsaved work, offline and unknown students', async () => {
+  const h=harness('coord'),{app}=h;
+  await assert.rejects(app.createBoardShareSnapshot('b1'),/banca está aberta/);
+  h.write('seals/b1',{by:'t1',at:h.now()});delete h.data.deliveries.b1.s1;
+  await assert.rejects(app.createBoardShareSnapshot('b1'),/todas as notas completas/);
+  app.state.connected=false;await assert.rejects(app.createBoardShareSnapshot('b1'),/Conecte-se/);
+  app.state.connected=true;await assert.rejects(app.createBoardShareSnapshot('b1',{studentId:'missing'}),/Aluno não encontrado/);
+  app.state.drafts.set('delivery/b1/s1',{delivery:'8'});
+  await assert.rejects(app.createBoardShareSnapshot('b1'),/Salve as notas/);
+});
+
+test('share fingerprints reject edited grades, timer, reopened status and another session', async () => {
+  const h=harness('coord'),{app}=h;
+  h.write('seals/b1',{by:'t1',at:h.now()});h.write('timers/b1',{elapsedMs:123456,startedAt:0,revision:1});
+  for(const change of [()=>app.state.grades.b1.t1.s1.presentation=1,()=>app.state.timers.b1.elapsedMs++,()=>app.state.seals.b1=null]){
+    const result=await app.createBoardShareSnapshot('b1');change();assert.throws(()=>app.assertShareSnapshotCurrent(result),/mudaram/);
+  }
+  const result=await app.createBoardShareSnapshot('b1');app.state.user.uid='t2';
+  assert.throws(()=>app.assertShareSnapshotCurrent(result),/sessão mudou/);
+});
+
+test('account changes during asynchronous refresh cannot produce another account snapshot', async () => {
+  const h=harness(),{app}=h;
+  h.options.onRead=()=>{app.state.user.uid='t2';};
+  await assert.rejects(app.createBoardShareSnapshot('b1',{studentId:'s1'}),/sessão mudou/);
+});
+
+test('snapshot uses refreshed group metadata and rejects a student removed during preparation', async () => {
+  const h=harness(),{app}=h;
+  h.options.onRead=()=>{app.state.groups.g1={...app.state.groups.g1,title:'Título atualizado',students:{s1:'Ana atualizada',s2:'Bruno'}};};
+  const snapshot=await app.createBoardShareSnapshot('b1',{studentId:'s1'});
+  assert.equal(snapshot.projectTitle,'Título atualizado');
+  assert.equal(snapshot.students[0].name,'Ana atualizada');
+  app.assertShareSnapshotCurrent(snapshot);
+  h.options.onRead=()=>{app.state.groups.g1={...app.state.groups.g1,students:{s2:'Bruno'}};};
+  await assert.rejects(app.createBoardShareSnapshot('b1',{studentId:'s1'}),/Aluno não encontrado/);
 });
