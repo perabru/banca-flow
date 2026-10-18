@@ -7,10 +7,10 @@
   padding: clamp(14px, 2.4vw, 24px);
   overflow: hidden;
   border: 1px solid #dce5ef;
-  border-radius: 20px;
+  border-radius: 12px;
   background: #fff;
   color: #18324e;
-  box-shadow: 0 8px 26px #173c6510;
+  box-shadow: none;
 }
 .ba-chart-heading {
   margin: 0;
@@ -64,7 +64,7 @@
 .ba-chart-footnote { margin: 14px 0 0; color: #687586; font-size: .73rem; line-height: 1.6; }
 .ba-chart-empty { margin: 20px 0; color: #526277; font-size: .9rem; line-height: 1.6; }
 @media (max-width: 380px) {
-  .ba-chart { padding: 12px 8px; border-radius: 14px; }
+  .ba-chart { padding: 12px 8px; border-radius: 12px; }
   .ba-chart-legend { gap: 7px 11px; font-size: .75rem; }
 }
 @media print {

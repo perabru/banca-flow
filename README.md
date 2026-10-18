@@ -61,12 +61,12 @@ O PDF da agenda e o sorteio continuam disponíveis. O CSV de avaliação também
 
 ## Gráficos da coordenação
 
-Em **Relatórios**, o painel **Resultados em gráficos** acompanha os filtros de data, curso e turma. Ele inclui apenas bancas encerradas com todas as notas completas e mostra:
+Em **Relatórios**, o painel **Análise dos resultados** acompanha os filtros de data, curso e turma. Ele inclui apenas bancas encerradas com todas as notas completas e mostra:
 
 - Médias da banca, entregas e nota final por grupo, na escala fixa de 0 a 10.
 - Tempo de apresentação com centésimos comparado ao intervalo reservado na agenda. Esse intervalo inclui o horário completo da banca, podendo conter arguição e transição; não é uma meta de tempo de fala.
 - Composição da nota final de cada aluno, separando banca × 60% e entregas × 40%.
-- Ao escolher uma banca em **Explorar os gráficos**, comparação dos alunos e notas individuais de cada professor nos quatro critérios.
+- Ao escolher uma banca em **Banca analisada**, comparação dos alunos e notas individuais de cada professor nos quatro critérios.
 
 Os valores exatos também ficam disponíveis em tabelas expansíveis. A média geral considera cada aluno uma vez, sem fazer uma média das médias dos grupos. O tempo médio considera cada banca com cronômetro uma vez; um registro zerado é válido, e ausência de tempo aparece como **Não registrado**.
 

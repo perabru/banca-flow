@@ -5,15 +5,15 @@
 <meta name="color-scheme" content="light">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="stylesheet" href="assets/analytics.css">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-5K2YsXWkosOyNWvj1Uo6bkp20mRRvNoO2eKWassU8kg='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-8yW4xhUfu8DRVVsF+OdONDyp797GBv6VfdyulFFEFlU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
-<title>BancaFlow · Avaliação de TCC | Univap</title><style>
+<title>BancaFlow · Gestão de bancas | Univap</title><style>
 /* Mobile first. Cores institucionais Univap; todos os recursos ficam neste HTML. */
 :root{
   --azul:#014996;--azul-escuro:#073b78;--azul-profundo:#092c58;
   --azul-claro:#eaf3fb;--vermelho:#e0001a;--borda:#dce5ef;
   --texto:#22354c;--cinza:#5c7087;--fundo:#f3f6fb;--branco:#fff;
-  --sucesso:#137a58;--raio:20px;--nav-height:76px;
+  --sucesso:#137a58;--raio:12px;--nav-height:76px;
   font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Arial,sans-serif;
   color:var(--texto);background:var(--fundo);font-synthesis:none;
 }
@@ -57,16 +57,13 @@ a{color:var(--azul)}
 .auth-page{display:flex;flex-direction:column;min-height:100vh;min-height:100svh;background:var(--fundo)}
 .auth-deco{position:relative;overflow:hidden;background:var(--azul);color:#fff;padding:calc(28px + env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) 48px max(24px,env(safe-area-inset-left))}
 .auth-deco:before{content:"";position:absolute;inset:0 0 auto;height:5px;background:var(--vermelho)}
-.auth-deco:after{content:"";position:absolute;width:210px;height:210px;right:-100px;bottom:-120px;border:34px solid #ffffff0b;border-radius:50%;pointer-events:none}
 .pill{display:inline-flex;align-items:center;gap:7px;font-size:.68rem;font-weight:700;letter-spacing:.065em;line-height:1.5}
-.auth-deco>.pill{padding:7px 10px;border:1px solid #ffffff3b;border-radius:8px;background:#ffffff0b;letter-spacing:.035em}
+.auth-deco>.pill{padding:0;color:#d6e8fa;letter-spacing:.06em}
 .brand-mark{display:none}
 .auth-deco h1{font-size:clamp(1.8rem,7.2vw,2.4rem);font-weight:750;line-height:1.18;letter-spacing:-.04em;margin:22px 0 12px}
-.auth-deco h1 em{font-style:normal;color:#d6e8fa}
 .auth-deco p{color:#e0ecf9;font-size:.88rem;line-height:1.65;margin:0;max-width:480px}
-.auth-stats{display:flex;gap:16px;flex-wrap:wrap;margin-top:24px}
-.auth-stats span{font-size:.72rem;color:#e8f1fc;padding-left:9px;border-left:2px solid #ffffff5c}
-.auth-card{position:relative;z-index:1;width:calc(100% - 32px);max-width:460px;margin:-28px auto 32px;padding:25px 20px;background:#fff;border:1px solid #e2eaf3;border-radius:24px;box-shadow:0 16px 40px #183d6a10}
+.auth-deco .auth-term{margin-top:24px;padding-top:16px;border-top:1px solid #ffffff38;color:#cbdcf0;font-size:.78rem}
+.auth-card{position:relative;z-index:1;width:calc(100% - 32px);max-width:460px;margin:-28px auto 32px;padding:25px 20px;background:#fff;border:1px solid #e2eaf3;border-radius:14px;box-shadow:0 6px 20px #183d6a0a}
 .logo{display:flex;align-items:center;gap:11px;font-size:.84rem;line-height:1.3;font-weight:750;color:var(--azul-profundo)}
 .logo span{display:grid;place-items:center;flex-shrink:0;width:42px;height:42px;background:var(--azul);color:#fff;border-radius:12px;font-size:.77rem;letter-spacing:.02em}
 .logo small{display:block;margin-top:4px;font-size:.69rem;font-weight:400;color:var(--cinza);line-height:1.4}
@@ -135,13 +132,12 @@ button.avatar{width:44px;height:44px;padding:0}
 .menu-links button.menu-logout{color:#a92335;margin-top:5px}
 
 /* Cartões, campos e ações. */
-.hero{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:20px;background:var(--azul);border:1px solid var(--azul);color:#fff;border-radius:22px;padding:25px 22px;margin-bottom:18px;box-shadow:0 8px 24px #01499614}
-.hero:after{content:"";position:absolute;right:-65px;top:-65px;width:175px;height:175px;border:24px solid #ffffff08;border-radius:50%;pointer-events:none}
+.hero{position:relative;overflow:hidden;display:flex;flex-direction:column;align-items:flex-start;gap:20px;background:#fff;border:1px solid var(--borda);border-left:3px solid var(--azul);color:var(--texto);border-radius:12px;padding:24px 22px;margin-bottom:18px}
 .hero>div,.hero>.btn{position:relative;z-index:1;min-width:0}
-.hero .pill{color:#d6e8fa;font-size:.66rem}
-.hero h2{font-size:1.6rem;line-height:1.25;font-weight:750;letter-spacing:-.035em;margin:10px 0 9px;color:#fff;overflow-wrap:anywhere}
-.hero p{font-size:.88rem;line-height:1.65;color:#e3edf8;max-width:670px;margin:0}
-.hero .btn{width:100%;background:#fff;border-color:#fff;color:var(--azul);justify-content:space-between}
+.hero .pill{color:var(--cinza);font-size:.66rem}
+.hero h2{font-size:1.3rem;line-height:1.25;font-weight:700;letter-spacing:-.025em;margin:9px 0 8px;color:var(--azul-profundo);overflow-wrap:anywhere}
+.hero p{font-size:.86rem;line-height:1.6;color:var(--cinza);max-width:670px;margin:0}
+.hero .btn{width:100%;background:var(--azul);border-color:var(--azul);color:#fff;justify-content:space-between}
 .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
 .grid.three>.stat:last-child{grid-column:1/-1}
 .stat,.card{min-width:0;background:#fff;border:1px solid var(--borda);border-radius:var(--raio);box-shadow:0 4px 14px #163d6604}
@@ -269,12 +265,12 @@ button.avatar{width:44px;height:44px;padding:0}
 .analytics-toggle b,.analytics-toggle small{display:block;overflow-wrap:anywhere}
 .analytics-toggle small{font-size:.8rem;color:var(--cinza);margin-top:3px}
 .analytics-panel{margin:24px 0 32px;min-width:0}
-.analytics-hero{display:flex;flex-direction:column;gap:20px;padding:24px 20px;background:linear-gradient(125deg,#073b78,#014996);border-radius:20px 20px 0 0;color:#fff}
+.analytics-hero{display:flex;flex-direction:column;gap:20px;padding:24px 20px;background:var(--azul-escuro);border-radius:12px 12px 0 0;color:#fff}
 .analytics-hero .eyebrow{color:#b9d9f5;font-size:.7rem;letter-spacing:.12em;margin:0 0 8px}
 .analytics-hero h3{font-size:1.5rem;letter-spacing:-.03em;line-height:1.25;margin:0 0 9px}
 .analytics-hero p{color:#deebf8;font-size:.86rem;max-width:540px;margin:0}
 .analytics-hero .btn{background:#fff;color:var(--azul);border-color:#fff}
-.analytics-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));background:#fff;border:1px solid var(--borda);border-top:0;border-radius:0 0 20px 20px;overflow:hidden}
+.analytics-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));background:#fff;border:1px solid var(--borda);border-top:0;border-radius:0 0 12px 12px;overflow:hidden}
 .analytics-metrics>div{padding:17px 14px;min-width:0;border-bottom:1px solid var(--borda)}
 .analytics-metrics>div:nth-last-child(-n+2){border-bottom:0}
 .analytics-metrics>div:nth-child(odd){border-right:1px solid var(--borda)}
@@ -326,7 +322,7 @@ button.avatar{width:44px;height:44px;padding:0}
   .grid.three>.stat:last-child{grid-column:auto}
   .hero{flex-direction:row;align-items:center;justify-content:space-between;padding:30px}
   .hero .btn{width:auto;flex-shrink:0}
-  .hero h2{font-size:1.9rem}
+  .hero h2{font-size:1.45rem}
   .section-heading{flex-direction:row;align-items:center;justify-content:space-between}
   .section-heading>.btn{width:auto;flex-shrink:0}
   .toolbar{flex-direction:row;align-items:center;flex-wrap:wrap}
@@ -364,10 +360,8 @@ button.avatar{width:44px;height:44px;padding:0}
 @media(min-width:1024px){
   .auth-page{display:grid;grid-template-columns:minmax(0,1fr) minmax(470px,1fr);background:#fff}
   .auth-deco{display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:64px clamp(40px,6vw,100px);min-height:100vh}
-  .auth-deco h1{font-size:clamp(2.8rem,4.2vw,4.4rem);line-height:1.13;margin:30px 0 22px}
+  .auth-deco h1{font-size:clamp(2.8rem,3.8vw,3.8rem);line-height:1.13;margin:26px 0 16px}
   .auth-deco p{font-size:1rem;max-width:460px}
-  .auth-stats{margin-top:38px;gap:24px}
-  .auth-stats span{font-size:.82rem}
   .auth-card{width:min(480px,calc(100% - 64px));max-width:none;margin:auto;padding:44px 30px;border:0;box-shadow:none}
   .auth-card .logo{margin-bottom:44px}
   .auth-card h2{font-size:1.9rem}
@@ -403,7 +397,7 @@ button.avatar{width:44px;height:44px;padding:0}
   .btn:hover:not(:disabled){background:#f1f6fc;border-color:#9bbada}
   .btn.primary:hover:not(:disabled),.btn.dark:hover:not(:disabled){background:var(--azul-escuro);border-color:var(--azul-escuro)}
   .btn.danger:hover:not(:disabled){background:#ffe7eb;border-color:#d08995}
-  .hero .btn:hover{background:#edf4fc;border-color:#edf4fc}
+  .hero .btn:hover{background:var(--azul-escuro);border-color:var(--azul-escuro)}
   .sidebar nav button:hover,.menu-links button:hover{background:#f1f6fc;color:var(--azul)}
 }
 @media(prefers-reduced-motion:reduce){
@@ -521,16 +515,16 @@ button.avatar{width:44px;height:44px;padding:0}
 <noscript><p class="notice">Ative o JavaScript para acessar o BancaFlow. Em caso de dúvida, procure a coordenação.</p></noscript>
 <div id="toast" role="status" aria-live="polite"></div>
 <section id="login-view" class="auth-page">
-  <div class="auth-deco"><span class="pill">UNIVAP · TRABALHOS DE CONCLUSÃO DE CURSO</span><h1>Bancas e avaliações.<br><em>Em um só lugar.</em></h1><p>Organize as bancas, registre notas e acompanhe cada avaliação.</p><div class="auth-stats"><span>60% banca</span><span>40% entregas</span><span>Notas individuais</span></div></div>
-  <form id="login-form" class="auth-card"><div class="logo"><span>TCC</span><div>BancaFlow<small>Bancas de TCC · Univap</small></div></div><p class="eyebrow">ACESSO DOS PROFESSORES</p><h2>Acesse sua conta</h2><p class="muted">Use sua conta do BancaFlow cadastrada pela coordenação.</p>
+  <div class="auth-deco"><span class="pill">UNIVAP · TRABALHOS DE CONCLUSÃO DE CURSO</span><h1>BancaFlow</h1><p>Gestão de bancas de TCC</p><p class="auth-term">Ano letivo 2026</p></div>
+  <form id="login-form" class="auth-card"><div class="logo"><span>TCC</span><div>BancaFlow<small>Bancas de TCC · Univap</small></div></div><p class="eyebrow">ACESSO DOS PROFESSORES</p><h2>Entrar</h2><p class="muted">Conta cadastrada pela coordenação.</p>
     <label for="email">E-mail de acesso ao BancaFlow</label><input id="email" type="email" inputmode="email" enterkeyhint="next" autocapitalize="none" spellcheck="false" autocomplete="username" placeholder="professor@univap.br" required>
     <label for="password">Senha</label><div class="password-wrap"><input id="password" type="password" enterkeyhint="go" autocomplete="current-password" placeholder="Sua senha" required minlength="6"><button type="button" id="toggle-password" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
-    <button type="submit" class="btn primary full" id="login-button">Entrar no sistema <span>→</span></button><button type="button" id="reset-password" class="link-button">Esqueci minha senha</button>
+    <button type="submit" class="btn primary full" id="login-button">Entrar <span>→</span></button><button type="button" id="reset-password" class="link-button">Esqueci minha senha</button>
     <p class="tiny">Acesso exclusivo aos professores cadastrados. Use a senha própria do BancaFlow.</p>
-    <div class="auth-identity"><strong>BancaFlow · Gestão de bancas</strong><p>Ferramenta acadêmica utilizada por professores da Univap.<br>Responsável: Prof. Bruno Michel Pera · Coordenação: Prof. Alberson.</p><a href="privacidade.html">Sobre o sistema e a privacidade</a></div>
+    <div class="auth-identity"><strong>BancaFlow · Professores da Univap</strong><p>Responsável: Prof. Bruno Michel Pera<br>Coordenação: Prof. Alberson</p><a href="privacidade.html">Sobre o sistema e a privacidade</a></div>
     <p id="login-status" class="notice hidden" role="alert"></p>
     <details id="access-help" class="setup-guide">
-      <summary>Ajuda para liberar o acesso</summary>
+      <summary>Problemas de acesso</summary>
       <div class="setup-body">
         <p>E-mail e senha são verificados antes das permissões do sistema. Se a conta entrar, mas o acesso for negado, a administração precisa conferir o cadastro e as regras no Firebase.</p>
         <div id="access-account" class="setup-keys hidden">
@@ -545,7 +539,7 @@ button.avatar{width:44px;height:44px;padding:0}
 </section>
 <div id="app-view" class="app-shell hidden">
   <aside class="sidebar"><div class="logo"><span>TCC</span><div>BancaFlow<small>Bancas de TCC · Univap</small></div></div><p class="side-heading">SISTEMA DE AVALIAÇÃO</p><nav id="desktop-nav" aria-label="Navegação principal"></nav><div class="side-foot"><div class="avatar" id="side-avatar">P</div><div><strong id="side-name">Professor</strong><small id="side-role">Avaliador</small></div><button type="button" id="logout" class="icon-btn" title="Sair" aria-label="Sair"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M9 12h12m-4-4 4 4-4 4"/></svg></button></div></aside>
-  <div class="main-column"><header class="topbar"><div><p class="eyebrow" id="page-eyebrow">PAINEL</p><h1 id="page-title">Visão geral</h1></div><div class="top-right"><span class="live-dot"></span><span class="online-label">Ambiente de avaliação</span><button type="button" id="top-initials" class="avatar" aria-label="Abrir menu da conta" aria-haspopup="dialog" aria-controls="mobile-menu">P</button></div></header>
+  <div class="main-column"><header class="topbar"><div><p class="eyebrow" id="page-eyebrow">PAINEL</p><h1 id="page-title">Visão geral</h1></div><div class="top-right"><span class="live-dot"></span><span class="online-label">BancaFlow · Univap</span><button type="button" id="top-initials" class="avatar" aria-label="Abrir menu da conta" aria-haspopup="dialog" aria-controls="mobile-menu">P</button></div></header>
     <main id="view" tabindex="-1"></main><footer class="app-identity">BancaFlow · Professores da Univap · Coordenação: Alberson <a href="privacidade.html">Sobre e privacidade</a></footer>
   </div><nav id="mobile-nav" class="mobile-nav" aria-label="Navegação mobile"></nav>
 </div>
@@ -1043,12 +1037,12 @@ function render(){if(!state.user)return;captureDrafts();if(typeof captureGroupAd
 }
 function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,b])=>{const g=groupOf(b);return g&&isCoord()&&situacao(b,g,boardGrades(id),state.deliveries[id]).pronta;});
  const completed=isCoord()?ready.length:boards.filter(([id,b])=>{const g=groupOf(b);return g&&studentsOf(g).every(([sid])=>mediaAvaliador(state.grades[id]?.[state.user.uid]?.[sid])!==null);}).length;
- return `<div class="hero"><div><span class="pill">UNIVAP · ANO ACADÊMICO 2026</span><h2>Olá, ${esc(state.profile.name.replace(/^Prof\.?\s+/i,'').split(' ')[0])}</h2><p>${isCoord()?'Organize as bancas, acompanhe cada avaliação e emita os relatórios finais.':'Suas bancas e avaliações individuais estão reunidas em um só lugar.'}</p></div><button class="btn" data-route="${isCoord()?'sortear':'bancas'}">${isCoord()?'Organizar bancas':'Minhas bancas'} ${icon('seta')}</button></div>
+ return `<div class="hero"><div><span class="pill">UNIVAP · ANO LETIVO 2026</span><h2>${isCoord()?'Painel da coordenação':'Painel do professor'}</h2><p>${isCoord()?'Agenda, avaliações e relatórios.':'Consulta de bancas e registro de notas.'}</p></div><button class="btn" data-route="${isCoord()?'sortear':'bancas'}">${isCoord()?'Organizar bancas':'Minhas bancas'} ${icon('seta')}</button></div>
  <div class="grid">${stats(isCoord()?'Grupos ativos':'Bancas atribuídas',isCoord()?availableGroups().length:boards.length,'01')}${stats('Bancas agendadas',boards.length,'02')}${stats(isCoord()?'Prontas para concluir':'Minhas bancas avaliadas',completed,'03')}${stats(isCoord()?'Professores ativos':'Alunos para avaliar',isCoord()?activeTeachers().length:boards.reduce((s,[,b])=>s+studentsOf(groupOf(b)).length,0),'04')}</div>
- ${isCoord() && !Object.keys(state.groups).length ? '<div class="notice">Nenhum grupo cadastrado. Acesse Grupos e cursos para cadastrar um grupo ou importar uma planilha.</div>' : ''}<section class="card">${heading('Próximas bancas',isCoord()?'Acompanhe as bancas criadas e o andamento das notas.':'Somente as bancas das quais você participa.',`<button class="btn soft" data-route="bancas">Ver todas →</button>`)}${boardList(boards.slice().sort((a,b)=>a[1].startAt-b[1].startAt).slice(0,5))}</section>`;
+ ${isCoord() && !Object.keys(state.groups).length ? '<div class="notice">Nenhum grupo cadastrado. Acesse Grupos e cursos para cadastrar um grupo ou importar uma planilha.</div>' : ''}<section class="card">${heading('Agenda de bancas',isCoord()?'Agendamentos e situação das avaliações.':'Bancas atribuídas ao professor.',`<button class="btn soft" data-route="bancas">Ver todas →</button>`)}${boardList(boards.slice().sort((a,b)=>a[1].startAt-b[1].startAt).slice(0,5))}</section>`;
 }
 function boardStatus(bid,b){if(state.seals[bid])return badge('Avaliação encerrada','green');if(!isCoord())return badge('Agendada','blue');const g=groupOf(b);if(g&&situacao(b,g,boardGrades(bid),state.deliveries[bid]).pronta)return badge('Notas completas','green');return badge('Em avaliação','orange');}
-function boardList(boards){if(!boards.length)return empty('Nenhuma banca por aqui','Crie uma banca ou aguarde a atribuição da coordenação.');return `<div class="group-list">${boards.map(([id,b])=>{const g=groupOf(b);return `<article class="group-card board-card"><div><div class="row">${g?.courseName?badge(g.courseName):''}${badge(g?.className||'TCC','blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||b.groupId)}</h4><p class="project-name">${esc(g?.title||'')}</p><div class="board-info"><span>${icon('bancas')}${dateStr(b.startAt)}</span><span>${icon('sala')}${esc(b.room)}</span></div><p class="board-team">Orientador: ${esc(b.advisorName)} ${b.members?.[b.advisorUid]?'(participa)':'(não participa)'}<br>${Object.keys(b.members||{}).length} avaliadores · ${studentsOf(g).length} alunos</p></div><button class="btn soft" data-open-board="${esc(id)}">${isCoord()?'Ver detalhes':'Avaliar grupo'} ${icon('seta')}</button></article>`;}).join('')}</div>`;}
+function boardList(boards){if(!boards.length)return empty(isCoord()?'Nenhuma banca cadastrada':'Nenhuma banca atribuída',isCoord()?'Cadastre uma banca em Sorteio.':'A atribuição das bancas é feita pela coordenação.');return `<div class="group-list">${boards.map(([id,b])=>{const g=groupOf(b);return `<article class="group-card board-card"><div><div class="row">${g?.courseName?badge(g.courseName):''}${badge(g?.className||'TCC','blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||b.groupId)}</h4><p class="project-name">${esc(g?.title||'')}</p><div class="board-info"><span>${icon('bancas')}${dateStr(b.startAt)}</span><span>${icon('sala')}${esc(b.room)}</span></div><p class="board-team">Orientador: ${esc(b.advisorName)} ${b.members?.[b.advisorUid]?'(participa)':'(não participa)'}<br>${Object.keys(b.members||{}).length} avaliadores · ${studentsOf(g).length} alunos</p></div><button class="btn soft" data-open-board="${esc(id)}">${isCoord()?'Ver detalhes':'Avaliar grupo'} ${icon('seta')}</button></article>`;}).join('')}</div>`;}
 function boardMatchesDay(board,day){return !day||(Number.isFinite(board?.startAt)&&localDayKey(board.startAt)===day);}
 function filteredBoards(){
  return activeBoards().filter(([,board])=>(state.filter==='todas'||groupOf(board)?.className===state.filter)&&(state.courseFilter==='todas'||courseLabel(groupOf(board))===state.courseFilter)&&boardMatchesDay(board,state.boardDateFilter)).sort((a,b)=>a[1].startAt-b[1].startAt);
@@ -1068,7 +1062,7 @@ function bancaDateFilterHtml(report=false){
  return `<div class="banca-date-field"><label for="${id}">Data da banca</label><input id="${id}" class="filter" type="date" lang="pt-BR" value="${esc(day)}" aria-describedby="${id}-help"><small id="${id}-help">${day?'Somente '+esc(day.split('-').reverse().join('/')):'Todas as datas'}</small></div><div class="banca-date-actions"><button class="btn soft" type="button" data-date-today="${scope}">Hoje</button><button class="btn soft" type="button" data-date-clear="${scope}" ${!day?'disabled':''}>Todas as datas</button></div>`;
 }
 function boardsView(){const arr=filteredBoards();
- const all=Object.values(state.groups);return `${heading(isCoord()?'Agenda de bancas':'Suas bancas',`${arr.length} banca(s) encontrada(s)${state.boardDateFilter?' em '+state.boardDateFilter.split('-').reverse().join('/'):''}.`,isCoord()?'<button class="btn primary" data-route="sortear">+ Nova banca</button>':'')}
+ const all=Object.values(state.groups);return `${heading(isCoord()?'Agenda de bancas':'Bancas atribuídas',`${arr.length} banca(s) encontrada(s)${state.boardDateFilter?' em '+state.boardDateFilter.split('-').reverse().join('/'):''}.`,isCoord()?'<button class="btn primary" data-route="sortear">+ Nova banca</button>':'')}
  <div class="toolbar banca-filter-toolbar"><select id="filter-course" class="filter" aria-label="Filtrar bancas por curso">${opts([['todas','Todos os cursos'],...[...new Set(all.map(courseLabel))].sort().map(c=>[c,c])],state.courseFilter)}</select><select id="filter-class" class="filter" aria-label="Filtrar bancas por turma"><option value="todas">Todas as turmas</option>${[...new Set(all.map(g=>g.className))].sort().map(c=>`<option ${state.filter===c?'selected':''} value="${esc(c)}">Turma ${esc(c)}</option>`).join('')}</select>${bancaDateFilterHtml()}${isCoord()?`<button class="btn soft" data-pdf-agenda="1" ${!arr.length?'disabled':''}>Baixar PDF da agenda</button>`:''}</div>${arr.length?boardList(arr):empty('Nenhuma banca encontrada','Escolha outra data, curso ou turma para ajustar a busca.')}`;
 }
 const opts=(items,selected='')=>items.map(([v,text])=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(text)}</option>`).join('');
@@ -1089,7 +1083,7 @@ function lotteryView(){
  <div class="field"><label for="manual-duration">Duração</label><select id="manual-duration" name="duration">${opts([['30','30 minutos'],['45','45 minutos'],['60','60 minutos'],['90','90 minutos']],'60')}</select></div>
  <div class="field"><label for="manual-size">Professores na banca</label><select id="manual-size" name="size">${opts([['2','2 professores'],['3','3 professores']],'3')}</select></div>
  <div class="wide" id="manual-members"><p class="muted tiny">Selecione um grupo para escolher os avaliadores.</p></div><div class="wide row"><button class="btn primary" type="submit" ${!pending.length?'disabled':''}>Criar banca</button></div></form></div>
- <div class="card">${heading('Sorteio automático','Configure a capacidade diária e o período. O sistema priorizará o orientador e organizará todas as bancas possíveis sem conflitos.')}
+ <div class="card">${heading('Sorteio automático','Distribuição por período, capacidade diária e disponibilidade de avaliadores.')}
  <form id="lottery-form" class="form-grid">
  <div class="field"><label for="lot-course">Cursos incluídos</label><select id="lot-course" name="courseName">${opts([['todas','Todos os cursos'],...[...new Set(pending.map(courseLabel))].sort().map(c=>[c,c])],meta?.courseName||'todas')}</select></div>
  <div class="field"><label for="lot-class">Turmas incluídas</label><select id="lot-class" name="className" required>${opts([['todas','Todas as turmas'],...classes.map(c=>[c,`Turma ${c}`])],'todas')}</select></div>
@@ -1122,7 +1116,7 @@ function manualMemberPicker(){
  p.innerHTML=`<p class="muted tiny">Orientador: <b>${esc(who(g.advisorUid))}</b>. Selecione 2 ou 3 avaliadores, preferencialmente incluindo o orientador. A ausência dele não impede a criação da banca.</p><div class="check-list">${teachers.map(([uid,u])=>`<label class="check-tag"><input type="checkbox" name="evaluator" value="${esc(uid)}" ${previouslySelected.has(uid)||(uid===g.advisorUid&&!previouslySelected.size)?'checked':''}>${esc(u.name)} ${uid===g.advisorUid?'<small>· orientador</small>':''}</label>`).join('')}</div>${!advisorIsTeacher?'<p class="muted tiny">O orientador não está entre os professores cadastrados e não poderá ser incluído nesta banca.</p>':''}`;
 }
 function gradeView(){let id=state.selectedBoard;let board=state.boards[id];if(!board||(!isCoord()&&!board.members?.[state.user.uid])){const first=activeBoards()[0];id=first?.[0];board=first?.[1];state.selectedBoard=id||'';}
- if(!board)return empty('Nenhuma banca atribuída','Você verá sua avaliação quando o coordenador criar uma banca.');const g=groupOf(board);if(!g)return empty('Grupo ainda não importado');const sealed=!!state.seals[id];const selfMember=!!board.members[state.user.uid];const own=state.grades[id]?.[state.user.uid]||{};
+ if(!board)return empty('Nenhuma banca atribuída','A atribuição das bancas é feita pela coordenação.');const g=groupOf(board);if(!g)return empty('Grupo ainda não importado');const sealed=!!state.seals[id];const selfMember=!!board.members[state.user.uid];const own=state.grades[id]?.[state.user.uid]||{};
  return `<div class="row space">${heading(g.name,g.title)}<select class="filter" id="board-switch" aria-label="Selecionar banca para avaliação">${opts(activeBoards().map(([bid,b])=>[bid,`${groupOf(b)?.name||bid} · ${dateStr(b.startAt)}`]),id)}</select></div>
  <div class="card"><div class="row space"><div class="board-details"><div><b>Orientador:</b> ${esc(board.advisorName)} · ${board.members?.[board.advisorUid]?"participa da banca":"não participa da banca"}</div><div><b>Horário:</b> ${dateStr(board.startAt)} · ${esc(board.room)} · ${board.durationMin} min</div><div><b>Banca:</b> ${Object.keys(board.members).map(uid=>esc(board.memberNames?.[uid]||who(uid))).join(', ')}</div></div>${badge(sealed?'Avaliação encerrada':'Em avaliação',sealed?'green':'orange')}</div><div class="board-actions">${boardActions(id)}<button type="button" class="btn whatsapp" data-share-board="${esc(id)}">${isCoord()?'Compartilhar resultado':'Compartilhar minhas avaliações'}</button></div></div>${timerHtml(id)}
  ${!selfMember?'<div class="notice">Você pode consultar esta banca, mas não está entre seus avaliadores.</div>':sealed?'<div class="notice good">Banca encerrada. As notas estão bloqueadas para edição.</div>':'<div class="notice">As notas são individuais por aluno. Apenas você e o coordenador podem acessar as avaliações que você envia.</div>'}
@@ -1171,10 +1165,10 @@ function analyticsView(){
  const {boards,selected,ids}=analyticsSelection(),summary=BancaAnalytics.summary(boards);
  const charts=selected?BancaAnalytics.details(selected):BancaAnalytics.overview(boards);
  const filteredCount=filteredReportBoards().length;
- return `<section class="analytics-panel" aria-labelledby="analytics-heading"><div class="analytics-hero"><div><p class="eyebrow">ANÁLISE DA COORDENAÇÃO</p><h3 id="analytics-heading">Resultados em gráficos</h3><p>Notas, composição da média final e tempo de apresentação em uma visão clara.</p></div><button class="btn primary" type="button" data-print-analytics="1" ${!ids.length?'disabled':''}>Baixar PDF dos gráficos ${icon('pdf')}</button></div>
+ return `<section class="analytics-panel" aria-labelledby="analytics-heading"><div class="analytics-hero"><div><p class="eyebrow">ANÁLISE DA COORDENAÇÃO</p><h3 id="analytics-heading">Análise dos resultados</h3><p>Notas finais, critérios de avaliação e duração das apresentações.</p></div><button class="btn primary" type="button" data-print-analytics="1" ${!ids.length?'disabled':''}>Baixar PDF dos gráficos ${icon('pdf')}</button></div>
  <div class="analytics-metrics"><div><span>Bancas concluídas</span><strong>${summary.boardCount}<small> / ${filteredCount} do filtro</small></strong></div><div><span>Alunos avaliados</span><strong>${summary.studentCount}</strong></div><div><span>Média final dos alunos</span><strong>${summary.meanFinal===null?'—':fmt(summary.meanFinal)}<small> / 10</small></strong></div><div><span>Tempo médio registrado</span><strong>${summary.meanElapsedMs===null?'—':formatElapsed(summary.meanElapsedMs)}</strong><small>${summary.timedCount} banca(s) com cronômetro</small></div></div>
  <p class="tiny analytics-scope">${boards.length} banca(s) encerrada(s) e completa(s) dos filtros de data, curso e turma. Bancas abertas e notas pendentes ficam fora dos gráficos. A média final considera cada aluno uma vez; o tempo médio considera cada banca com tempo registrado uma vez.</p>
- ${boards.length?`<div class="analytics-controls"><div class="field"><label for="analytics-board-filter">Explorar os gráficos</label><select id="analytics-board-filter">${opts([['','Visão geral dos filtros'],...boards.map(board=>[board.id,`${board.label} · ${board.courseName} · ${board.className}`])],selected?.id||'')}</select></div><p class="tiny">Escolha uma banca para ver as notas de cada aluno, por critério e professor. O PDF dos gráficos acompanha esta seleção.</p></div><div class="analytics-chart-grid">${charts.map(chart=>BancaAnalytics.renderChart(chart)).join('')}</div>`:empty('Nenhuma banca completa neste filtro','Encerre uma banca com todas as notas para visualizar e exportar os gráficos.')}
+ ${boards.length?`<div class="analytics-controls"><div class="field"><label for="analytics-board-filter">Banca analisada</label><select id="analytics-board-filter">${opts([['','Todas as bancas do filtro'],...boards.map(board=>[board.id,`${board.label} · ${board.courseName} · ${board.className}`])],selected?.id||'')}</select></div><p class="tiny">Detalhamento por aluno, critério e avaliador. A seleção também se aplica ao PDF dos gráficos.</p></div><div class="analytics-chart-grid">${charts.map(chart=>BancaAnalytics.renderChart(chart)).join('')}</div>`:empty('Nenhuma banca completa neste filtro','Encerre uma banca com todas as notas para visualizar e exportar os gráficos.')}
  </section>`;
 }
 function chartBoardFromShare(snapshot){
@@ -1236,7 +1230,7 @@ function teachersView(){
  </form></section>`:'<div class="notice">O cadastro e a remoção de professores são exclusivos do coordenador Alberson.</div>'}
  <section class="card">${heading('Professores ativos','Apenas os docentes ativos entram nos próximos sorteios.')}<p class="teacher-admin-note">A remoção encerra o acesso e preserva os registros anteriores. Professores com bancas em aberto precisam concluir as avaliações antes da remoção.</p><div class="teacher-list">${active.map(teacherRow).join('')||empty('Nenhum professor ativo')}</div>
  ${removed.length?`<details class="teacher-archive"><summary>Professores removidos (${removed.length})</summary><div class="teacher-list">${removed.map(teacherRow).join('')}</div></details>`:''}</section>
- <div class="card">${heading('Grupos e cursos','Cadastre grupos, organize cursos e importe arquivos Excel.')}<button class="btn primary" data-route="grupos">Gerenciar grupos e cursos →</button></div>
+ <div class="card">${heading('Grupos e cursos','Cadastro de grupos e importação de planilhas.')}<button class="btn primary" data-route="grupos">Gerenciar grupos e cursos →</button></div>
  <div class="card">${heading('Configuração de permissões','Publique a política desta versão para ativar a edição de contato e a gestão de grupos e cursos, mantendo as avaliações protegidas.')}
  <button class="btn soft" data-copy-policy="1" type="button">Copiar política de acesso</button>
  <details class="policy-guide"><summary>Como aplicar no Firebase</summary><ol><li>No projeto <code>avaliadortcc</code>, abra <b>Realtime Database → Regras</b>.</li><li>Cole a política copiada acima e clique em <b>Publicar</b>.</li><li>Em <b>Dados → users → UID do Alberson</b>, confirme <code>role: "coordinator"</code> e <code>key: "alberson"</code>.</li><li>Em <b>Authentication → Método de login</b>, mantenha <b>E-mail/senha</b> habilitado.</li></ol><p>A política está incluída neste mesmo index.html. Não é necessário criar outro arquivo.</p></details></div>`;
@@ -1477,7 +1471,7 @@ function groupsView(){
   const boardIds=groupRelatedBoards(id),open=boardIds.filter(bid=>!state.seals[bid]),inactive=group.active===false;
   return `<article class="group-admin-card ${inactive?'is-archived':''}"><div class="group-admin-card-top"><div class="row">${badge(group.className,'blue')}${group.courseName?badge(group.courseName):''}${inactive?badge('Removido','orange'):badge(boardIds.length?'Banca agendada':'Disponível',boardIds.length?'blue':'green')}</div><h4>${esc(group.name)}</h4><p class="group-admin-title">${esc(group.title)}</p></div><div class="group-admin-meta"><span><b>Orientador</b>${esc(who(group.advisorUid))}</span><span><b>Alunos</b>${studentsOf(group).length} integrante(s)</span></div><details class="group-student-details"><summary>Ver integrantes</summary><ul>${studentsOf(group).map(([,name])=>`<li>${esc(name)}</li>`).join('')}</ul></details>${boardIds.length?`<p class="tiny muted group-history-note">${open.length?'Banca em aberto. Conclua a avaliação antes de remover o grupo.':'O histórico da banca e os relatórios serão preservados.'}</p>`:''}<div class="group-admin-actions">${inactive?`<button class="btn soft" type="button" data-restore-group="${esc(id)}" ${busy?'disabled':''}>Restaurar grupo</button>`:`<button class="btn soft" type="button" data-edit-group="${esc(id)}" ${busy||boardIds.length?'disabled':''}>Editar grupo</button><button class="btn danger" type="button" data-remove-group="${esc(id)}" ${busy||open.length?'disabled':''}>Remover grupo</button>`}</div>${boardIds.length&&!inactive?'<small class="muted">Dados do grupo protegidos após o agendamento.</small>':''}</article>`;
  };
- return `${heading('Grupos e cursos','Organize alunos, orientadores e novas turmas sem perder o histórico das avaliações.')}<div class="grid three">${stats('Grupos ativos',active.length,'01')}${stats('Alunos em grupos ativos',active.reduce((total,[,group])=>total+studentsOf(group).length,0),'04')}${stats('Grupos removidos',archived.length,'06')}</div>${typeof renderExcelImportCard==='function'?renderExcelImportCard():''}
+ return `${heading('Grupos e cursos','Cadastro de grupos, alunos, cursos e orientadores.')}<div class="grid three">${stats('Grupos ativos',active.length,'01')}${stats('Alunos em grupos ativos',active.reduce((total,[,group])=>total+studentsOf(group).length,0),'04')}${stats('Grupos removidos',archived.length,'06')}</div>${typeof renderExcelImportCard==='function'?renderExcelImportCard():''}
  <section class="card group-editor-card" id="group-editor">${heading(editId?'Editar grupo':'Adicionar grupo',editId?'A edição é permitida antes de agendar uma banca.':'Cadastre o grupo e selecione o orientador responsável.')}
  <form id="group-form" class="form-grid" data-group-version="${state.groupFormVersion}">
  <div class="field"><label for="group-name">Nome do grupo</label><input id="group-name" name="name" maxlength="100" value="${esc(draft.name)}" placeholder="Ex.: Grupo 01 — DermaPrev" required ${busy?'disabled':''}></div>
@@ -1487,7 +1481,7 @@ function groupsView(){
  <div class="field wide"><label for="group-title">Título do trabalho</label><textarea id="group-title" name="title" maxlength="500" rows="2" placeholder="Título completo do projeto" required ${busy?'disabled':''}>${esc(draft.title)}</textarea></div>
  <fieldset class="wide group-students-fieldset" ${busy?'disabled':''}><legend>Integrantes do grupo</legend><p class="muted tiny">Cadastre de 1 a 20 alunos. As notas continuarão individuais.</p><div id="group-student-fields">${groupStudentFields(draft.students,busy)}</div><button class="btn soft" type="button" data-add-group-student="1" ${busy||draft.students.length>=20?'disabled':''}>+ Adicionar aluno</button></fieldset>
  <div class="wide group-editor-actions"><button class="btn primary" type="submit" ${busy?'disabled':''}>${busy?'Salvando…':editId?'Salvar alterações':'Adicionar grupo'}</button><button class="btn soft" type="button" data-cancel-group-edit="1" ${busy?'disabled':''}>${editId?'Cancelar edição':'Limpar formulário'}</button><span class="muted tiny">${editId?'Os identificadores dos alunos serão mantidos.':'O grupo ficará disponível para o próximo agendamento.'}</span></div></form></section>
- <section class="card">${heading('Grupos cadastrados',`${shown.length} grupo(s) nesta seleção. Use os filtros para encontrar cursos, turmas e alunos.`)}<div class="group-admin-filters"><div class="field"><label for="group-course-filter">Curso</label><select id="group-course-filter">${opts([['','Todos os cursos'],...courses.map(course=>[course,course])],state.groupFilterCourse)}</select></div><div class="field"><label for="group-class-filter">Turma</label><select id="group-class-filter">${opts([['','Todas as turmas'],...classes.map(className=>[className,className])],state.groupFilterClass)}</select></div><div class="field group-search-field"><label for="group-search">Buscar grupo ou aluno</label><input id="group-search" type="search" maxlength="180" value="${esc(state.groupSearch)}" placeholder="Nome, projeto ou integrante"></div><label class="group-archive-toggle"><input id="group-show-archived" type="checkbox" ${state.groupShowArchived?'checked':''}> Mostrar removidos</label></div><div class="group-admin-list">${shown.length?shown.map(card).join(''):empty('Nenhum grupo encontrado','Cadastre um novo grupo ou ajuste os filtros.')}</div></section>`;
+ <section class="card">${heading('Grupos cadastrados',`${shown.length} grupo(s) na seleção.`)}<div class="group-admin-filters"><div class="field"><label for="group-course-filter">Curso</label><select id="group-course-filter">${opts([['','Todos os cursos'],...courses.map(course=>[course,course])],state.groupFilterCourse)}</select></div><div class="field"><label for="group-class-filter">Turma</label><select id="group-class-filter">${opts([['','Todas as turmas'],...classes.map(className=>[className,className])],state.groupFilterClass)}</select></div><div class="field group-search-field"><label for="group-search">Buscar grupo ou aluno</label><input id="group-search" type="search" maxlength="180" value="${esc(state.groupSearch)}" placeholder="Nome, projeto ou integrante"></div><label class="group-archive-toggle"><input id="group-show-archived" type="checkbox" ${state.groupShowArchived?'checked':''}> Mostrar removidos</label></div><div class="group-admin-list">${shown.length?shown.map(card).join(''):empty('Nenhum grupo encontrado','Cadastre um novo grupo ou ajuste os filtros.')}</div></section>`;
 }
 function editGroup(id){
  if(!canManageTeachers())throw Error('Somente o Alberson pode editar grupos.');if(state.groupBusy)return;
