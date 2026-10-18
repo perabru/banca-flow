@@ -1,5 +1,7 @@
 # BancaFlow — Avaliação de TCC Univap
 
+[Abrir BancaFlow no GitHub Pages](https://perabru.github.io/banca-flow/)
+
 Aplicação estática em HTML, CSS e JavaScript, conectada ao projeto Firebase existente `avaliadortcc`. A atualização preserva os cadastros, grupos, alunos, agenda, notas, entregas, configuração Firebase e lista criptografada de grupos. Não faz migração destrutiva nem importação automática.
 
 `index.html` e `BancaFlow_TCC_2026_Unico.html` oferecem a mesma versão, incluindo a mesma política de acesso atualizada. O layout começa em 320 px e se adapta a tablets e computadores. O site continua sem etapa de compilação. A importação de Excel usa arquivos locais em `assets/`, que devem ser publicados junto dos HTMLs. `privacidade.html` identifica o sistema, os responsáveis e o tratamento dos dados.
@@ -29,6 +31,14 @@ Publicar arquivos no GitHub não publica as regras no Firebase. A política atua
 Somente professores ativos que participam da banca podem controlar essa banca. O coordenador pode agir mesmo sem ser um avaliador dela. Encerrar bloqueia as notas e pausa o cronômetro. Reabrir preserva todas as avaliações e permite correções; o tempo fica pausado até clicar em **Continuar**. O coordenador pode reabrir para lançar ou corrigir entregas e encerrar novamente depois.
 
 O encerramento pode ocorrer antes de todos os lançamentos. O relatório e o resultado oficial só ficam disponíveis com a banca encerrada e todas as notas completas, incluindo as entregas. Campos em edição devem ser salvos antes do encerramento. Rascunhos são preservados durante atualizações da tela e salvamentos pendentes; a troca de conta limpa os campos e qualquer prévia de compartilhamento da sessão anterior.
+
+## Filtrar bancas por data
+
+Em **Bancas**, selecione **Data da banca** para ver os grupos daquele dia, combinando o filtro com curso e turma. **Hoje** escolhe o dia atual e **Todas as datas** limpa somente a data. Os professores continuam vendo apenas as bancas às quais estão atribuídos. O PDF da agenda inclui exatamente os resultados dessa seleção.
+
+Em **Relatórios**, a data também restringe a lista, o PDF consolidado e o CSV de bancas concluídas. Com uma data escolhida, grupos sem agendamento não pertencem à seleção daquele dia; todas as bancas selecionadas ainda precisam estar encerradas e com notas completas para o PDF consolidado. Sem data, a verificação de conclusão de todos os grupos do curso/turma permanece.
+
+O filtro considera o dia no fuso do dispositivo, o mesmo utilizado na apresentação da agenda. Ele é limpo ao trocar de conta. A atualização não altera dados nem exige novas regras no Firebase.
 
 ## Cronômetro com centésimos
 
