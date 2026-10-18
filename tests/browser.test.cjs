@@ -74,7 +74,7 @@ async function openApp(t,{timezoneId='UTC'}={}) {
     return route.request().url() === 'https://bancaflow.example.test/' ? route.fulfill({ contentType: 'text/html', body: servedMarkup }) : route.abort();
   });
   const bootstrap = adapter() + source + `
-    globalThis.appTest={state,go,render,resetAppData,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,
+    globalThis.appTest={state,go,render,resetAppData,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,
       mount(uid){clearListeners();resetAppData();mock.uid=uid;state.user={uid,email:uid+'@example.test'};state.profile=mock.clone(mock.data.users[uid]);for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])state[key]=mock.clone(mock.data[key]||{});state.connected=true;document.querySelector('#login-view').classList.add('hidden');document.querySelector('#app-view').classList.remove('hidden');if(isCoord())for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])listen(key,key);else syncTeacherSubs();syncTimerSubs();go('avaliar','b1');}
     };appTest.mount('t1');
   `;
@@ -434,4 +434,91 @@ test('analytics empty state disables PDF and fully removes stale detail selectio
   await page.locator('[data-date-clear="reports"]').click();
   assert.equal(await page.locator('#analytics-board-filter').inputValue(),'','stale selected board is reset when the report filters change');
   assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+
+test('Alberson consults all saved scores including pending and historical boards through mobile and desktop navigation', {skip}, async t=>{
+  const{page,errors,cspErrors,requests}=await openApp(t);
+  await page.evaluate(()=>{
+    const baseGroup=firebaseMock.clone(firebaseMock.data.groups.g1),baseBoard=firebaseMock.clone(firebaseMock.data.boards.b1),baseGrades=firebaseMock.clone(firebaseMock.data.grades.b1),baseDeliveries=firebaseMock.clone(firebaseMock.data.deliveries.b1);
+    const rows=[['b1','g1','ABERTA_COMPLETA','ADS','2A','2026-10-18',false,false],['b2','g2','ENCERRADA_HISTORICA','Engenharia','3A','2026-10-19',true,true],['b3','g3','ABERTA_PENDENTE','ADS','2A','2026-10-18',false,false],['b4','g4','ENCERRADA_PENDENTE','Redes','4A','2026-10-20',true,false]];
+    firebaseMock.data.users.disabled={name:'Professor Histórico',role:'teacher',active:false};
+    for(const[id,gid,name,courseName,className,date,sealed,archived]of rows){
+      firebaseMock.data.groups[gid]={...firebaseMock.clone(baseGroup),id:gid,name,courseName,className,active:!archived};
+      firebaseMock.data.boards[id]={...firebaseMock.clone(baseBoard),groupId:gid,startAt:Date.parse(date+'T15:00:00Z')};
+      firebaseMock.data.grades[id]=firebaseMock.clone(baseGrades);firebaseMock.data.deliveries[id]=firebaseMock.clone(baseDeliveries);firebaseMock.data.groupBoards[gid]=id;
+      if(sealed)firebaseMock.data.seals[id]={by:'coord',at:Date.now()};
+    }
+    firebaseMock.data.boards.b2.members={t1:true,disabled:true};firebaseMock.data.boards.b2.memberNames={t1:'Professor Um',disabled:'Professor Histórico'};
+    firebaseMock.data.grades.b2.disabled=firebaseMock.data.grades.b2.t2;delete firebaseMock.data.grades.b2.t2;
+    delete firebaseMock.data.grades.b3.t2.s1.code;delete firebaseMock.data.deliveries.b3.s2;
+    firebaseMock.data.grades.b4={};firebaseMock.data.deliveries.b4={};
+    appTest.mount('coord');Object.assign(appTest.state,{courseFilter:'NO_MATCH',filter:'NO_MATCH',boardDateFilter:'2099-01-01',reportCourseFilter:'NO_MATCH',reportFilter:'NO_MATCH',reportDateFilter:'2099-01-01'});appTest.go('inicio');
+  });
+  await page.setViewportSize({width:1440,height:900});
+  await page.locator('#desktop-nav [data-route="notas"]').click();
+  assert.equal(await page.locator('#page-title').textContent(),'Todas as notas');
+  assert.equal(await page.locator('[data-notes-board]').count(),4,'consultation is independent of agenda and PDF filters');
+  assert.equal(await page.locator('[data-grade-form]').count(),0);assert.equal(await page.locator('[data-delivery-form]').count(),0);
+  await page.locator('[data-notes-expand]').click();
+  const firstBoard=page.locator('[data-notes-board="b1"]'),ana=firstBoard.locator('[data-notes-student="s1"]'),historic=page.locator('[data-notes-board="b2"]');
+  assert.equal(await firstBoard.getAttribute('open'),'');
+  for(const text of ['Ana','Professor Um','Professora Dois','7,80'])assert.ok((await ana.textContent()).includes(text),text);
+  assert.ok((await firstBoard.locator('[data-notes-student="s2"]').textContent()).includes('0,00'),'zero grades are preserved');
+  assert.ok((await historic.textContent()).includes('Professor Histórico'),'removed teachers remain visible in existing evaluations');
+  assert.equal(await firstBoard.locator('.notes-table').count(),2);
+  assert.equal(await firstBoard.locator('input[type="number"]').count(),0,'all-evaluator consultation has no editable numeric fields');
+  const savedBefore=await page.evaluate(()=>JSON.stringify(firebaseMock.data));
+  for(const width of [320,390,640,768,1024,1440]){
+    await page.setViewportSize({width,height:920});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`all notes overflow at ${width}px`);
+    if(process.env.BANCAFLOW_SCREENSHOT_DIR&&[320,390,1440].includes(width))await page.screenshot({path:join(process.env.BANCAFLOW_SCREENSHOT_DIR,`banca-flow-all-notes-${width}.png`),fullPage:true});
+  }
+  await page.setViewportSize({width:1440,height:720});
+  const logout=await page.locator('#logout').boundingBox();assert.ok(logout&&logout.y>=0&&logout.y+logout.height<=720,'desktop logout remains within a 720px-tall viewport');
+  if(process.env.BANCAFLOW_SCREENSHOT_DIR)await page.screenshot({path:join(process.env.BANCAFLOW_SCREENSHOT_DIR,'banca-flow-all-notes-sidebar-720.png')});
+  assert.equal(await page.evaluate(()=>JSON.stringify(firebaseMock.data)),savedBefore,'consultation and responsive rendering are read only');
+  await page.locator('#notes-search').fill('Busca ainda não aplicada');await page.locator('#notes-search').focus();await page.locator('#notes-search').evaluate(el=>el.setSelectionRange(5,12));
+  await page.evaluate(()=>{firebaseMock.write('grades/b1/t2/s1/presentation',2);firebaseMock.emit('grades/b1/t2/s1');});
+  await page.waitForFunction(()=>document.querySelector('[data-notes-board="b1"] [data-notes-student="s1"]').textContent.includes('7,50'));
+  assert.equal(await firstBoard.getAttribute('open'),'','a saved score snapshot preserves expanded details');
+  assert.equal(await page.locator('#notes-search').inputValue(),'Busca ainda não aplicada');assert.equal(await page.locator('[data-notes-board]').count(),4,'typing does not apply an incomplete search');
+  assert.deepEqual(await page.locator('#notes-search').evaluate(el=>({focused:el===document.activeElement,start:el.selectionStart,end:el.selectionEnd})),{focused:true,start:5,end:12});
+  assert.equal(await historic.getAttribute('open'),'','unrelated expanded details are also preserved');
+  await page.locator('[data-notes-collapse]').click();assert.equal(await firstBoard.getAttribute('open'),null);
+  await firstBoard.locator('summary').click();assert.equal(await firstBoard.getAttribute('open'),'');
+  await page.evaluate(()=>{firebaseMock.write('grades/b1/t2/s1/time',8);firebaseMock.emit('grades/b1/t2/s1');});
+  await page.waitForFunction(()=>document.querySelector('[data-notes-board="b1"] [data-notes-student="s1"]').textContent.includes('7,65'));
+  assert.equal(await firstBoard.getAttribute('open'),'','manually expanded details persist after a Firebase update');
+
+  await page.locator('#notes-course-filter').selectOption('ADS');await page.locator('#notes-class-filter').selectOption('2A');await page.locator('#notes-date-filter').fill('2026-10-18');await page.locator('#notes-status-filter').selectOption('pendentes');
+  assert.deepEqual(await page.locator('[data-notes-board]').evaluateAll(els=>els.map(el=>el.dataset.notesBoard)),['b3']);
+  await page.locator('[data-notes-reset]').click();assert.equal(await page.locator('[data-notes-board]').count(),4);
+  assert.equal(await page.locator('#notes-date-filter').inputValue(),'');assert.equal(await page.locator('#notes-status-filter').inputValue(),'todas');
+  await page.locator('#notes-search').fill('histórica');await page.locator('#notes-search').press('Enter');
+  assert.deepEqual(await page.locator('[data-notes-board]').evaluateAll(els=>els.map(el=>el.dataset.notesBoard)),['b2']);
+  await page.locator('[data-notes-reset]').click();assert.equal(await page.locator('#notes-search').inputValue(),'');
+  await page.locator('#notes-status-filter').selectOption('encerradas');
+  assert.deepEqual(await page.locator('[data-notes-board]').evaluateAll(els=>els.map(el=>el.dataset.notesBoard)),['b2','b4']);
+  await page.locator('[data-notes-reset]').click();
+
+  await page.setViewportSize({width:320,height:844});await page.evaluate(()=>appTest.go('inicio'));
+  await page.locator('#mobile-nav [data-open-menu]').click();await page.locator('#mobile-menu [data-route="notas"]').click();
+  assert.equal(await page.locator('#page-title').textContent(),'Todas as notas');assert.equal(await page.locator('#mobile-menu').isVisible(),false);
+  await page.evaluate(()=>appTest.go('avaliar','b1'));
+  assert.equal(await page.locator('[data-grade-form]').count(),0,'coordinator nonmember cannot edit evaluator notes');
+  for(const text of ['Ana','Bruno','Professor Um','Professora Dois','7,65'])assert.ok((await page.locator('#view').textContent()).includes(text),text);
+  assert.equal(await page.locator('.notes-table').count(),2,'coordinator detail includes all evaluator grades');
+
+  await page.evaluate(()=>{appTest.mount('t1');appTest.go('notas');});
+  assert.equal(await page.locator('[data-notes-board]').count(),0);assert.equal(await page.locator('.notes-table').count(),0);
+  assert.equal(await page.locator('[data-route="notas"]').count(),0);
+  const direct=await page.evaluate(()=>({table:appTest.boardNotesHtml('b1'),view:appTest.allNotesView(),filtered:appTest.filteredNotesBoards(),expanded:appTest.state.notesExpanded.size}));
+  assert.equal(direct.table,'');assert.deepEqual(direct.filtered,[]);assert.equal(direct.expanded,0);
+  for(const leaked of ['Professora Dois','7,65','notes-table'])assert.ok(!direct.view.includes(leaked),leaked);
+  await page.evaluate(()=>appTest.go('avaliar','b1'));
+  assert.equal(await page.locator('[data-grade-form]').count(),2);assert.equal(await page.locator('.notes-table').count(),0);
+  assert.ok(!(await page.locator('#view').textContent()).includes('Professor Histórico'),'teachers retain their own assigned evaluation scope');
+  assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+  assert.ok(requests.every(url=>!/firebaseio\.com|firebasedatabase\.app|gstatic\.com\/firebasejs/.test(url)));
 });

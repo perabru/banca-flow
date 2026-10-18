@@ -14,6 +14,8 @@ A suíte executa o JavaScript do próprio `index.html` com adaptadores de DOM e 
 
 A gestão de professores e grupos também é verificada: exclusividade do Alberson, conta secundária durante o cadastro, reversão de criação incompleta, dados imutáveis de login, edição de contato, concorrência, remoção e restauração sem apagar histórico, identidade dos alunos, proteção após agendamento e confirmação da importação.
 
+A consulta **Todas as notas** é verificada separadamente dos relatórios finais: Alberson consulta todas as bancas, inclusive abertas, incompletas e de grupos arquivados, com notas por aluno, professor e critério. A suíte cobre notas zero, médias incompletas, entregas pendentes, cálculo de 60%/40%, identificação de resultados provisórios, professores desativados no histórico, filtros independentes da agenda e dos PDFs, busca, escape do conteúdo salvo e bloqueio de acesso pelo professor ou sem sessão. A consulta não grava nem altera notas.
+
 O parser local do Excel tem uma suíte própria, sem dependências adicionais:
 
 ```bash
@@ -45,6 +47,8 @@ BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/browser.test.cjs
 Sem Playwright ou sem essa variável, os testes de navegador aparecem como ignorados. Eles executam a página real com Firebase em memória e requisições interceptadas localmente. Verificam larguras de 320 a 1440 px, os eventos reais de formulário e botões, cronômetro compartilhado, encerramento e reabertura por professores/coordenador, permissão das entregas, rascunhos durante atualizações e confirmação de salvamento, além do download efetivo do PDF com notas e médias ponderadas.
 
 Os testes dos gráficos conferem o carregamento dos recursos locais sob a política CSP, rótulos e descrições dos SVGs, estado vazio, distinção entre tempo zero e não registrado, filtros, exploração de uma banca e os downloads reais dos PDFs analíticos e oficiais com ou sem gráficos. Também conferem a ausência de rolagem horizontal e o bloqueio da análise no perfil de professor.
+
+A consulta de notas também passa pela navegação real de desktop e pelo menu “Mais” no celular. São verificados os filtros por curso, turma, data e situação, a busca, a limpeza da seleção, as médias atualizadas após um snapshot do Firebase e a preservação das bancas expandidas. Os detalhes da banca exibem todas as notas ao coordenador mesmo quando ele não é avaliador, sem abrir campos para editar a nota de outro professor. A troca de sessão remove o acesso e limpa as expansões. A tela é conferida de 320 a 1440 px; capturas são salvas quando `BANCAFLOW_SCREENSHOT_DIR` estiver definido.
 
 O compartilhamento é verificado com `navigator.share`, clipboard e links do WhatsApp interceptados: arquivo PDF real, notas individuais, ativação por clique, cancelamento sem envio automático, alternativa de download/texto, escolha de um aluno, privacidade do relatório parcial e bloqueio de dados desatualizados. Os testes não abrem conversas reais nem enviam mensagens.
 

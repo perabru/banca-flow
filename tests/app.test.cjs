@@ -122,7 +122,7 @@ function harness(uid = 't1') {
       localDayKey,boardMatchesDay,filteredBoards,filteredReportBoards,reportGroups,setBancaDateFilter,resetAppData,boardsView,reportsView,exportSchedulePdf,
       teacherIdentity,teacherEditIdentity,teacherProfileFingerprint,addTeacher,changeTeacherAccess,saveTeacherEdit,
       validatedGroupDraft,groupRelatedBoards,groupAdminFingerprint,resetGroupAdmin,editGroup,saveGroup,changeGroupAccess,addGroupStudentRow,removeGroupStudentRow,
-      confirmExcelImport,
+      confirmExcelImport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,gradeView,navItems,setNotesFilter,resetNotesFilters,
       startTeacherEdit(uid){teacherEditSession={uid,ownerUid:state.user.uid,revision:accessRevision,profileFingerprint:teacherProfileFingerprint(state.users[uid]),dialog:{open:false,remove(){},querySelectorAll(){return[];}},saving:false};},
       prepareImport(rows){const catalog={users:state.users,existingGroups:state.groups},preview=BancaFlowImport.parseRows(rows,catalog);excelImportState={uid:state.user.uid,revision:accessRevision,busy:false,rows,defaultCourse:'',catalog,preview,fingerprint:excelPreviewFingerprint(preview)};return excelImportState;},
       buildEvaluationPdf: typeof buildEvaluationPdf === 'function' ? buildEvaluationPdf : null };
@@ -724,4 +724,153 @@ test('analytics export aborts without a download when its date, course, class or
     assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0,field);
     assert.deepEqual(h.data,before,field);
   }
+});
+
+
+function installNotesCatalog(h){
+  const {app}=h,baseBoard=clone(h.data.boards.b1),baseGroup=clone(h.data.groups.g1),baseGrades=clone(h.data.grades.b1),baseDelivery=clone(h.data.deliveries.b1);
+  const catalog=[
+    ['b1','g1','ABERTA_COMPLETA','ADS','2A','2026-10-18',false,false],
+    ['b2','g2','ENCERRADA_HISTORICA','Engenharia','3A','2026-10-19',true,true],
+    ['b3','g3','ABERTA_PENDENTE','ADS','2A','2026-10-18',false,false],
+    ['b4','g4','ENCERRADA_PENDENTE','Redes','4A','2026-10-20',true,false]
+  ];
+  const data={groups:{},boards:{},groupBoards:{},grades:{},deliveries:{},seals:{}};
+  for(const [id,gid,name,courseName,className,day,sealed,archived]of catalog){
+    data.groups[gid]={...clone(baseGroup),id:gid,name,courseName,className,active:!archived};
+    data.boards[id]={...clone(baseBoard),groupId:gid,startAt:Date.parse(day+'T15:00:00Z')};
+    data.groupBoards[gid]=id;data.grades[id]=clone(baseGrades);data.deliveries[id]=clone(baseDelivery);
+    if(sealed)data.seals[id]={by:'coord',at:h.now()};
+  }
+  data.boards.b2.members={t1:true,disabled:true};data.boards.b2.memberNames={t1:'Professor Um',disabled:'Professor Histórico'};
+  data.grades.b2.disabled=data.grades.b2.t2;delete data.grades.b2.t2;
+  delete data.grades.b3.t2.s1.code;delete data.deliveries.b3.s2;
+  data.grades.b4={};data.deliveries.b4={};
+  Object.assign(h.data,clone(data));Object.assign(app.state,clone(data));
+}
+
+test('coordinator sees every evaluator grade, zeroes and 60/40 results without being a board member',()=>{
+  const h=harness('coord'),{app}=h,before=clone(h.data),record=app.coordinatorBoardRecord('b1');
+  assert.equal(record.id,'b1');assert.equal(record.expectedGrades,4);assert.equal(record.completedGrades,4);assert.equal(record.missingDeliveries,0);
+  assert.equal(record.ready,true);assert.equal(record.sealed,false);
+  const ana=record.students.find(student=>student.id==='s1'),bruno=record.students.find(student=>student.id==='s2');
+  assert.deepEqual(clone(ana.evaluators.map(item=>[item.uid,item.name,item.mean,item.completedCriteria])),[['t1','Professor Um',8,4],['t2','Professora Dois',6,4]]);
+  assert.deepEqual(clone(ana.evaluators[0].scores),grade(10,8,6,8));
+  assert.equal(ana.banca,7);assert.equal(ana.entrega,9);assert.ok(Math.abs(ana.result.final-7.8)<1e-12);assert.equal(ana.provisional,true);
+  assert.equal(bruno.evaluators[0].mean,0);assert.equal(bruno.entrega,0);assert.equal(bruno.banca,5);assert.equal(bruno.result.final,3);
+  app.state.selectedBoard='b1';const detail=app.gradeView();
+  for(const visible of ['Ana','Bruno','Professor Um','Professora Dois','7,80','0,00'])assert.ok(detail.includes(visible),visible);
+  assert.ok(detail.includes('notes-table'));assert.ok(!detail.includes('data-grade-form='),'consultation must not edit another evaluator’s scores');
+  assert.deepEqual(h.data,before);assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
+});
+
+test('coordinator consultation exposes partial criteria and delivery gaps without inventing averages or final results',()=>{
+  const h=harness('coord'),{app}=h;
+  delete app.state.grades.b1.t2.s1.code;delete app.state.deliveries.b1.s2;
+  let record=app.coordinatorBoardRecord('b1');
+  assert.equal(record.expectedGrades,4);assert.equal(record.completedGrades,3);assert.equal(record.missingDeliveries,1);assert.equal(record.ready,false);
+  const ana=record.students.find(student=>student.id==='s1'),bruno=record.students.find(student=>student.id==='s2');
+  assert.equal(ana.evaluators[1].completedCriteria,3);assert.equal(ana.evaluators[1].mean,null);
+  assert.equal(ana.evaluators[1].scores.presentation,6);assert.equal(ana.banca,null);assert.equal(ana.result,null);
+  assert.equal(bruno.banca,5);assert.equal(bruno.entrega,null);assert.equal(bruno.result,null);
+  delete app.state.grades.b1.t1.s1;record=app.coordinatorBoardRecord('b1');
+  assert.equal(record.completedGrades,2);assert.equal(record.students[0].evaluators[0].completedCriteria,0);
+  assert.ok(/pendente/i.test(app.boardNotesHtml('b1')));
+  app.state.seals.b1={by:'coord',at:h.now()};
+  assert.equal(app.coordinatorBoardRecord('b1').sealed,true);assert.equal(app.coordinatorBoardRecord('b1').ready,false);
+});
+
+test('complete evaluator mean remains visible while a delivery is pending and final complete closed results are official',()=>{
+  const{app,now}=harness('coord');delete app.state.deliveries.b1.s1;
+  let student=app.coordinatorBoardRecord('b1').students.find(item=>item.id==='s1');
+  assert.equal(student.banca,7);assert.equal(student.entrega,null);assert.equal(student.result,null);
+  app.state.deliveries.b1.s1=9;app.state.seals.b1={by:'coord',at:now()};
+  const record=app.coordinatorBoardRecord('b1');student=record.students.find(item=>item.id==='s1');
+  assert.equal(record.ready,true);assert.equal(student.provisional,false);assert.ok(Math.abs(student.result.final-7.8)<1e-12);
+  assert.equal(app.coordinatorBoardRecord('absent'),null);
+});
+
+test('all-notes filters include archived groups and historical disabled professors and stay independent of report filters',()=>{
+  const h=harness('coord');installNotesCatalog(h);const{app}=h;
+  Object.assign(app.state,{courseFilter:'NO_MATCH',reportCourseFilter:'NO_MATCH',filter:'NO_MATCH',reportFilter:'NO_MATCH',boardDateFilter:'2099-01-01',reportDateFilter:'2099-01-01'});
+  assert.deepEqual(clone(app.filteredNotesBoards().map(([id])=>id)),['b1','b3','b2','b4']);
+  const historic=app.coordinatorBoardRecord('b2');assert.equal(historic.ready,true);
+  assert.ok(historic.students[0].evaluators.some(item=>item.uid==='disabled'&&item.name==='Professor Histórico'));
+  app.setNotesFilter('course','ADS');app.setNotesFilter('className','2A');app.setNotesFilter('date','2026-10-18');
+  assert.deepEqual(clone(app.filteredNotesBoards().map(([id])=>id)),['b1','b3']);
+  app.setNotesFilter('status','pendentes');assert.deepEqual(clone(app.filteredNotesBoards().map(([id])=>id)),['b3']);
+  app.resetNotesFilters();app.setNotesFilter('status','encerradas');assert.deepEqual(clone(app.filteredNotesBoards().map(([id])=>id)),['b2','b4']);
+  app.setNotesFilter('status','abertas');assert.deepEqual(clone(app.filteredNotesBoards().map(([id])=>id)),['b1','b3']);
+  app.resetNotesFilters();app.setNotesFilter('status','pendentes');assert.deepEqual(clone(app.filteredNotesBoards().map(([id])=>id)),['b3','b4']);
+  app.resetNotesFilters();app.state.notesFilters.search='histórica';assert.deepEqual(clone(app.filteredNotesBoards().map(([id])=>id)),['b2']);
+  app.state.notesFilters.search='Professor Histórico';assert.deepEqual(clone(app.filteredNotesBoards().map(([id])=>id)),['b2']);
+  assert.equal(app.state.reportCourseFilter,'NO_MATCH');assert.equal(app.state.reportDateFilter,'2099-01-01');
+});
+
+test('all-notes filter reset and session reset remove prior coordinator selection and expanded content',()=>{
+  const h=harness('coord'),{app}=h;installNotesCatalog(h);
+  Object.assign(app.state.notesFilters,{course:'ADS',className:'2A',date:'2026-10-18',status:'pendentes',search:'Ana'});app.state.notesSearchDraft='Unsubmitted query';app.state.notesExpanded.add('b1');
+  app.resetNotesFilters();
+  assert.deepEqual(clone(app.state.notesFilters),{course:'todas',className:'todas',date:'',status:'todas',search:''});assert.equal(app.state.notesSearchDraft,'');
+  assert.equal(app.state.notesExpanded.has('b1'),true,'resetting filters preserves intentional expansions');
+  app.state.notesExpanded.add('b2');app.resetAppData();assert.equal(app.state.notesExpanded.size,0);
+  assert.deepEqual(clone(app.state.notesFilters),{course:'todas',className:'todas',date:'',status:'todas',search:''});
+});
+
+test('coordinator all-notes HTML escapes stored text and remains read-only for all professors',()=>{
+  const h=harness('coord'),{app}=h;
+  app.state.groups.g1.name='<script>groupAttack()</script>';app.state.groups.g1.title='<img src=x onerror=titleAttack()>';
+  app.state.groups.g1.students.s1='<svg onload=studentAttack()>';app.state.boards.b1.memberNames.t2='<img src=x onerror=teacherAttack()>';
+  app.state.notesExpanded.add('b1');
+  const rendered=app.allNotesView()+app.boardNotesHtml('b1');
+  for(const literal of ['<script>groupAttack()','<img src=x onerror=titleAttack()','<svg onload=studentAttack()','<img src=x onerror=teacherAttack()'])assert.ok(!rendered.includes(literal),literal);
+  for(const escaped of ['&lt;script&gt;groupAttack()','&lt;img src=x onerror=titleAttack()','&lt;svg onload=studentAttack()','&lt;img src=x onerror=teacherAttack()'])assert.ok(rendered.includes(escaped),escaped);
+  assert.ok(!rendered.includes('data-grade-form='));assert.ok(!rendered.includes('data-delivery-form='));
+  assert.ok(app.navItems().some(([route,,title])=>route==='notas'&&title==='Todas as notas'));
+});
+
+test('teacher and unauthenticated direct calls cannot expose coordinator note records or all-notes navigation',()=>{
+  for(const uid of ['t1','outsider']){
+    const h=harness(uid),{app}=h;
+    for(const unauthenticated of [false,true]){
+      if(unauthenticated)app.state.user=null;
+      assert.throws(()=>app.coordinatorBoardRecord('b1'),/coordenação/i);
+      assert.equal(app.boardNotesHtml('b1'),'');
+      assert.deepEqual(clone(app.filteredNotesBoards()),[]);
+      const rendered=app.allNotesView();for(const privateText of ['Professora Dois','Ana','Bruno','7,80','notes-table'])assert.ok(!rendered.includes(privateText),privateText);
+      assert.equal(app.navItems().some(([route])=>route==='notas'),false);
+    }
+  }
+});
+
+
+test('coordinator assigned to a board consults all notes while retaining forms only for their own evaluator scores',()=>{
+  const h=harness('coord'),{app}=h;
+  app.state.boards.b1.members.coord=true;app.state.boards.b1.memberNames.coord='Alberson';
+  app.state.grades.b1.coord={s1:grade(10,10,10,10),s2:grade(0,0,0,0)};app.state.selectedBoard='b1';
+  const rendered=app.gradeView();
+  assert.equal((rendered.match(/data-grade-form="b1"/g)||[]).length,2,'one editable form per student, not per professor');
+  for(const name of ['Alberson','Professor Um','Professora Dois'])assert.ok(app.boardNotesHtml('b1').includes(name),name);
+  assert.ok(Math.abs(app.coordinatorBoardRecord('b1').students[0].banca-8)<1e-12);
+  assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
+});
+
+test('all-notes filter validation rejects invalid calendar dates, unknown statuses and unauthorized mutation',()=>{
+  const h=harness('coord'),{app}=h;
+  app.setNotesFilter('date','2028-02-29');
+  for(const invalid of ['2026-02-29','2026-04-31','2026-13-01','18/10/2026'])assert.throws(()=>app.setNotesFilter('date',invalid),/data válida/);
+  assert.equal(app.state.notesFilters.date,'2028-02-29');
+  assert.throws(()=>app.setNotesFilter('status','ALL'),/Situação/);assert.throws(()=>app.setNotesFilter('grades','ALL'),/Filtro/);
+  assert.equal(app.state.notesFilters.status,'todas');
+  app.state.profile=clone(h.data.users.t1);app.state.user={uid:'t1'};
+  assert.throws(()=>app.setNotesFilter('date','2026-10-18'),/coordenação/);assert.equal(app.state.notesFilters.date,'2028-02-29');
+});
+
+test('coordinator consultation retains saved student and evaluator records when group metadata is unavailable',()=>{
+  const h=harness('coord'),{app}=h;delete app.state.groups.g1;
+  const record=app.coordinatorBoardRecord('b1');assert.equal(record.ready,false);
+  assert.deepEqual(clone(record.students.map(student=>student.id)),['s1','s2']);assert.equal(record.completedGrades,4);
+  assert.ok(app.boardNotesHtml('b1').includes('Cadastro do grupo indisponível'));
+  assert.ok(app.boardNotesHtml('b1').includes('Professor Um'));assert.ok(app.boardNotesHtml('b1').includes('7,80'));
+  assert.deepEqual(clone(app.filteredNotesBoards().map(([id])=>id)),['b1']);
 });

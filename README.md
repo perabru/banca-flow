@@ -32,6 +32,14 @@ Somente professores ativos que participam da banca podem controlar essa banca. O
 
 O encerramento pode ocorrer antes de todos os lançamentos. O relatório e o resultado oficial só ficam disponíveis com a banca encerrada e todas as notas completas, incluindo as entregas. Campos em edição devem ser salvos antes do encerramento. Rascunhos são preservados durante atualizações da tela e salvamentos pendentes; a troca de conta limpa os campos e qualquer prévia de compartilhamento da sessão anterior.
 
+## Todas as notas — coordenação
+
+O Alberson pode consultar **Todas as notas** pelo menu lateral, pelo atalho da visão geral ou por **Mais → Todas as notas** no celular. A consulta inclui todas as bancas, abertas ou encerradas, com notas completas ou pendentes, inclusive o histórico de grupos removidos. Há filtros independentes por curso, turma, data e situação, além da busca por grupo, aluno ou professor. **Expandir todas** mostra os detalhes das bancas selecionadas.
+
+Cada aluno tem suas notas separadas por avaliador e critério, média do avaliador, média da banca, entregas e parcelas de 60%/40%. Uma nota ausente aparece como **Pendente**; zero continua sendo uma nota válida. A média da banca é exibida quando todos os avaliadores concluíram os quatro critérios, mesmo sem entregas. A nota final só é calculada com todas as notas necessárias e fica identificada como provisória enquanto a banca estiver aberta.
+
+O mesmo detalhamento fica disponível em **Bancas → Ver detalhes** e **Relatórios → Consultar notas**, mesmo quando o coordenador não participa da banca. Essa consulta é somente leitura: cada professor continua responsável pelas próprias notas, e as entregas permanecem exclusivas da coordenação. Os valores acompanham os lançamentos salvos no Firebase. Não há alteração nos dados, nas regras ou nas exigências dos PDFs oficiais.
+
 ## Filtrar bancas por data
 
 Em **Bancas**, selecione **Data da banca** para ver os grupos daquele dia, combinando o filtro com curso e turma. **Hoje** escolhe o dia atual e **Todas as datas** limpa somente a data. Os professores continuam vendo apenas as bancas às quais estão atribuídos. O PDF da agenda inclui exatamente os resultados dessa seleção.

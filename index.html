@@ -5,7 +5,7 @@
 <meta name="color-scheme" content="light">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="stylesheet" href="assets/analytics.css">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-8yW4xhUfu8DRVVsF+OdONDyp797GBv6VfdyulFFEFlU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-x3Jw7ruN8gk7ZhG6gGAlF4kzSBKO+h1ru2EhDDNd1F4='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>BancaFlow · Gestão de bancas | Univap</title><style>
 /* Mobile first. Cores institucionais Univap; todos os recursos ficam neste HTML. */
@@ -260,6 +260,51 @@ button.avatar{width:44px;height:44px;padding:0}
 #toast.show{opacity:1;transform:none}
 #toast.error{background:#8c2632;border-left-color:#f09ba4}
 #print-root{display:none}
+.notes-toolbar{display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin-bottom:16px}
+.notes-search{display:flex;flex-direction:column;align-items:stretch;gap:10px;margin-bottom:18px;min-width:0}
+.notes-search .field{flex:1;min-width:0}
+.notes-overview{display:flex;flex-direction:column;gap:12px;margin:18px 0;color:var(--cinza);font-size:.83rem}
+.notes-overview p{margin:0}.notes-overview strong{color:var(--azul-profundo)}
+.notes-board{border:1px solid var(--borda);border-radius:12px;background:#fff;margin:14px 0;min-width:0}
+.notes-board>summary{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 16px;cursor:pointer;list-style:none}
+.notes-board>summary::-webkit-details-marker{display:none}
+.notes-board>summary:focus-visible{outline:3px solid #3984c7;outline-offset:3px;border-radius:12px}
+.notes-board-label{display:grid;gap:7px;min-width:0;flex:1;color:var(--cinza);font-size:.82rem;overflow-wrap:anywhere}
+.notes-board-label strong{font-size:1rem;color:var(--azul-profundo)}
+.notes-board-label small{font-size:.75rem;line-height:1.6}
+.notes-summary-action{font-size:.75rem;font-weight:700;color:var(--azul);display:flex;align-items:center;gap:5px;flex-shrink:0;padding-top:2px}
+.notes-summary-action .ui-icon{width:16px;height:16px;transition:transform .15s}
+.notes-board[open] .notes-summary-action .ui-icon{transform:rotate(90deg)}
+.notes-board-body{padding:0 14px 18px;border-top:1px solid var(--borda);min-width:0}
+.notes-board-body>.btn{margin-top:18px}
+.notes-board-content{min-width:0;margin:20px 0;padding:18px 15px;background:#fff;border:1px solid var(--borda);border-radius:12px}
+.notes-board-body>.notes-board-content{margin:0;padding:18px 0 0;border:0}
+.notes-content-heading{margin-bottom:18px;align-items:flex-start}
+.notes-content-heading h3{font-size:1rem;color:var(--azul-profundo);margin:0}
+.notes-student{min-width:0;padding:18px 0;border-top:1px solid var(--borda)}
+.notes-student>.row{margin-bottom:14px;align-items:flex-start}
+.notes-student h4{margin:0;color:var(--azul-profundo);font-size:1rem;overflow-wrap:anywhere}
+.notes-table caption{display:block;width:100%;text-align:left;caption-side:top;font-size:.75rem;color:var(--cinza);padding:0 0 12px}
+.notes-table td,.notes-result dd{font-variant-numeric:tabular-nums}
+.notes-pending{color:#8a5e19;font-size:.76rem;font-weight:500}
+.notes-result{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--borda);border:1px solid var(--borda);border-radius:10px;overflow:hidden;margin:15px 0 0}
+.notes-result>div{background:#f7f9fc;min-width:0;padding:12px}
+.notes-result>div:last-child{background:var(--azul-claro);grid-column:1 / -1}
+.notes-result dt{font-size:.73rem;color:var(--cinza);line-height:1.6}
+.notes-result dd{margin:5px 0 0;font-size:1.04rem;font-weight:700;color:var(--azul-profundo);overflow-wrap:anywhere}
+@media(min-width:640px){
+ .notes-toolbar{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .notes-search{flex-direction:row;align-items:flex-end}
+ .notes-overview{flex-direction:row;align-items:center;justify-content:space-between;flex-wrap:wrap}
+ .notes-board>summary{padding:20px}
+ .notes-board-body{padding:0 20px 20px}
+}
+@media(min-width:1024px){
+ .notes-toolbar{grid-template-columns:repeat(4,minmax(0,1fr))}
+ .notes-result{grid-template-columns:repeat(5,minmax(0,1fr))}
+ .notes-result>div:last-child{grid-column:auto}
+}
+@media(min-width:768px){.notes-table caption{display:table-caption;width:auto}}
 .analytics-toggle{display:flex;gap:12px;align-items:flex-start;padding:17px 19px;margin:18px 0;border:1px solid var(--borda);border-radius:16px;background:#fff;cursor:pointer}
 .analytics-toggle input{width:21px;height:21px;flex:0 0 21px;margin:2px 0;accent-color:var(--azul)}
 .analytics-toggle b,.analytics-toggle small{display:block;overflow-wrap:anywhere}
@@ -369,6 +414,8 @@ button.avatar{width:44px;height:44px;padding:0}
   .sidebar{position:sticky;top:0;align-self:start;display:flex;flex-direction:column;height:100vh;height:100dvh;padding:28px 16px 18px;background:#fff;border-right:1px solid var(--borda)}
   .sidebar:before{content:"";position:absolute;inset:0 0 auto;height:4px;background:var(--vermelho)}
   .sidebar .logo{padding:10px 12px 26px;margin-bottom:26px;border-bottom:1px solid var(--borda)}
+  .sidebar>.logo,.sidebar>.side-heading,.side-foot{flex-shrink:0}
+  .sidebar>#desktop-nav{min-height:0;overflow-y:auto}
   .sidebar .logo small{font-size:.65rem}
   .side-heading{padding:0 14px;margin-bottom:10px}
   .sidebar nav button{display:flex;align-items:center;gap:12px;width:100%;min-height:49px;text-align:left;padding:12px 14px;margin:4px 0;border:0;border-radius:12px;background:transparent;color:#536b84;font-size:.88rem;font-weight:650}
@@ -890,6 +937,7 @@ const ICON_PATHS={
  sortear:'<path d="M3 7h3c5 0 7 10 12 10h3m-4-4 4 4-4 4M3 17h3c2 0 4-2 5-4m2-2c1-2 3-4 5-4h3m-4-4 4 4-4 4"/>',
  professores:'<circle cx="9" cy="7" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2m1-17a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5v2"/>',
  entregas:'<rect x="5" y="5" width="14" height="16" rx="2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m8 14 3 3 5-6"/>',
+ notas:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h3m3 3 2 2 4-5"/>',
  relatorios:'<path d="M4 3v18h17M8 16v-4m5 4V7m5 9v-6"/>',
  avaliar:'<path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7M14 5l5 5M10 14l-1 4 4-1L22 8a2 2 0 0 0-4-4Z"/>',
  mais:'<circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/>',
@@ -903,7 +951,7 @@ const ICON_PATHS={
 };
 const icon=name=>`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name]||ICON_PATHS.bancas}</svg>`;
 const ROSTER_PROTEGIDO = JSON.parse(document.getElementById('roster-criptografado').textContent);
-const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', analyticsBoard:'', reportCharts:true, unsubs:[], teacherSubs:new Map() };
+const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', analyticsBoard:'', reportCharts:true, notesFilters:{course:'todas',className:'todas',date:'',status:'todas',search:''}, notesSearchDraft:'', notesExpanded:new Set(), unsubs:[], teacherSubs:new Map() };
 const isActiveTeacher = profile => !!profile && ['coordinator','teacher'].includes(profile.role) && profile.active !== false;
 const activeTeachers = () => Object.entries(state.users).filter(([,profile])=>isActiveTeacher(profile));
 const isCoord = () => state.profile?.role === 'coordinator' && state.profile.active !== false;
@@ -942,6 +990,7 @@ function showAccessProblem(message,user=auth.currentUser){
  $('#access-help').open=true;notice(message,true);
 }
 function resetAppData(){
+ closeMobileMenu();$('#mobile-menu').innerHTML='';
  if(typeof resetGroupAdmin==='function')resetGroupAdmin();
  if(typeof closeExcelImport==='function')closeExcelImport(true);
  if(typeof closeTeacherEdit==='function')closeTeacherEdit(true);
@@ -949,7 +998,7 @@ function resetAppData(){
  state.drafts.clear();state.busyBoards.clear();if(typeof closeBoardShare==='function')closeBoardShare();$('#view').innerHTML='';
  state.plan=[];state.planMeta=null;state.planUnassigned=[];state.selectedBoard='';
  state.filter='todas';state.courseFilter='todas';state.reportFilter='todas';state.reportCourseFilter='todas';state.boardDateFilter='';state.reportDateFilter='';
- state.analyticsBoard='';state.reportCharts=true;
+ state.analyticsBoard='';state.reportCharts=true;resetNotesFilters();state.notesExpanded.clear();
 }
 function dataReadFailed(error,revision){
  if(revision!==accessRevision)return;
@@ -1016,30 +1065,30 @@ async function verificarAcesso(user){
  }catch(err){if(revision!==accessRevision)return;dataReadFailed(err,revision);}
 }
 onAuthStateChanged(auth,verificarAcesso);
-const navItems=()=>isCoord()? [['inicio','01','Visão geral'],['bancas','02','Bancas'],['sortear','03','Sorteio'],['entregas','04','Entregas'],['relatorios','05','Relatórios'],['grupos','07','Grupos e cursos'],['professores','06','Professores']] : [['inicio','01','Início'],['bancas','02','Minhas bancas'],['avaliar','03','Avaliar']];
+const navItems=()=>isCoord()? [['inicio','01','Visão geral'],['bancas','02','Bancas'],['notas','08','Todas as notas'],['sortear','03','Sorteio'],['entregas','04','Entregas'],['relatorios','05','Relatórios'],['grupos','07','Grupos e cursos'],['professores','06','Professores']] : [['inicio','01','Início'],['bancas','02','Minhas bancas'],['avaliar','03','Avaliar']];
 function closeMobileMenu(){const menu=$('#mobile-menu');if(menu.open)menu.close();document.body.classList.remove('menu-open');}
 function openMobileMenu(){
  if(!state.user)return;const menu=$('#mobile-menu');if(menu.open)return;
- const extra=isCoord()?[['grupos','Grupos e cursos','Cadastrar grupos e importar planilhas'],['entregas','Entregas','Lançar a nota dos 40%'],['relatorios','Relatórios','Concluir bancas e emitir os PDFs']]:[];
+ const extra=isCoord()?[['notas','Todas as notas','Consultar notas de todas as bancas'],['grupos','Grupos e cursos','Cadastrar grupos e importar planilhas'],['entregas','Entregas','Lançar a nota dos 40%'],['relatorios','Relatórios','Concluir bancas e emitir os PDFs']]:[];
  menu.innerHTML=`<div class="menu-content"><div class="menu-grip" aria-hidden="true"></div><div class="menu-header"><h2 id="mobile-menu-title">Sua conta e outras áreas</h2><button type="button" class="icon-btn" data-close-menu="1" aria-label="Fechar menu" autofocus>${icon('fechar')}</button></div><div class="menu-profile"><span class="avatar" aria-hidden="true">${esc(initials(state.profile.name))}</span><div><strong>${esc(state.profile.name)}</strong><small>${isCoord()?'Coordenação':'Professor avaliador'}</small><small>${esc(state.profile.email||state.user.email||'')}</small></div></div><nav class="menu-links" aria-label="Outras áreas">${extra.map(([route,label,description])=>`<button type="button" data-route="${route}" class="${state.route===route?'active':''}" ${state.route===route?'aria-current="page"':''}>${icon(route)}<span><b>${label}</b><small>${description}</small></span>${icon('seta')}</button>`).join('')}<button type="button" data-route="sair" class="menu-logout">${icon('sair')}<span><b>Sair da conta</b><small>Encerrar esta sessão no dispositivo</small></span></button></nav></div>`;
  menu.showModal();document.body.classList.add('menu-open');
 }
 function go(route,board=''){closeMobileMenu();if(board)state.selectedBoard=board;state.route=route;render();$('#view').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
-function render(){if(!state.user)return;captureDrafts();if(typeof captureGroupAdminDrafts==='function')captureGroupAdminDrafts();const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'))state.route='inicio';
- const pageTitles={inicio:'Visão geral',bancas:'Bancas de avaliação',sortear:'Sorteio de bancas',entregas:'Notas de entregas',relatorios:'Relatórios finais',professores:'Professores',grupos:'Grupos e cursos',avaliar:'Avaliação individual'};
+function render(){if(!state.user)return;const notesFocus=state.route==='notas'&&document.activeElement?.id==='notes-search'?{start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null;captureDrafts();if(typeof captureGroupAdminDrafts==='function')captureGroupAdminDrafts();const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'))state.route='inicio';
+ const pageTitles={inicio:'Visão geral',bancas:'Bancas de avaliação',sortear:'Sorteio de bancas',entregas:'Notas de entregas',relatorios:'Relatórios finais',professores:'Professores',grupos:'Grupos e cursos',avaliar:'Avaliação individual',notas:'Todas as notas'};
  $('#page-title').textContent=pageTitles[state.route];$('#page-eyebrow').textContent=isCoord()?'COORDENAÇÃO • TCC 2026':'CORPO DOCENTE • TCC 2026';
  const active=route=>state.route===route||(route==='bancas'&&state.route==='avaliar'&&isCoord());
  const navButton=(route,label)=>`<button type="button" class="${active(route)?'active':''}" data-route="${route}" ${active(route)?'aria-current="page"':''}><span class="nav-ico">${icon(route)}</span><span>${label}</span></button>`;
  $('#desktop-nav').innerHTML=routes.map(([route,,label])=>navButton(route,label)).join('');
  const primary=isCoord()?[['inicio','Início'],['bancas','Bancas'],['sortear','Sorteio'],['professores','Equipe']]:[['inicio','Início'],['bancas','Bancas'],['avaliar','Avaliar']];
- $('#mobile-nav').innerHTML=primary.map(([route,label])=>navButton(route,label)).join('')+(isCoord()?`<button type="button" data-open-menu="1" class="${['entregas','relatorios','grupos'].includes(state.route)?'active':''}" aria-label="Mais áreas e opções da conta" aria-haspopup="dialog" aria-controls="mobile-menu"><span class="nav-ico">${icon('mais')}</span><span>Mais</span></button>`:navButton('sair','Sair'));
- const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,professores:teachersView,grupos:groupsView};$('#view').innerHTML=views[state.route]?.()||'';restoreDrafts();
+ $('#mobile-nav').innerHTML=primary.map(([route,label])=>navButton(route,label)).join('')+(isCoord()?`<button type="button" data-open-menu="1" class="${['entregas','relatorios','grupos','notas'].includes(state.route)?'active':''}" aria-label="Mais áreas e opções da conta" aria-haspopup="dialog" aria-controls="mobile-menu"><span class="nav-ico">${icon('mais')}</span><span>Mais</span></button>`:navButton('sair','Sair'));
+ const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,professores:teachersView,grupos:groupsView,notas:allNotesView};$('#view').innerHTML=views[state.route]?.()||'';restoreDrafts();if(notesFocus){const field=$('#notes-search');field?.focus({preventScroll:true});field?.setSelectionRange(notesFocus.start,notesFocus.end);}
 }
 function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,b])=>{const g=groupOf(b);return g&&isCoord()&&situacao(b,g,boardGrades(id),state.deliveries[id]).pronta;});
  const completed=isCoord()?ready.length:boards.filter(([id,b])=>{const g=groupOf(b);return g&&studentsOf(g).every(([sid])=>mediaAvaliador(state.grades[id]?.[state.user.uid]?.[sid])!==null);}).length;
  return `<div class="hero"><div><span class="pill">UNIVAP · ANO LETIVO 2026</span><h2>${isCoord()?'Painel da coordenação':'Painel do professor'}</h2><p>${isCoord()?'Agenda, avaliações e relatórios.':'Consulta de bancas e registro de notas.'}</p></div><button class="btn" data-route="${isCoord()?'sortear':'bancas'}">${isCoord()?'Organizar bancas':'Minhas bancas'} ${icon('seta')}</button></div>
  <div class="grid">${stats(isCoord()?'Grupos ativos':'Bancas atribuídas',isCoord()?availableGroups().length:boards.length,'01')}${stats('Bancas agendadas',boards.length,'02')}${stats(isCoord()?'Prontas para concluir':'Minhas bancas avaliadas',completed,'03')}${stats(isCoord()?'Professores ativos':'Alunos para avaliar',isCoord()?activeTeachers().length:boards.reduce((s,[,b])=>s+studentsOf(groupOf(b)).length,0),'04')}</div>
- ${isCoord() && !Object.keys(state.groups).length ? '<div class="notice">Nenhum grupo cadastrado. Acesse Grupos e cursos para cadastrar um grupo ou importar uma planilha.</div>' : ''}<section class="card">${heading('Agenda de bancas',isCoord()?'Agendamentos e situação das avaliações.':'Bancas atribuídas ao professor.',`<button class="btn soft" data-route="bancas">Ver todas →</button>`)}${boardList(boards.slice().sort((a,b)=>a[1].startAt-b[1].startAt).slice(0,5))}</section>`;
+ ${isCoord() && !Object.keys(state.groups).length ? '<div class="notice">Nenhum grupo cadastrado. Acesse Grupos e cursos para cadastrar um grupo ou importar uma planilha.</div>' : ''}<section class="card">${heading('Agenda de bancas',isCoord()?'Agendamentos e situação das avaliações.':'Bancas atribuídas ao professor.',`<div class="row">${isCoord()?'<button class="btn soft" data-route="notas">Todas as notas</button>':''}<button class="btn soft" data-route="bancas">Ver todas →</button></div>`)}${boardList(boards.slice().sort((a,b)=>a[1].startAt-b[1].startAt).slice(0,5))}</section>`;
 }
 function boardStatus(bid,b){if(state.seals[bid])return badge('Avaliação encerrada','green');if(!isCoord())return badge('Agendada','blue');const g=groupOf(b);if(g&&situacao(b,g,boardGrades(bid),state.deliveries[bid]).pronta)return badge('Notas completas','green');return badge('Em avaliação','orange');}
 function boardList(boards){if(!boards.length)return empty(isCoord()?'Nenhuma banca cadastrada':'Nenhuma banca atribuída',isCoord()?'Cadastre uma banca em Sorteio.':'A atribuição das bancas é feita pela coordenação.');return `<div class="group-list">${boards.map(([id,b])=>{const g=groupOf(b);return `<article class="group-card board-card"><div><div class="row">${g?.courseName?badge(g.courseName):''}${badge(g?.className||'TCC','blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||b.groupId)}</h4><p class="project-name">${esc(g?.title||'')}</p><div class="board-info"><span>${icon('bancas')}${dateStr(b.startAt)}</span><span>${icon('sala')}${esc(b.room)}</span></div><p class="board-team">Orientador: ${esc(b.advisorName)} ${b.members?.[b.advisorUid]?'(participa)':'(não participa)'}<br>${Object.keys(b.members||{}).length} avaliadores · ${studentsOf(g).length} alunos</p></div><button class="btn soft" data-open-board="${esc(id)}">${isCoord()?'Ver detalhes':'Avaliar grupo'} ${icon('seta')}</button></article>`;}).join('')}</div>`;}
@@ -1115,22 +1164,88 @@ function manualMemberPicker(){
  const advisorIsTeacher=teachers.some(([uid])=>uid===g.advisorUid);
  p.innerHTML=`<p class="muted tiny">Orientador: <b>${esc(who(g.advisorUid))}</b>. Selecione 2 ou 3 avaliadores, preferencialmente incluindo o orientador. A ausência dele não impede a criação da banca.</p><div class="check-list">${teachers.map(([uid,u])=>`<label class="check-tag"><input type="checkbox" name="evaluator" value="${esc(uid)}" ${previouslySelected.has(uid)||(uid===g.advisorUid&&!previouslySelected.size)?'checked':''}>${esc(u.name)} ${uid===g.advisorUid?'<small>· orientador</small>':''}</label>`).join('')}</div>${!advisorIsTeacher?'<p class="muted tiny">O orientador não está entre os professores cadastrados e não poderá ser incluído nesta banca.</p>':''}`;
 }
+// Consulta da coordenação: notas salvas, sem exigir encerramento ou entregas.
+function resetNotesFilters(){
+ state.notesFilters={course:'todas',className:'todas',date:'',status:'todas',search:''};state.notesSearchDraft='';
+}
+function coordinatorBoardRecord(bid){
+ if(!state.user||!isCoord())throw Error('Consulta de todas as notas exclusiva da coordenação.');
+ const board=state.boards[bid];if(!board)return null;
+ const group=groupOf(board),grades=boardGrades(bid),deliveries=state.deliveries[bid]||{},members=Object.keys(board.members||{});
+ const roster=group?studentsOf(group):[...new Set(members.flatMap(uid=>Object.keys(grades[uid]||{})))].map(sid=>[sid,`Aluno ${sid} · cadastro indisponível`]);
+ const students=roster.map(([sid,name])=>{
+  const evaluators=members.map(uid=>{
+   const saved=grades[uid]?.[sid];
+   return {uid,name:board.memberNames?.[uid]||who(uid),scores:Object.fromEntries(CRITERIOS.map(([key])=>[key,saved?.[key]])),mean:mediaAvaliador(saved),completedCriteria:CRITERIOS.filter(([key])=>notaValida(saved?.[key])).length};
+  });
+  const banca=evaluators.length&&evaluators.every(e=>e.mean!==null)?evaluators.reduce((sum,e)=>sum+e.mean,0)/evaluators.length:null;
+  const entrega=notaValida(deliveries[sid])?deliveries[sid]:null,result=resultadoAluno(board,sid,grades,deliveries);
+  return {id:sid,name,evaluators,banca,entrega,result,provisional:!!result&&!state.seals[bid]};
+ });
+ return {id:bid,board,group,sealed:!!state.seals[bid],ready:!!group&&situacao(board,group,grades,deliveries).pronta,
+  expectedGrades:members.length*students.length,completedGrades:students.reduce((sum,s)=>sum+s.evaluators.filter(e=>e.mean!==null).length,0),missingDeliveries:students.filter(s=>s.entrega===null).length,students};
+}
+function filteredNotesBoards(){
+ if(!state.user||!isCoord())return [];
+ const f=state.notesFilters,normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR'),query=normalize(f.search).trim();
+ return Object.entries(state.boards).filter(([bid,board])=>{
+  const group=groupOf(board);
+  if((f.course!=='todas'&&courseLabel(group)!==f.course)||(f.className!=='todas'&&group?.className!==f.className)||!boardMatchesDay(board,f.date))return false;
+  if(f.status==='abertas'&&state.seals[bid]||f.status==='encerradas'&&!state.seals[bid])return false;
+  if(f.status==='pendentes'&&group&&situacao(board,group,boardGrades(bid),state.deliveries[bid]).pronta)return false;
+  const names=Object.keys(board.members||{}).flatMap(uid=>[board.memberNames?.[uid],who(uid)]);
+  return !query||normalize([bid,group?.name,group?.title,courseLabel(group),group?.className,...Object.values(group?.students||{}),...names].join(' ')).includes(query);
+ }).sort((a,b)=>(a[1].startAt||0)-(b[1].startAt||0));
+}
+function setNotesFilter(key,value){
+ if(!state.user||!isCoord())throw Error('Consulta de notas exclusiva da coordenação.');
+ if(!['course','className','date','status'].includes(key))throw Error('Filtro de notas inválido.');
+ const next=String(value||'');
+ if(key==='date'&&next&&(!/^\d{4}-\d{2}-\d{2}$/.test(next)||localDayKey(new Date(next+'T12:00:00').getTime())!==next))throw Error('Escolha uma data válida.');
+ if(key==='status'&&!['todas','abertas','encerradas','pendentes'].includes(next))throw Error('Situação da banca inválida.');
+ state.notesFilters[key]=next;if(key==='course')state.notesFilters.className='todas';render();
+}
+function boardNotesHtml(bid){
+ if(!state.user||!isCoord())return '';
+ const record=coordinatorBoardRecord(bid);if(!record)return '';
+ const display=value=>notaValida(value)?fmt(value):'<span class="notes-pending">Pendente</span>';
+ return `<section class="notes-board-content" data-coordinator-notes="${esc(bid)}"><div class="row space notes-content-heading"><h3>Notas da banca</h3><span class="tiny">${record.completedGrades} de ${record.expectedGrades} avaliações completas · ${record.missingDeliveries} entrega(s) pendente(s)</span></div>
+ ${!record.group?'<div class="notice">Cadastro do grupo indisponível. As notas salvas são identificadas pelo código do aluno.</div>':''}
+ ${record.students.length?record.students.map(student=>`<article class="notes-student" data-notes-student="${esc(student.id)}"><div class="row space"><h4>${esc(student.name)}</h4>${badge(student.result?(record.sealed?'Resultado calculado':'Resultado provisório'):'Notas pendentes',student.result&&record.sealed?'green':'orange')}</div><div class="table-scroll"><table class="data-table notes-table"><caption>Notas de ${esc(student.name)} por professor avaliador</caption><thead><tr><th scope="col">Professor avaliador</th>${CRITERIOS.map(([,label])=>`<th scope="col">${esc(label)}</th>`).join('')}<th scope="col">Média do avaliador</th></tr></thead><tbody>${student.evaluators.map(evaluator=>`<tr data-notes-evaluator="${esc(evaluator.uid)}"><td data-label="Professor avaliador"><strong>${esc(evaluator.name)}</strong><small>${evaluator.completedCriteria} de 4 critérios</small></td>${CRITERIOS.map(([key,label])=>`<td data-label="${esc(label)}"><span>${display(evaluator.scores[key])}</span></td>`).join('')}<td data-label="Média do avaliador"><strong>${display(evaluator.mean)}</strong></td></tr>`).join('')}</tbody></table></div>
+ ${!student.evaluators.length?'<p class="notice">Nenhum avaliador cadastrado nesta banca.</p>':''}
+ <dl class="notes-result"><div><dt>Média da banca</dt><dd>${display(student.banca)}</dd></div><div><dt>Entregas</dt><dd>${display(student.entrega)}</dd></div><div><dt>Banca × 60%</dt><dd>${student.banca===null?'<span class="notes-pending">Pendente</span>':fmt(student.banca*.6)}</dd></div><div><dt>Entregas × 40%</dt><dd>${student.entrega===null?'<span class="notes-pending">Pendente</span>':fmt(student.entrega*.4)}</dd></div><div><dt>${record.sealed?'Nota final':'Nota calculada'} (0–10)</dt><dd>${student.result?fmt(student.result.final):'<span class="notes-pending">Pendente</span>'}</dd></div></dl>
+ </article>`).join(''):empty('Nenhum aluno cadastrado para esta banca')}
+ <p class="tiny">Consulta das notas salvas. As avaliações são atualizadas conforme os professores salvam os lançamentos. O resultado é provisório enquanto a banca estiver aberta.</p></section>`;
+}
+function allNotesView(){
+ if(!state.user||!isCoord())return empty('Acesso exclusivo da coordenação');
+ const boards=filteredNotesBoards(),records=boards.map(([bid])=>coordinatorBoardRecord(bid)),f=state.notesFilters;
+ const courses=[...new Set(Object.values(state.groups).map(courseLabel))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ const classes=[...new Set(Object.values(state.groups).filter(g=>f.course==='todas'||courseLabel(g)===f.course).map(g=>g.className).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ return `${heading('Todas as notas','Consulta por banca, aluno e professor, incluindo avaliações em andamento.')}
+ <div class="notes-toolbar"><div class="field"><label for="notes-course-filter">Curso</label><select id="notes-course-filter">${opts([['todas','Todos os cursos'],...courses.map(c=>[c,c])],f.course)}</select></div><div class="field"><label for="notes-class-filter">Turma</label><select id="notes-class-filter">${opts([['todas','Todas as turmas'],...classes.map(c=>[c,c])],f.className)}</select></div><div class="field"><label for="notes-date-filter">Data da banca</label><input id="notes-date-filter" type="date" lang="pt-BR" value="${esc(f.date)}"></div><div class="field"><label for="notes-status-filter">Situação</label><select id="notes-status-filter">${opts([['todas','Todas as bancas'],['abertas','Em avaliação'],['encerradas','Encerradas'],['pendentes','Com notas pendentes']],f.status)}</select></div></div>
+ <form id="notes-search-form" class="notes-search"><div class="field"><label for="notes-search">Buscar grupo, aluno ou professor</label><input id="notes-search" type="search" name="search" maxlength="180" value="${esc(state.notesSearchDraft)}" placeholder="Nome, projeto ou professor"></div><button type="submit" class="btn primary">Buscar</button><button type="button" class="btn soft" data-notes-reset="1">Limpar filtros</button></form>
+ <div class="notes-overview"><p><strong>${boards.length}</strong> banca(s) · <strong>${records.reduce((sum,r)=>sum+r.students.length,0)}</strong> aluno(s) · <strong>${records.reduce((sum,r)=>sum+r.completedGrades,0)} / ${records.reduce((sum,r)=>sum+r.expectedGrades,0)}</strong> avaliações completas</p><div class="row"><button type="button" class="btn soft" data-notes-expand="1" ${!boards.length?'disabled':''}>Expandir todas</button><button type="button" class="btn soft" data-notes-collapse="1" ${!boards.length?'disabled':''}>Recolher todas</button></div></div>
+ ${!state.connected?'<p class="notice">Sem conexão. Os valores exibidos são os últimos dados recebidos; reconecte para acompanhar novos lançamentos.</p>':''}
+ ${records.length?records.map(record=>{const {id,board,group}=record;return `<details class="notes-board" data-notes-board="${esc(id)}" ${state.notesExpanded.has(id)?'open':''}><summary><span class="notes-board-label"><span class="row">${boardStatus(id,board)}${group?.active===false?badge('Grupo removido','gray'):''}${group?.className?badge(group.className,'blue'):''}</span><strong>${esc(group?.name||board.groupId||id)}</strong><span>${esc(group?.title||'Cadastro do grupo indisponível')}</span><small>${esc(courseLabel(group))} · ${dateStr(board.startAt)} · ${record.completedGrades}/${record.expectedGrades} avaliações completas</small></span><span class="notes-summary-action">Ver notas ${icon('seta')}</span></summary><div class="notes-board-body">${boardNotesHtml(id)}<button type="button" class="btn soft" data-open-board="${esc(id)}">Abrir banca ${icon('seta')}</button></div></details>`;}).join(''):empty('Nenhuma banca encontrada','Ajuste os filtros ou limpe a busca.')}`;
+}
 function gradeView(){let id=state.selectedBoard;let board=state.boards[id];if(!board||(!isCoord()&&!board.members?.[state.user.uid])){const first=activeBoards()[0];id=first?.[0];board=first?.[1];state.selectedBoard=id||'';}
  if(!board)return empty('Nenhuma banca atribuída','A atribuição das bancas é feita pela coordenação.');const g=groupOf(board);if(!g)return empty('Grupo ainda não importado');const sealed=!!state.seals[id];const selfMember=!!board.members[state.user.uid];const own=state.grades[id]?.[state.user.uid]||{};
  return `<div class="row space">${heading(g.name,g.title)}<select class="filter" id="board-switch" aria-label="Selecionar banca para avaliação">${opts(activeBoards().map(([bid,b])=>[bid,`${groupOf(b)?.name||bid} · ${dateStr(b.startAt)}`]),id)}</select></div>
  <div class="card"><div class="row space"><div class="board-details"><div><b>Orientador:</b> ${esc(board.advisorName)} · ${board.members?.[board.advisorUid]?"participa da banca":"não participa da banca"}</div><div><b>Horário:</b> ${dateStr(board.startAt)} · ${esc(board.room)} · ${board.durationMin} min</div><div><b>Banca:</b> ${Object.keys(board.members).map(uid=>esc(board.memberNames?.[uid]||who(uid))).join(', ')}</div></div>${badge(sealed?'Avaliação encerrada':'Em avaliação',sealed?'green':'orange')}</div><div class="board-actions">${boardActions(id)}<button type="button" class="btn whatsapp" data-share-board="${esc(id)}">${isCoord()?'Compartilhar resultado':'Compartilhar minhas avaliações'}</button></div></div>${timerHtml(id)}
- ${!selfMember?'<div class="notice">Você pode consultar esta banca, mas não está entre seus avaliadores.</div>':sealed?'<div class="notice good">Banca encerrada. As notas estão bloqueadas para edição.</div>':'<div class="notice">As notas são individuais por aluno. Apenas você e o coordenador podem acessar as avaliações que você envia.</div>'}
- ${selfMember?studentsOf(g).map(([sid,name])=>`<form class="student" data-grade-form="${esc(id)}" data-student="${esc(sid)}"><h4>${esc(name)}</h4><p>${esc(g.name)} · ${esc(g.title)}</p><div class="grade-grid">${CRITERIOS.map(([key,label])=>`<div class="field"><label for="${esc(id)}-${esc(sid)}-${key}">${label}</label><input id="${esc(id)}-${esc(sid)}-${key}" name="${key}" type="number" inputmode="decimal" min="0" max="10" step="0.1" required ${sealed?'disabled':''} value="${own[sid]?.[key]??''}" placeholder="0 a 10"></div>`).join('')}</div><div class="grade-foot"><span class="muted tiny">Média deste avaliador: <strong>${mediaAvaliador(own[sid])===null?'—':fmt(mediaAvaliador(own[sid]))}</strong></span>${!sealed?'<button class="btn primary" type="submit">Salvar notas</button>':''}<button class="btn whatsapp" type="button" data-share-board="${esc(id)}" data-share-student="${esc(sid)}">Compartilhar avaliação deste aluno</button></div></form>`).join(''):empty('Apenas os avaliadores podem lançar notas nesta banca')}`;
+ ${isCoord()?boardNotesHtml(id):''}
+ ${!selfMember?'<div class="notice">Consulta da coordenação. O lançamento de notas dos critérios é exclusivo de cada avaliador.</div>':sealed?'<div class="notice good">Banca encerrada. As notas estão bloqueadas para edição.</div>':'<div class="notice">As notas são individuais por aluno. Apenas você e o coordenador podem acessar as avaliações que você envia.</div>'}
+ ${selfMember?studentsOf(g).map(([sid,name])=>`<form class="student" data-grade-form="${esc(id)}" data-student="${esc(sid)}"><h4>${esc(name)}</h4><p>${esc(g.name)} · ${esc(g.title)}</p><div class="grade-grid">${CRITERIOS.map(([key,label])=>`<div class="field"><label for="${esc(id)}-${esc(sid)}-${key}">${label}</label><input id="${esc(id)}-${esc(sid)}-${key}" name="${key}" type="number" inputmode="decimal" min="0" max="10" step="0.1" required ${sealed?'disabled':''} value="${own[sid]?.[key]??''}" placeholder="0 a 10"></div>`).join('')}</div><div class="grade-foot"><span class="muted tiny">Média deste avaliador: <strong>${mediaAvaliador(own[sid])===null?'—':fmt(mediaAvaliador(own[sid]))}</strong></span>${!sealed?'<button class="btn primary" type="submit">Salvar notas</button>':''}<button class="btn whatsapp" type="button" data-share-board="${esc(id)}" data-share-student="${esc(sid)}">Compartilhar avaliação deste aluno</button></div></form>`).join(''):''}`;
 }
 function deliveriesView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const boards=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);return `${heading('Entregas · 40%','Somente o coordenador lança e visualiza esta nota. Cada aluno tem sua própria nota.')}<div class="notice">A nota de entregas é de 0 a 10; ela representa 40% da nota final. Ao encerrar a banca, as notas são bloqueadas. Reabra a banca para lançar ou corrigir entregas; depois encerre novamente.</div>${boards.length?boards.map(([bid,b])=>{const g=groupOf(b);if(!g)return '';const sealed=!!state.seals[bid];return `<section class="card">${heading(g.name,g.title,boardStatus(bid,b))}<p class="muted tiny">Orientador: ${esc(b.advisorName)}</p><div class="board-actions">${boardActions(bid)}</div>${studentsOf(g).map(([sid,name])=>`<form class="student" data-delivery-form="${esc(bid)}" data-student="${esc(sid)}"><div class="row space delivery-row"><div><h4>${esc(name)}</h4><p>Avaliação de entregas</p></div><div class="row delivery-controls"><input style="width:110px" class="filter" aria-label="Nota de entregas de ${esc(name)}" type="number" name="delivery" step="0.1" min="0" max="10" required ${sealed?'disabled':''} value="${state.deliveries[bid]?.[sid]??''}" placeholder="0 a 10"><button class="btn soft" type="submit" ${sealed?'disabled':''}>Salvar</button></div></div></form>`).join('')}</section>`;}).join(''):empty('Nenhuma banca criada')}`;}
 function reportsView(){if(!isCoord())return empty('Acesso exclusivo da coordenação');const filtered=filteredReportBoards();
  const finished=filtered.filter(([id,b])=>state.seals[id]&&groupOf(b)&&situacao(b,groupOf(b),boardGrades(id),state.deliveries[id]).pronta);const targetGroups=reportGroups();const allReady=targetGroups.length>0&&targetGroups.every(g=>state.groupBoards[g.id]&&finished.some(([id])=>id===state.groupBoards[g.id]))&&filtered.length===targetGroups.length;
- return `${heading('Relatórios oficiais','Detalhamento por aluno e professor avaliador, com a participação de 60% / 40%.',`<button class="btn dark" data-export-csv="1" ${!finished.length?'disabled':''}>Exportar CSV (concluídas)</button>`)}
+ return `${heading('Relatórios oficiais','Detalhamento por aluno e professor avaliador, com a participação de 60% / 40%.',`<div class="row"><button class="btn soft" data-route="notas">Consultar todas as notas</button><button class="btn dark" data-export-csv="1" ${!finished.length?'disabled':''}>Exportar CSV (concluídas)</button></div>`)}
  <div class="toolbar banca-filter-toolbar"><select id="report-course-filter" class="filter" aria-label="Filtrar relatórios por curso">${opts([['todas','Todos os cursos'],...[...new Set(Object.values(state.groups).map(courseLabel))].sort().map(c=>[c,c])],state.reportCourseFilter)}</select><select id="report-filter" class="filter" aria-label="Filtrar relatórios por turma">${opts([['todas','Todas as turmas'],...new Set(Object.values(state.groups).map(g=>g.className))].map(x=>Array.isArray(x)?x:[x,`Turma ${x}`]),state.reportFilter)}</select>${bancaDateFilterHtml(true)}<button class="btn primary" data-print-all="1" ${!allReady?'disabled':''}>Baixar PDF consolidado</button></div>
  ${!allReady?'<div class="notice">O relatório consolidado só será habilitado quando todas as bancas do filtro estiverem encerradas e com todas as notas, incluindo as entregas. É possível emitir individualmente o relatório de uma banca encerrada e com notas completas.</div>':'<div class="notice good">Todas as bancas do filtro estão encerradas e com notas completas.</div>'}
  <label class="analytics-toggle"><input id="report-charts" type="checkbox" ${state.reportCharts?'checked':''}><span><b>Incluir gráficos nos relatórios PDF</b><small>Relatórios individuais, consolidado e PDFs oficiais preparados para compartilhar.</small></span></label>
  ${analyticsView()}
- ${filtered.length?filtered.map(([id,b])=>{const g=groupOf(b);const s=g?situacao(b,g,boardGrades(id),state.deliveries[id]):{pronta:false,pendencias:[]};const sealed=!!state.seals[id];return `<article class="group-card"><div><div class="row">${badge(g?.className||'', 'blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||id)} — ${esc(g?.title||'')}</h4><p>${esc(b.advisorName)} · ${s.pendencias.length} lançamento(s) pendente(s) · ${dateStr(b.startAt)}</p></div><div class="row">${boardActions(id)}<button class="btn primary" data-print-one="${esc(id)}" ${!sealed||!s.pronta?'disabled':''}>Baixar relatório PDF</button><button class="btn whatsapp" type="button" data-share-board="${esc(id)}" ${!sealed||!s.pronta?'disabled':''}>WhatsApp / compartilhar</button></div></article>`;}).join(''):empty('Nenhuma banca encontrada')}`;
+ ${filtered.length?filtered.map(([id,b])=>{const g=groupOf(b);const s=g?situacao(b,g,boardGrades(id),state.deliveries[id]):{pronta:false,pendencias:[]};const sealed=!!state.seals[id];return `<article class="group-card"><div><div class="row">${badge(g?.className||'', 'blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||id)} — ${esc(g?.title||'')}</h4><p>${esc(b.advisorName)} · ${s.pendencias.length} lançamento(s) pendente(s) · ${dateStr(b.startAt)}</p></div><div class="row">${boardActions(id)}<button class="btn soft" data-open-board="${esc(id)}">Consultar notas</button><button class="btn primary" data-print-one="${esc(id)}" ${!sealed||!s.pronta?'disabled':''}>Baixar relatório PDF</button><button class="btn whatsapp" type="button" data-share-board="${esc(id)}" ${!sealed||!s.pronta?'disabled':''}>WhatsApp / compartilhar</button></div></article>`;}).join(''):empty('Nenhuma banca encontrada')}`;
 }
 
 // Gráficos derivados das mesmas notas dos relatórios: nenhuma gravação adicional.
@@ -2718,8 +2833,14 @@ async function openBoardShare(boardId, { studentId = '' } = {}) {
 const handle = async cb=>{try{await cb();}catch(err){fail(err);}};
 for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('click',e=>{const el=e.target.closest('button');if(!el)return;if(el.dataset.openMenu!==undefined)return openMobileMenu();if(!el.dataset.route)return;if(el.dataset.route==='sair')signOut(auth).catch(fail);else go(el.dataset.route);});
 $('#view').addEventListener('click',e=>{
+ const summary=e.target.closest('summary'),notesBoard=summary?.parentElement?.dataset.notesBoard;
+ // O evento toggle é assíncrono: registre a intenção antes de uma atualização ao vivo.
+ if(notesBoard&&isCoord()){if(summary.parentElement.open)state.notesExpanded.delete(notesBoard);else state.notesExpanded.add(notesBoard);return;}
  const el=e.target.closest('button');if(!el||el.disabled)return;
  if(el.dataset.route)return go(el.dataset.route);
+ if(el.dataset.notesReset){if(!isCoord())return;resetNotesFilters();render();return;}
+ if(el.dataset.notesExpand){if(!isCoord())return;for(const [bid] of filteredNotesBoards())state.notesExpanded.add(bid);render();return;}
+ if(el.dataset.notesCollapse){if(!isCoord())return;state.notesExpanded.clear();render();return;}
  if(el.dataset.dateToday)return handle(()=>setBancaDateFilter(localDayKey(Date.now()),el.dataset.dateToday==='reports'));
  if(el.dataset.dateClear)return handle(()=>setBancaDateFilter('',el.dataset.dateClear==='reports'));
  if(el.dataset.importRoster)return handle(importarGruposProtegidos);
@@ -2756,11 +2877,16 @@ $('#view').addEventListener('click',e=>{
 });
 $('#view').addEventListener('change',e=>{if(e.target.id==='filter-date'||e.target.id==='report-date-filter')return handle(()=>setBancaDateFilter(e.target.value,e.target.id==='report-date-filter'));if(['group-course-filter','group-class-filter','group-search','group-show-archived'].includes(e.target.id))return groupFiltersChanged(e);if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='teacher-method')teacherRegistrationMethod();if(e.target.id==='filter-course'){state.courseFilter=e.target.value;render();}if(e.target.id==='report-course-filter'){state.reportCourseFilter=e.target.value;state.analyticsBoard='';render();}if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;state.analyticsBoard='';render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
 $('#view').addEventListener('change',e=>{
+ const notesKeys={'notes-course-filter':'course','notes-class-filter':'className','notes-date-filter':'date','notes-status-filter':'status'};
+ if(notesKeys[e.target.id])return handle(()=>setNotesFilter(notesKeys[e.target.id],e.target.value));
  if(e.target.id==='report-charts')state.reportCharts=!!e.target.checked;
  if(e.target.id==='analytics-board-filter'){state.analyticsBoard=e.target.value;render();}
 });
+$('#view').addEventListener('input',e=>{if(e.target.id==='notes-search'&&isCoord())state.notesSearchDraft=String(e.target.value||'').slice(0,180);});
+$('#view').addEventListener('toggle',e=>{const bid=e.target.dataset?.notesBoard;if(!bid||!isCoord())return;if(e.target.open)state.notesExpanded.add(bid);else state.notesExpanded.delete(bid);},true);
 $('#view').addEventListener('submit',e=>{e.preventDefault();const f=e.target;handle(async()=>{
- if(f.id==='manual-form'){const d=new FormData(f);const g=state.groups[d.get('groupId')];if(!g||g.active===false||state.groupBoards[g.id])throw Error('Selecione um grupo ativo ainda não agendado.');const startAt=new Date(d.get('date')).getTime(),durationMin=Number(d.get('duration')),size=Number(d.get('size')),room=String(d.get('room')||'').trim();const evaluators=d.getAll('evaluator');if(evaluators.length!==size||new Set(evaluators).size!==evaluators.length)throw Error(`Selecione exatamente ${size} professores avaliadores.`);if(evaluators.some(uid=>!state.users[uid]))throw Error('Há um professor sem cadastro.');if(!room)throw Error('Informe a sala.');await createBoards([makeBoard(g,startAt,durationMin,room,evaluators)]);}
+ if(f.id==='notes-search-form'){if(!isCoord())throw Error('Consulta de notas exclusiva da coordenação.');state.notesFilters.search=String(new FormData(f).get('search')||'').trim().slice(0,180);state.notesSearchDraft=state.notesFilters.search;render();}
+ else if(f.id==='manual-form'){const d=new FormData(f);const g=state.groups[d.get('groupId')];if(!g||g.active===false||state.groupBoards[g.id])throw Error('Selecione um grupo ativo ainda não agendado.');const startAt=new Date(d.get('date')).getTime(),durationMin=Number(d.get('duration')),size=Number(d.get('size')),room=String(d.get('room')||'').trim();const evaluators=d.getAll('evaluator');if(evaluators.length!==size||new Set(evaluators).size!==evaluators.length)throw Error(`Selecione exatamente ${size} professores avaliadores.`);if(evaluators.some(uid=>!state.users[uid]))throw Error('Há um professor sem cadastro.');if(!room)throw Error('Informe a sala.');await createBoards([makeBoard(g,startAt,durationMin,room,evaluators)]);}
  else if(f.id==='lottery-form'){if(!isCoord())throw Error('Sorteio exclusivo da coordenação.');const result=makeLottery(new FormData(f));state.plan=result.plan;state.planMeta=result.config;state.planUnassigned=result.unassigned;render();notice(result.unassigned.length?`${result.plan.length} bancas encaixadas; ${result.unassigned.length} grupo(s) sem horário. Ajuste as condições antes de confirmar.`:'Sorteio completo! Baixe o PDF da prévia ou confirme as bancas.',!!result.unassigned.length);}
  else if(f.id==='group-form')await saveGroup(f);
  else if(f.id==='teacher-form')await addTeacher(f);
