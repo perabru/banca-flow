@@ -1,0 +1,222 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      "$uid": {
+        ".read": "auth !== null && auth.uid === $uid",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('key').val() === 'alberson' && auth.uid !== $uid && (!data.exists() || data.child('role').val() === 'teacher') && newData.exists() && newData.child('role').val() === 'teacher' && (!data.exists() || (newData.child('email').val() === data.child('email').val() && newData.child('key').val() === data.child('key').val()))",
+        ".validate": "newData.hasChildren(['name','email','role','key','active']) && newData.child('role').val() === 'teacher' && newData.child('key').val() !== 'alberson'",
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
+        },
+        "email": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 254"
+        },
+        "key": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60"
+        },
+        "role": {
+          ".validate": "newData.val() === 'teacher'"
+        },
+        "active": {
+          ".validate": "newData.isBoolean()"
+        },
+        "createdBy": {
+          ".validate": "newData.isString() && (data.exists() ? newData.val() === data.val() : newData.val() === auth.uid)"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber() && (data.exists() ? newData.val() === data.val() : newData.val() <= now + 60000)"
+        },
+        "disabledBy": {
+          ".validate": "newData.isString() && newData.val() === auth.uid"
+        },
+        "disabledAt": {
+          ".validate": "newData.isNumber() && newData.val() <= now + 60000"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "groups": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).exists()",
+      "$groupId": {
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['id','name','className','title','advisorUid','students']) && newData.child('id').val() === $groupId && root.child('users').child(newData.child('advisorUid').val()).exists()",
+        "id": {
+          ".validate": "newData.isString()"
+        },
+        "name": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 100"
+        },
+        "className": {
+          ".validate": "newData.isString() && newData.val().length <= 20"
+        },
+        "title": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 500"
+        },
+        "advisorUid": {
+          ".validate": "newData.isString()"
+        },
+        "students": {
+          "$sid": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 180"
+          }
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "boards": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).exists()",
+      "$bid": {
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
+        ".validate": "newData.hasChildren(['groupId','advisorUid','advisorName','members','memberNames','startAt','durationMin','room','createdBy','createdAt']) && root.child('groups').child(newData.child('groupId').val()).exists() && newData.child('advisorUid').val() === root.child('groups').child(newData.child('groupId').val()).child('advisorUid').val() && newData.child('members').hasChildren() && newData.child('createdBy').val() === auth.uid && newData.child('durationMin').val() % 15 === 0 && newData.child('startAt').val() % 900000 === 0 && newData.child('startAt').val() > now - 60000",
+        "groupId": {
+          ".validate": "newData.isString()"
+        },
+        "advisorUid": {
+          ".validate": "newData.isString()"
+        },
+        "advisorName": {
+          ".validate": "newData.isString() && newData.val().length <= 120"
+        },
+        "members": {
+          "$uid": {
+            ".validate": "newData.val() === true && root.child('users').child($uid).exists() && root.child('users').child($uid).child('active').val() !== false && (root.child('users').child($uid).child('role').val() === 'teacher' || root.child('users').child($uid).child('role').val() === 'coordinator')"
+          }
+        },
+        "memberNames": {
+          "$uid": {
+            ".validate": "newData.isString() && root.child('users').child($uid).exists() && root.child('users').child($uid).child('active').val() !== false && (root.child('users').child($uid).child('role').val() === 'teacher' || root.child('users').child($uid).child('role').val() === 'coordinator')"
+          }
+        },
+        "startAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "durationMin": {
+          ".validate": "newData.isNumber() && (newData.val() === 30 || newData.val() === 45 || newData.val() === 60 || newData.val() === 90)"
+        },
+        "room": {
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+        },
+        "createdBy": {
+          ".validate": "newData.isString()"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "groupBoards": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      "$groupId": {
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('groups').child($groupId).exists() && !data.exists() && newData.exists()",
+        ".validate": "newData.isString()"
+      }
+    },
+    "roomLocks": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      "$slice": {
+        "$roomKey": {
+          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
+          ".validate": "newData.isString()"
+        }
+      }
+    },
+    "locks": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      "$slice": {
+        "$uid": {
+          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child($uid).exists() && !data.exists() && newData.exists()",
+          ".validate": "newData.isString()"
+        }
+      }
+    },
+    "grades": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      "$bid": {
+        "$uid": {
+          ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && auth.uid === $uid && root.child('boards').child($bid).child('members').child($uid).val() === true",
+          "$sid": {
+            ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && auth.uid === $uid && root.child('boards').child($bid).child('members').child($uid).val() === true && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('students').child($sid).exists() && !root.child('seals').child($bid).exists() && newData.exists()",
+            ".validate": "newData.hasChildren(['presentation','practice','code','time'])",
+            "presentation": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10"
+            },
+            "practice": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10"
+            },
+            "code": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10"
+            },
+            "time": {
+              ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10"
+            },
+            "$other": {
+              ".validate": false
+            }
+          }
+        }
+      }
+    },
+    "deliveries": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      "$bid": {
+        "$sid": {
+          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('students').child($sid).exists() && !root.child('seals').child($bid).exists() && newData.exists()",
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 10"
+        }
+      }
+    },
+    "seals": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      "$bid": {
+        ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).child('members').child(auth.uid).val() === true",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).exists() && (root.child('users').child(auth.uid).child('role').val() === 'coordinator' || root.child('boards').child($bid).child('members').child(auth.uid).val() === true) && ((!data.exists() && newData.exists()) || (data.exists() && !newData.exists()))",
+        ".validate": "newData.hasChildren(['by','at']) && newData.child('by').val() === auth.uid && (!newData.parent().parent().child('timers').child($bid).exists() || newData.parent().parent().child('timers').child($bid).child('startedAt').val() === 0)",
+        "by": {
+          ".validate": "newData.isString()"
+        },
+        "at": {
+          ".validate": "newData.isNumber() && newData.val() >= now - 60000 && newData.val() <= now + 60000 && newData.val() % 1 === 0"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    },
+    "timers": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
+      "$bid": {
+        ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).exists() && (root.child('users').child(auth.uid).child('role').val() === 'coordinator' || root.child('boards').child($bid).child('members').child(auth.uid).val() === true)",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('boards').child($bid).exists() && (root.child('users').child(auth.uid).child('role').val() === 'coordinator' || root.child('boards').child($bid).child('members').child(auth.uid).val() === true) && newData.exists() && (!root.child('seals').child($bid).exists() || !newData.parent().parent().child('seals').child($bid).exists())",
+        ".validate": "newData.hasChildren(['elapsedMs','startedAt','updatedAt','updatedBy','revision']) && (!newData.parent().parent().child('seals').child($bid).exists() || newData.child('startedAt').val() === 0)",
+        "elapsedMs": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= 31536000000 && newData.val() % 1 === 0"
+        },
+        "startedAt": {
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 60000 && newData.val() % 1 === 0"
+        },
+        "updatedAt": {
+          ".validate": "newData.isNumber() && newData.val() >= now - 60000 && newData.val() <= now + 60000"
+        },
+        "updatedBy": {
+          ".validate": "newData.val() === auth.uid"
+        },
+        "revision": {
+          ".validate": "newData.isNumber() && newData.val() === (data.exists() ? data.val() + 1 : 1)"
+        },
+        "$other": {
+          ".validate": false
+        }
+      }
+    }
+  }
+}
