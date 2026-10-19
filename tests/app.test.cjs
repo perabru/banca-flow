@@ -122,7 +122,7 @@ function harness(uid = 't1') {
       localDayKey,boardMatchesDay,filteredBoards,filteredReportBoards,reportGroups,setBancaDateFilter,resetAppData,boardsView,reportsView,exportSchedulePdf,
       teacherIdentity,teacherEditIdentity,teacherProfileFingerprint,addTeacher,changeTeacherAccess,saveTeacherEdit,
       validatedGroupDraft,groupRelatedBoards,groupAdminFingerprint,resetGroupAdmin,editGroup,saveGroup,changeGroupAccess,addGroupStudentRow,removeGroupStudentRow,
-      confirmExcelImport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,gradeView,navItems,setNotesFilter,resetNotesFilters,
+      confirmExcelImport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,gradeView,myEvaluationsView,evaluatorBoards,navItems,setNotesFilter,resetNotesFilters,
       startTeacherEdit(uid){teacherEditSession={uid,ownerUid:state.user.uid,revision:accessRevision,profileFingerprint:teacherProfileFingerprint(state.users[uid]),dialog:{open:false,remove(){},querySelectorAll(){return[];}},saving:false};},
       prepareImport(rows){const catalog={users:state.users,existingGroups:state.groups},preview=BancaFlowImport.parseRows(rows,catalog);excelImportState={uid:state.user.uid,revision:accessRevision,busy:false,rows,defaultCourse:'',catalog,preview,fingerprint:excelPreviewFingerprint(preview)};return excelImportState;},
       buildEvaluationPdf: typeof buildEvaluationPdf === 'function' ? buildEvaluationPdf : null };
@@ -873,4 +873,85 @@ test('coordinator consultation retains saved student and evaluator records when 
   assert.ok(app.boardNotesHtml('b1').includes('Cadastro do grupo indisponível'));
   assert.ok(app.boardNotesHtml('b1').includes('Professor Um'));assert.ok(app.boardNotesHtml('b1').includes('7,80'));
   assert.deepEqual(clone(app.filteredNotesBoards().map(([id])=>id)),['b1']);
+});
+
+
+function installCoordinatorEvaluator(h){
+  const {app}=h;
+  h.data.boards.b1.members.coord=true;h.data.boards.b1.memberNames.coord='Alberson';
+  h.data.grades.b1.coord={s1:grade(8,8,8,8),s2:grade(5,5,5,5)};
+  h.data.groups.g2={...clone(h.data.groups.g1),id:'g2',name:'Banca sem Alberson'};
+  h.data.boards.b2={...clone(h.data.boards.b1),groupId:'g2',startAt:100000};
+  h.data.boards.b2.members={t1:true,t2:true};h.data.boards.b2.memberNames={t1:'Professor Um',t2:'Professora Dois'};
+  h.data.grades.b2={t1:clone(h.data.grades.b1.t1),t2:clone(h.data.grades.b1.t2)};
+  h.data.deliveries.b2=clone(h.data.deliveries.b1);
+  Object.assign(app.state,clone(h.data));
+}
+
+test('own evaluation navigation includes only active signed-in board members in chronological order',()=>{
+  const h=harness('coord'),{app}=h;installCoordinatorEvaluator(h);
+  app.state.boards.b3={...clone(app.state.boards.b1),startAt:300000};
+  app.state.boards.truthy={...clone(app.state.boards.b1),members:{coord:'true'}};
+  app.state.boards.falseMember={...clone(app.state.boards.b1),members:{coord:false}};
+  assert.deepEqual(clone(app.evaluatorBoards().map(([id])=>id)),['b3','b1']);
+  assert.ok(app.navItems().some(([route,,title])=>route==='minhasavaliacoes'&&title==='Minhas avaliações'));
+  const before=clone(h.data);
+  app.state.selectedBoard='b2';const rendered=app.myEvaluationsView();
+  assert.equal(app.state.selectedBoard,'b3','direct grading selects an assigned board when previous detail was unassigned');
+  assert.ok(rendered.includes('data-grade-form="b3"'));
+  assert.ok(!rendered.includes('value="b2"'),'own selector excludes consulted nonmember boards');
+  assert.ok(!rendered.includes('value="truthy"'));
+  app.state.profile.active=false;assert.deepEqual(clone(app.evaluatorBoards()),[]);
+  app.state.profile.active=true;app.state.user=null;assert.deepEqual(clone(app.evaluatorBoards()),[]);
+  assert.deepEqual(h.data,before,'opening own evaluations never changes board membership');
+  assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
+});
+
+test('coordinator grading has own forms first and direct links preserve readonly all-board consultation',()=>{
+  const h=harness('coord'),{app}=h;installCoordinatorEvaluator(h);
+  app.state.selectedBoard='b1';const own=app.myEvaluationsView();
+  assert.equal((own.match(/data-grade-form="b1"/g)||[]).length,2);
+  assert.ok(own.includes('id="my-grade-heading"'));
+  assert.ok(own.indexOf('data-grade-form="b1"')<own.indexOf('notes-table'),'editable own scores precede the readonly comparison');
+  app.state.notesExpanded.add('b1');app.state.notesExpanded.add('b2');
+  const screens=app.boardsView()+app.allNotesView()+app.reportsView();
+  assert.ok(screens.includes('data-my-grades="b1"'));
+  assert.ok(!screens.includes('data-my-grades="b2"'),'no grading shortcut for boards without coordinator membership');
+  app.state.selectedBoard='b2';const detail=app.gradeView();
+  assert.ok(detail.includes('notes-table'));
+  assert.ok(!detail.includes('data-grade-form='));
+  assert.equal(app.state.selectedBoard,'b2','coordinator can still consult unassigned boards');
+  delete app.state.boards.b1.members.coord;
+  const emptyOwn=app.myEvaluationsView();
+  assert.ok(!emptyOwn.includes('data-grade-form='));assert.ok(!emptyOwn.includes('notes-table'),'no assignment does not fall back to all-board consultation');
+});
+
+test('Alberson saves his own criteria including zero and decimals without changing colleagues or deliveries',async()=>{
+  const h=harness('coord'),{app}=h;installCoordinatorEvaluator(h);
+  const otherGrades=clone(h.data.grades.b1),deliveries=clone(h.data.deliveries),boards=clone(h.data.boards);
+  const form={dataset:{gradeForm:'b1',student:'s1'},values:{presentation:'0',practice:'9.5',code:'7,5',time:'8'}};
+  await app.saveGrade(form);
+  assert.equal(h.calls.sets[0][0],'grades/b1/coord/s1');
+  assert.deepEqual(h.data.grades.b1.coord.s1,grade(0,9.5,7.5,8));
+  assert.deepEqual(h.data.grades.b1.t1,otherGrades.t1);assert.deepEqual(h.data.grades.b1.t2,otherGrades.t2);
+  assert.deepEqual(h.data.grades.b1.coord.s2,otherGrades.coord.s2);
+  assert.deepEqual(h.data.deliveries,deliveries);assert.deepEqual(h.data.boards,boards);
+  app.state.grades.b1.coord.s1=clone(h.data.grades.b1.coord.s1);
+  const ownRecord=app.coordinatorBoardRecord('b1').students[0].evaluators.find(item=>item.uid==='coord');
+  assert.deepEqual(clone(ownRecord.scores),grade(0,9.5,7.5,8));assert.equal(ownRecord.mean,6.25);
+  const count=h.calls.sets.length;form.dataset.gradeForm='b2';
+  await assert.rejects(app.saveGrade(form),/Banca não disponível/);assert.equal(h.calls.sets.length,count);
+});
+
+test('closed coordinator evaluations are locked until reopening then accept only their own saved notes',async()=>{
+  const h=harness('coord'),{app}=h;installCoordinatorEvaluator(h);
+  const sealed={by:'t1',at:h.now()};h.write('seals/b1',sealed);app.state.seals.b1=clone(sealed);
+  app.state.selectedBoard='b1';const locked=app.myEvaluationsView();
+  assert.ok(/disabled[^>]*value="8"/.test(locked),'own inputs show saved notes but remain locked');
+  const form={dataset:{gradeForm:'b1',student:'s1'},values:{presentation:'9',practice:'9',code:'9',time:'9'}};
+  await assert.rejects(app.saveGrade(form),/Banca não disponível/);assert.equal(h.calls.sets.length,0);
+  const unchanged=clone(h.data.grades.b1.t1);await app.reopenBoard('b1');
+  assert.equal(h.calls.confirmations.length,1);assert.equal(h.data.seals.b1,undefined);
+  delete app.state.seals.b1;await app.saveGrade(form);
+  assert.deepEqual(h.data.grades.b1.coord.s1,grade(9,9,9,9));assert.deepEqual(h.data.grades.b1.t1,unchanged);
 });

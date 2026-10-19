@@ -16,6 +16,8 @@ A gestão de professores e grupos também é verificada: exclusividade do Albers
 
 A consulta **Todas as notas** é verificada separadamente dos relatórios finais: Alberson consulta todas as bancas, inclusive abertas, incompletas e de grupos arquivados, com notas por aluno, professor e critério. A suíte cobre notas zero, médias incompletas, entregas pendentes, cálculo de 60%/40%, identificação de resultados provisórios, professores desativados no histórico, filtros independentes da agenda e dos PDFs, busca, escape do conteúdo salvo e bloqueio de acesso pelo professor ou sem sessão. A consulta não grava nem altera notas.
 
+A coordenação também é testada como avaliadora: **Minhas avaliações** considera somente bancas em que o usuário autenticado é membro ativo, mantém a escolha de uma banca atribuída e apresenta os próprios formulários antes da consulta geral. As regressões salvam notas zero e decimais no UID do Alberson, verificam os colegas e as entregas sem alterações, bloqueiam a edição após encerramento e permitem retomá-la após reabertura. O acesso a bancas sem participação permanece somente para consulta.
+
 O parser local do Excel tem uma suíte própria, sem dependências adicionais:
 
 ```bash
@@ -49,6 +51,8 @@ Sem Playwright ou sem essa variável, os testes de navegador aparecem como ignor
 Os testes dos gráficos conferem o carregamento dos recursos locais sob a política CSP, rótulos e descrições dos SVGs, estado vazio, distinção entre tempo zero e não registrado, filtros, exploração de uma banca e os downloads reais dos PDFs analíticos e oficiais com ou sem gráficos. Também conferem a ausência de rolagem horizontal e o bloqueio da análise no perfil de professor.
 
 A consulta de notas também passa pela navegação real de desktop e pelo menu “Mais” no celular. São verificados os filtros por curso, turma, data e situação, a busca, a limpeza da seleção, as médias atualizadas após um snapshot do Firebase e a preservação das bancas expandidas. Os detalhes da banca exibem todas as notas ao coordenador mesmo quando ele não é avaliador, sem abrir campos para editar a nota de outro professor. A troca de sessão remove o acesso e limpa as expansões. A tela é conferida de 320 a 1440 px; capturas são salvas quando `BANCAFLOW_SCREENSHOT_DIR` estiver definido.
+
+O fluxo real do Alberson percorre **Minhas avaliações** no desktop e **Avaliar** diretamente na navegação do celular, salva critérios no próprio UID e confere a atualização da tabela de consulta. Verifica o bloqueio e a reabertura, os atalhos de notas/bancas/relatórios, a preservação das entregas e dos demais avaliadores e sua seleção como avaliador na criação de outra banca. A tela de lançamento é conferida em 320, 390 e 1440 px.
 
 O compartilhamento é verificado com `navigator.share`, clipboard e links do WhatsApp interceptados: arquivo PDF real, notas individuais, ativação por clique, cancelamento sem envio automático, alternativa de download/texto, escolha de um aluno, privacidade do relatório parcial e bloqueio de dados desatualizados. Os testes não abrem conversas reais nem enviam mensagens.
 

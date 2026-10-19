@@ -40,6 +40,14 @@ Cada aluno tem suas notas separadas por avaliador e critério, média do avaliad
 
 O mesmo detalhamento fica disponível em **Bancas → Ver detalhes** e **Relatórios → Consultar notas**, mesmo quando o coordenador não participa da banca. Essa consulta é somente leitura: cada professor continua responsável pelas próprias notas, e as entregas permanecem exclusivas da coordenação. Os valores acompanham os lançamentos salvos no Firebase. Não há alteração nos dados, nas regras ou nas exigências dos PDFs oficiais.
 
+## Alberson como avaliador
+
+O coordenador também participa das avaliações. Use **Minhas avaliações** no menu lateral ou **Avaliar** na navegação inferior do celular. Essa área lista somente as bancas em que a conta está cadastrada como avaliador. O atalho **Lançar minhas notas** também aparece na visão geral e nas bancas atribuídas, inclusive em Todas as notas e Relatórios.
+
+O formulário **Minha avaliação** aparece antes da consulta geral. Alberson registra Apresentação, Parte prática, Domínio do código e Domínio do tempo por aluno, como os demais avaliadores. Os lançamentos são salvos na conta dele e participam da média da banca. As avaliações dos demais professores permanecem independentes; **Entregas · 40%** continua sendo uma nota separada, lançada pela coordenação.
+
+Ao criar uma banca manualmente, o coordenador aparece na lista como **coordenador e avaliador**; ele também integra o conjunto de professores disponíveis para o sorteio. As bancas existentes mantêm sua composição e suas notas. Em uma banca não atribuída ao Alberson, ele conserva o acesso de consulta da coordenação. Bancas encerradas exigem reabertura com confirmação para alterar notas.
+
 ## Filtrar bancas por data
 
 Em **Bancas**, selecione **Data da banca** para ver os grupos daquele dia, combinando o filtro com curso e turma. **Hoje** escolhe o dia atual e **Todas as datas** limpa somente a data. Os professores continuam vendo apenas as bancas às quais estão atribuídos. O PDF da agenda inclui exatamente os resultados dessa seleção.
