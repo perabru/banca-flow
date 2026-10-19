@@ -14,7 +14,9 @@ A suíte executa o JavaScript do próprio `index.html` com adaptadores de DOM e 
 
 A gestão de professores e grupos também é verificada: exclusividade do Alberson, conta secundária durante o cadastro, reversão de criação incompleta, dados imutáveis de login, edição de contato, concorrência, remoção e restauração sem apagar histórico, identidade dos alunos, proteção após agendamento e confirmação da importação.
 
-A consulta **Todas as notas** é verificada separadamente dos relatórios finais: Alberson consulta todas as bancas, inclusive abertas, incompletas e de grupos arquivados, com notas por aluno, professor e critério. A suíte cobre notas zero, médias incompletas, entregas pendentes, cálculo de 60%/40%, identificação de resultados provisórios, professores desativados no histórico, filtros independentes da agenda e dos PDFs, busca, escape do conteúdo salvo e bloqueio de acesso pelo professor ou sem sessão. A consulta não grava nem altera notas.
+A consulta **Todas as notas** é verificada separadamente dos relatórios finais: Alberson consulta todas as bancas, inclusive abertas, incompletas e de grupos arquivados, com notas por aluno, professor e critério. A suíte cobre notas zero, médias incompletas, entregas pendentes, cálculo de 60%/40%, identificação de resultados provisórios, professores desativados no histórico, filtros independentes da agenda e dos PDFs, busca, escape do conteúdo salvo e bloqueio de acesso pelo professor ou sem sessão. A consulta mantém os critérios dos avaliadores somente para leitura. Alberson pode preencher a nota individual de monografia / entregas na mesma tela, sem alterar as avaliações dos professores.
+
+O consolidado geral cobre todas as bancas salvas, abertas, incompletas, encerradas e arquivadas, além de alunos sem banca. Sua exportação não depende dos filtros da consulta ou dos relatórios oficiais. Os testes conferem os PDFs com notas e gráficos, o CSV detalhado, valores zero, notas pendentes, leitura atualizada de todo o catálogo, bloqueio sem conexão, rascunhos pendentes e troca de sessão. O PDF oficial continua exigindo notas completas. O salvamento da monografia rejeita aluno inexistente, banca arquivada ou encerrada, falta de sessão e perfil de professor.
 
 A coordenação também é testada como avaliadora: **Minhas avaliações** considera somente bancas em que o usuário autenticado é membro ativo, mantém a escolha de uma banca atribuída e apresenta os próprios formulários antes da consulta geral. As regressões salvam notas zero e decimais no UID do Alberson, verificam os colegas e as entregas sem alterações, bloqueiam a edição após encerramento e permitem retomá-la após reabertura. O acesso a bancas sem participação permanece somente para consulta.
 
@@ -28,10 +30,10 @@ Ela lê arquivos XLSX, XLS e CSV reais com a biblioteca local, verifica cabeçal
 
 ## Gráficos e PDFs analíticos
 
-As duas suítes dos gráficos também usam apenas Node.js e os arquivos locais:
+As suítes dos gráficos e do consolidado também usam apenas Node.js e os arquivos locais:
 
 ```bash
-node --test tests/analytics.test.cjs tests/analytics-pdf.test.cjs
+node --test tests/analytics.test.cjs tests/analytics-pdf.test.cjs tests/coordinator-report.test.cjs tests/coordinator-report-pdf.test.cjs
 ```
 
 A primeira verifica as médias por aluno e por banca, composição de 60%/40%, notas individuais por professor e critério, tempo com centésimos, ausência de cronômetro distinta de tempo zero, escalas, rótulos, tabelas acessíveis e escape de conteúdo nos gráficos SVG. A segunda valida a saída vetorial no PDF, sua paginação e o tratamento de dados ausentes e rótulos extensos.
@@ -50,7 +52,9 @@ Sem Playwright ou sem essa variável, os testes de navegador aparecem como ignor
 
 Os testes dos gráficos conferem o carregamento dos recursos locais sob a política CSP, rótulos e descrições dos SVGs, estado vazio, distinção entre tempo zero e não registrado, filtros, exploração de uma banca e os downloads reais dos PDFs analíticos e oficiais com ou sem gráficos. Também conferem a ausência de rolagem horizontal e o bloqueio da análise no perfil de professor.
 
-A consulta de notas também passa pela navegação real de desktop e pelo menu “Mais” no celular. São verificados os filtros por curso, turma, data e situação, a busca, a limpeza da seleção, as médias atualizadas após um snapshot do Firebase e a preservação das bancas expandidas. Os detalhes da banca exibem todas as notas ao coordenador mesmo quando ele não é avaliador, sem abrir campos para editar a nota de outro professor. A troca de sessão remove o acesso e limpa as expansões. A tela é conferida de 320 a 1440 px; capturas são salvas quando `BANCAFLOW_SCREENSHOT_DIR` estiver definido.
+A consulta de notas também passa pela navegação real de desktop e pelo atalho direto “Notas” no celular. São verificados os filtros por curso, turma, data e situação, a busca, a limpeza da seleção, as médias atualizadas após um snapshot do Firebase e a preservação das bancas expandidas. Os detalhes da banca exibem todas as notas ao coordenador mesmo quando ele não é avaliador, sem abrir campos para editar a nota de outro professor. A troca de sessão remove o acesso e limpa as expansões. A tela é conferida de 320 a 1440 px; capturas são salvas quando `BANCAFLOW_SCREENSHOT_DIR` estiver definido.
+
+O navegador também salva a monografia pelo formulário individual de **Todas as notas**, confirma os critérios dos avaliadores preservados, consulta os gráficos de bancas abertas e incompletas e baixa os três arquivos completos mesmo com a consulta filtrada. Capturas em 320, 390 e 1440 px e PDFs gerados ficam no diretório de QA configurado.
 
 O fluxo real do Alberson percorre **Minhas avaliações** no desktop e **Avaliar** diretamente na navegação do celular, salva critérios no próprio UID e confere a atualização da tabela de consulta. Verifica o bloqueio e a reabertura, os atalhos de notas/bancas/relatórios, a preservação das entregas e dos demais avaliadores e sua seleção como avaliador na criação de outra banca. A tela de lançamento é conferida em 320, 390 e 1440 px.
 
@@ -63,7 +67,7 @@ Para usar um pacote Chromium de servidor, `BANCAFLOW_CHROMIUM_MODULE` pode apont
 As suítes da aplicação, importação, gráficos e navegador podem rodar juntas:
 
 ```bash
-BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/app.test.cjs tests/import.test.cjs tests/analytics.test.cjs tests/analytics-pdf.test.cjs tests/browser.test.cjs
+BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/app.test.cjs tests/import.test.cjs tests/analytics.test.cjs tests/analytics-pdf.test.cjs tests/coordinator-report.test.cjs tests/coordinator-report-pdf.test.cjs tests/browser.test.cjs
 ```
 
 ## Regras do Firebase

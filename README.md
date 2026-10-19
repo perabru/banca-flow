@@ -34,17 +34,33 @@ O encerramento pode ocorrer antes de todos os lançamentos. O relatório e o res
 
 ## Todas as notas — coordenação
 
-O Alberson pode consultar **Todas as notas** pelo menu lateral, pelo atalho da visão geral ou por **Mais → Todas as notas** no celular. A consulta inclui todas as bancas, abertas ou encerradas, com notas completas ou pendentes, inclusive o histórico de grupos removidos. Há filtros independentes por curso, turma, data e situação, além da busca por grupo, aluno ou professor. **Expandir todas** mostra os detalhes das bancas selecionadas.
+O Alberson pode consultar **Todas as notas** pelo menu lateral, pelo atalho da visão geral ou por **Notas** na navegação inferior do celular. A consulta inclui todas as bancas, abertas ou encerradas, com notas completas ou pendentes, inclusive o histórico de grupos removidos. Há filtros independentes por curso, turma, data e situação, além da busca por grupo, aluno ou professor. **Expandir todas** mostra os detalhes das bancas selecionadas.
 
 Cada aluno tem suas notas separadas por avaliador e critério, média do avaliador, média da banca, entregas e parcelas de 60%/40%. Uma nota ausente aparece como **Pendente**; zero continua sendo uma nota válida. A média da banca é exibida quando todos os avaliadores concluíram os quatro critérios, mesmo sem entregas. A nota final só é calculada com todas as notas necessárias e fica identificada como provisória enquanto a banca estiver aberta.
 
-O mesmo detalhamento fica disponível em **Bancas → Ver detalhes** e **Relatórios → Consultar notas**, mesmo quando o coordenador não participa da banca. Essa consulta é somente leitura: cada professor continua responsável pelas próprias notas, e as entregas permanecem exclusivas da coordenação. Os valores acompanham os lançamentos salvos no Firebase. Não há alteração nos dados, nas regras ou nas exigências dos PDFs oficiais.
+O mesmo detalhamento fica disponível em **Bancas → Ver detalhes** e **Relatórios → Consultar notas**, mesmo quando o coordenador não participa da banca. Os critérios de cada professor permanecem somente para consulta. Alberson pode preencher **Monografia e entregas · 40%** na própria ficha de cada aluno. Reabra a banca para corrigir uma nota bloqueada; grupos removidos precisam ser restaurados antes da edição. Os valores acompanham os lançamentos salvos no Firebase. Não há alteração nos dados, nas regras ou nas exigências dos PDFs oficiais.
+
+## Consolidado completo e monografia
+
+Em **Todas as notas**, o painel **Todos os alunos** oferece:
+
+- **PDF completo**: resumo de todos os alunos, todas as notas individuais por avaliador e critério, monografia, parcelas de 60%/40%, resultados e gráficos.
+- **Planilha de notas (CSV)**: uma linha por aluno e avaliador, com curso, turma, banca, situação e todas as notas. Alunos sem banca também aparecem, com os campos de nota vazios. O arquivo abre no Excel com acentos e separador de ponto e vírgula.
+- **PDF dos gráficos**: comparação de todos os alunos, médias dos critérios salvos com suas quantidades, tempos de apresentação e detalhamento por aluno, professor e critério em todas as bancas.
+
+Os três arquivos sempre incluem todos os cursos e turmas, independentemente dos filtros da consulta. Incluem bancas abertas, encerradas ou incompletas, grupos removidos e alunos cadastrados sem banca. Resultados de bancas abertas são **provisórios**; notas ausentes não viram zero. Em **Gráficos e resumo de todos os alunos**, é possível explorar uma banca na tela sem limitar o conteúdo dos arquivos completos.
+
+A nota individual de **Monografia e entregas** usa o mesmo campo numérico de entregas já existente (`deliveries/BANCA/ALUNO`). Informe uma nota de 0 a 10; o sistema calcula os 40%. Os valores anteriores e a fórmula original estão preservados. A coordenação pode salvar essa nota na consulta geral ou em **Monografia**, mesmo sem ser membro da banca. Os próprios critérios do Alberson continuam em **Minhas avaliações** e entram nos 60% da banca.
+
+Antes do download, o sistema atualiza os cadastros, bancas, notas, monografias, encerramentos e tempos salvos no Firebase. Exige conexão e que os campos em edição estejam salvos. Esse consolidado é uma consulta da coordenação; os relatórios oficiais em **Relatórios** conservam a exigência de banca encerrada e todas as notas completas. A atualização não modifica a composição das bancas, o banco existente ou as regras de acesso.
+
+Publique `assets/coordinator-report.js` e `assets/coordinator-report-pdf.js` junto dos dois HTMLs e dos demais recursos locais.
 
 ## Alberson como avaliador
 
 O coordenador também participa das avaliações. Use **Minhas avaliações** no menu lateral ou **Avaliar** na navegação inferior do celular. Essa área lista somente as bancas em que a conta está cadastrada como avaliador. O atalho **Lançar minhas notas** também aparece na visão geral e nas bancas atribuídas, inclusive em Todas as notas e Relatórios.
 
-O formulário **Minha avaliação** aparece antes da consulta geral. Alberson registra Apresentação, Parte prática, Domínio do código e Domínio do tempo por aluno, como os demais avaliadores. Os lançamentos são salvos na conta dele e participam da média da banca. As avaliações dos demais professores permanecem independentes; **Entregas · 40%** continua sendo uma nota separada, lançada pela coordenação.
+O formulário **Minha avaliação** aparece antes da consulta geral. Alberson registra Apresentação, Parte prática, Domínio do código e Domínio do tempo por aluno, como os demais avaliadores. Os lançamentos são salvos na conta dele e participam da média da banca. As avaliações dos demais professores permanecem independentes; **Monografia e entregas · 40%** continua sendo uma nota separada, lançada pela coordenação.
 
 Ao criar uma banca manualmente, o coordenador aparece na lista como **coordenador e avaliador**; ele também integra o conjunto de professores disponíveis para o sorteio. As bancas existentes mantêm sua composição e suas notas. Em uma banca não atribuída ao Alberson, ele conserva o acesso de consulta da coordenação. Bancas encerradas exigem reabertura com confirmação para alterar notas.
 

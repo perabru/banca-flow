@@ -66,7 +66,7 @@ async function openApp(t,{timezoneId='UTC'}={}) {
   page.on('console',message=>{if(message.type()==='error'&&/Content Security Policy|violates.*directive|Refused to execute/i.test(message.text()))cspErrors.push(message.text());});
   page.on('download', file => downloads.push(file.suggestedFilename()));
   let servedMarkup;
-  const assets=new Map(['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css'].map(path=>[path,readFileSync(join(__dirname,'..',path.slice(1)),'utf8')]));
+  const assets=new Map(['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js'].map(path=>[path,readFileSync(join(__dirname,'..',path.slice(1)),'utf8')]));
   await page.route('**/*', route => {
     requests.push(route.request().url());
     const url=new URL(route.request().url());
@@ -74,7 +74,7 @@ async function openApp(t,{timezoneId='UTC'}={}) {
     return route.request().url() === 'https://bancaflow.example.test/' ? route.fulfill({ contentType: 'text/html', body: servedMarkup }) : route.abort();
   });
   const bootstrap = adapter() + source + `
-    globalThis.appTest={state,go,render,resetAppData,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
+    globalThis.appTest={state,go,render,resetAppData,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
       mount(uid){clearListeners();resetAppData();mock.uid=uid;state.user={uid,email:uid+'@example.test'};state.profile=mock.clone(mock.data.users[uid]);for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])state[key]=mock.clone(mock.data[key]||{});state.connected=true;document.querySelector('#login-view').classList.add('hidden');document.querySelector('#app-view').classList.remove('hidden');if(isCoord())for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])listen(key,key);else syncTeacherSubs();syncTimerSubs();go('avaliar','b1');}
     };appTest.mount('t1');
   `;
@@ -297,13 +297,13 @@ test('unmodified production HTML loads local Excel and analytics assets and Fire
   await page.route('**/*',route=>{
     const url=new URL(route.request().url());
     if(url.href==='https://bancaflow.production.test/')return route.fulfill({contentType:'text/html',body:html});
-    if(url.origin==='https://bancaflow.production.test'&&['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css'].includes(url.pathname))return route.fulfill({contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:readFileSync(join(__dirname,'..',url.pathname.slice(1)),'utf8')});
+    if(url.origin==='https://bancaflow.production.test'&&['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js'].includes(url.pathname))return route.fulfill({contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:readFileSync(join(__dirname,'..',url.pathname.slice(1)),'utf8')});
     if(url.origin==='https://bancaflow-csp-fixture.firebaseio.com'&&url.pathname==='/.lp')return route.fulfill({contentType:'text/javascript',body:'parent.__fixtureLongPollLoaded=true;'});
     const name=url.pathname.split('/').at(-1);if(url.origin==='https://www.gstatic.com'&&modules[name])return route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:modules[name]});
     return route.abort();
   });
   await page.goto('https://bancaflow.production.test/');
-  await page.waitForFunction(()=>globalThis.XLSX?.version==='0.20.3'&&!!globalThis.BancaFlowImport&&!!globalThis.BancaAnalytics&&!!globalThis.BancaAnalyticsPdf);
+  await page.waitForFunction(()=>globalThis.XLSX?.version==='0.20.3'&&!!globalThis.BancaFlowImport&&!!globalThis.BancaAnalytics&&!!globalThis.BancaAnalyticsPdf&&!!globalThis.BancaCoordinatorReport&&!!globalThis.BancaCoordinatorPdf);
   await page.locator('#email').fill('fixture@example.test');await page.locator('#password').fill('password123');await page.locator('#toggle-password').click();
   assert.equal(await page.locator('#password').getAttribute('type'),'text');
   await page.locator('#login-button').click();await page.waitForFunction(()=>document.querySelector('#login-status').textContent.includes('E-mail ou senha incorretos'));
@@ -459,7 +459,7 @@ test('Alberson consults all saved scores including pending and historical boards
   await page.locator('#desktop-nav [data-route="notas"]').click();
   assert.equal(await page.locator('#page-title').textContent(),'Todas as notas');
   assert.equal(await page.locator('[data-notes-board]').count(),4,'consultation is independent of agenda and PDF filters');
-  assert.equal(await page.locator('[data-grade-form]').count(),0);assert.equal(await page.locator('[data-delivery-form]').count(),0);
+  assert.equal(await page.locator('[data-grade-form]').count(),0);assert.ok(await page.locator('[data-delivery-form]').count()>0);
   await page.locator('[data-notes-expand]').click();
   const firstBoard=page.locator('[data-notes-board="b1"]'),ana=firstBoard.locator('[data-notes-student="s1"]'),historic=page.locator('[data-notes-board="b2"]');
   assert.equal(await firstBoard.getAttribute('open'),'');
@@ -467,7 +467,7 @@ test('Alberson consults all saved scores including pending and historical boards
   assert.ok((await firstBoard.locator('[data-notes-student="s2"]').textContent()).includes('0,00'),'zero grades are preserved');
   assert.ok((await historic.textContent()).includes('Professor Histórico'),'removed teachers remain visible in existing evaluations');
   assert.equal(await firstBoard.locator('.notes-table').count(),2);
-  assert.equal(await firstBoard.locator('input[type="number"]').count(),0,'all-evaluator consultation has no editable numeric fields');
+  assert.equal(await firstBoard.locator('input[type="number"]').count(),2,'only individual monograph controls are editable');
   const savedBefore=await page.evaluate(()=>JSON.stringify(firebaseMock.data));
   for(const width of [320,390,640,768,1024,1440]){
     await page.setViewportSize({width,height:920});
@@ -503,7 +503,7 @@ test('Alberson consults all saved scores including pending and historical boards
   await page.locator('[data-notes-reset]').click();
 
   await page.setViewportSize({width:320,height:844});await page.evaluate(()=>appTest.go('inicio'));
-  await page.locator('#mobile-nav [data-open-menu]').click();await page.locator('#mobile-menu [data-route="notas"]').click();
+  await page.locator('#mobile-nav [data-route="notas"]').click();
   assert.equal(await page.locator('#page-title').textContent(),'Todas as notas');assert.equal(await page.locator('#mobile-menu').isVisible(),false);
   await page.evaluate(()=>appTest.go('avaliar','b1'));
   assert.equal(await page.locator('[data-grade-form]').count(),0,'coordinator nonmember cannot edit evaluator notes');
@@ -543,7 +543,7 @@ test('Alberson grades as an assigned evaluator through direct desktop/mobile nav
   assert.deepEqual(await page.locator('#board-switch option').evaluateAll(els=>els.map(el=>el.value)),['b1']);
   assert.equal(await page.locator('[data-grade-form="b1"]').count(),2,'coordinator has one own form per student');
   assert.equal(await page.locator('[data-grade-form="b2"]').count(),0);
-  assert.equal(await page.locator('[data-delivery-form]').count(),0,'criteria and delivery forms remain distinct');
+  assert.equal(await page.locator('[data-delivery-form]').count(),2,'coordinator keeps separate monograph forms beside read-only consultation');
   assert.equal(await page.evaluate(()=>document.querySelector('[data-grade-form]').compareDocumentPosition(document.querySelector('.notes-table'))&Node.DOCUMENT_POSITION_FOLLOWING),4,'own forms appear before the all-evaluator comparison');
   const previous=await page.evaluate(()=>({others:firebaseMock.clone({t1:firebaseMock.data.grades.b1.t1,t2:firebaseMock.data.grades.b1.t2}),deliveries:firebaseMock.clone(firebaseMock.data.deliveries),boards:firebaseMock.clone(firebaseMock.data.boards)}));
   const own=page.locator('[data-grade-form="b1"][data-student="s1"]');
@@ -587,5 +587,61 @@ test('Alberson grades as an assigned evaluator through direct desktop/mobile nav
   assert.equal(await page.locator('#manual-members input[name="evaluator"][value="coord"]').count(),1,'coordinator remains selectable as a future evaluator');
   const after=await page.evaluate(()=>({others:{t1:firebaseMock.data.grades.b1.t1,t2:firebaseMock.data.grades.b1.t2},deliveries:firebaseMock.data.deliveries,boards:firebaseMock.data.boards}));
   assert.deepEqual(after.others,previous.others);assert.deepEqual(after.deliveries,previous.deliveries);assert.deepEqual(after.boards,previous.boards);
+  assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('coordinator completes monograph notes inline and exports all students, incomplete banks and global charts', {skip}, async t=>{
+  const{page,errors,cspErrors,downloads}=await openApp(t),qa=process.env.BANCAFLOW_QA_DIR||'/tmp/bancaflow-complete-qa';mkdirSync(qa,{recursive:true});
+  await page.evaluate(()=>{
+    const data=firebaseMock.data,copy=firebaseMock.clone.bind(firebaseMock),group=copy(data.groups.g1),board=copy(data.boards.b1),grades=copy(data.grades.b1),delivery=copy(data.deliveries.b1);
+    const rows=[['b1','g1','GERAL_ABERTA',false,false],['b2','g2','GERAL_ARQUIVADA',true,true],['b3','g3','GERAL_PENDENTE',false,false]];
+    for(const[bid,gid,name,sealed,archived]of rows){
+      data.groups[gid]={...copy(group),id:gid,name,courseName:'ADS',active:!archived};
+      data.boards[bid]={...copy(board),groupId:gid,startAt:board.startAt+Number(bid.slice(1))*86400000};data.groupBoards[gid]=bid;
+      data.grades[bid]=copy(grades);data.deliveries[bid]=copy(delivery);if(sealed)data.seals[bid]={by:'coord',at:Date.now()};
+    }
+    delete data.grades.b3.t2.s1.code;delete data.deliveries.b3.s2;
+    data.groups.g4={...copy(group),id:'g4',name:'GERAL_SEM_BANCA',students:{eva:'EVA_SEM_BANCA'},courseName:'Direito'};
+    appTest.mount('coord');appTest.go('notas');
+  });
+  await page.setViewportSize({width:1440,height:900});
+  const board=page.locator('[data-notes-board="b1"]');await board.locator('summary').click();
+  const form=board.locator('[data-delivery-form="b1"][data-student="s1"]');assert.equal(await form.count(),1);
+  const original=await page.evaluate(()=>JSON.stringify(firebaseMock.data.grades));
+  await form.locator('input[name="delivery"]').fill('0');
+  await page.locator('[data-coordinator-export="csv"]').click();await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('Salve as notas'));assert.equal(downloads.length,0,'pending monograph draft blocks stale export');
+  await form.locator('button[type="submit"]').click();
+  await page.waitForFunction(()=>firebaseMock.data.deliveries.b1.s1===0);
+  assert.equal(await page.evaluate(()=>JSON.stringify(firebaseMock.data.grades)),original,'monograph saving preserves every evaluator criteria');
+  assert.ok((await board.locator('[data-notes-student="s1"]').textContent()).includes('4,20'),'final uses monograph zero rather than treating it as pending');
+  assert.equal(await board.locator('[data-grade-form]').count(),0,'consultation never edits evaluator scores');
+  const archived=page.locator('[data-notes-board="b2"]');await archived.locator('summary').click();
+  const archivedEditable=await archived.locator('[data-delivery-form] input:not(:disabled)').count();assert.equal(archivedEditable,0,'archived and sealed history remains protected');
+  const charts=page.locator('[data-coordinator-charts]');assert.equal(await charts.count(),1);await charts.locator(':scope > summary').click();
+  assert.ok(await charts.locator('svg[role="img"]').count()>0,'global charts include available notes from open banks');
+  assert.ok((await charts.textContent()).includes('EVA_SEM_BANCA'),'unassigned student remains accounted for in chart data');
+  await page.locator('#notes-chart-board').selectOption('b3');
+  assert.ok((await charts.textContent()).includes('GERAL_PENDENTE'));
+  for(const width of [320,390,1440]){
+    await page.setViewportSize({width,height:920});
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`complete coordinator screen overflows at ${width}px`);
+    await page.screenshot({path:join(qa,`coordinator-complete-${width}.png`),fullPage:true});
+  }
+  await page.setViewportSize({width:320,height:920});await form.screenshot({path:join(qa,'coordinator-monograph-form-320.png')});
+  await page.setViewportSize({width:1440,height:900});await page.locator('#notes-chart-board').selectOption('');
+  const screenshotStyle=await page.addStyleTag({content:'.topbar,.mobile-nav,#toast{visibility:hidden!important}'});
+  await charts.locator('figure').first().screenshot({path:join(qa,'coordinator-all-students-chart-1440.png')});await screenshotStyle.evaluate(el=>el.remove());
+  await page.locator('#notes-search').fill('GERAL_ABERTA');await page.locator('#notes-search').press('Enter');assert.equal(await page.locator('[data-notes-board]').count(),1);
+  for(const[kind,filename]of [['pdf','all-students.pdf'],['csv','all-students.csv'],['charts','all-students-charts.pdf']]){
+    const downloading=page.waitForEvent('download');await page.locator(`[data-coordinator-export="${kind}"]`).click();const file=await downloading;await file.saveAs(join(qa,filename));
+    const content=readFileSync(await file.path(),'utf8');
+    for(const marker of ['GERAL_ABERTA','GERAL_ARQUIVADA','GERAL_PENDENTE','EVA_SEM_BANCA'])assert.ok(content.includes(marker),`${kind}: ${marker} is included despite consultation filter`);
+    if(kind!=='csv'){assert.ok(content.startsWith('%PDF-1.4'));assert.match(content,/%%EOF\s*$/);}
+    else assert.ok(content.includes('0,00'),'CSV includes saved monograph zero');
+  }
+  const readRoots=await page.evaluate(()=>firebaseMock.reads);for(const root of ['users','groups','boards','grades','deliveries','seals','timers'])assert.ok(readRoots.includes(root),root);
+  assert.equal(await page.evaluate(()=>JSON.stringify(firebaseMock.data.grades)),original);
+  await page.evaluate(()=>{appTest.mount('t1');appTest.go('notas');});
+  assert.equal(await page.locator('[data-coordinator-export],[data-coordinator-charts]').count(),0,'complete export and global notes stay coordinator-only');
   assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
 });

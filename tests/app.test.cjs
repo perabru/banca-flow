@@ -107,7 +107,7 @@ function harness(uid = 't1') {
       return { committed: true, snapshot: snapshot(read(path)) };
     }
   });
-  for(const asset of ['roster-import.js','analytics.js','analytics-pdf.js'])vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
+  for(const asset of ['roster-import.js','analytics.js','analytics-pdf.js','coordinator-report.js','coordinator-report-pdf.js'])vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
   vm.runInContext(source + `
     render = () => {};
     refreshTimerUi = () => {};
@@ -118,7 +118,7 @@ function harness(uid = 't1') {
       createBoardShareSnapshot, assertShareSnapshotCurrent, buildSharePdf, buildBoardShareText, whatsappTextUrl, boardShareFilename,
       assertBoardAccess, hasUnsavedDrafts, saveGrade, saveDelivery, reportHtml, refreshReportData,
       printReports, exportCsv, csvCell, boardActions, timerHtml,
-      analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,
+      analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,
       localDayKey,boardMatchesDay,filteredBoards,filteredReportBoards,reportGroups,setBancaDateFilter,resetAppData,boardsView,reportsView,exportSchedulePdf,
       teacherIdentity,teacherEditIdentity,teacherProfileFingerprint,addTeacher,changeTeacherAccess,saveTeacherEdit,
       validatedGroupDraft,groupRelatedBoards,groupAdminFingerprint,resetGroupAdmin,editGroup,saveGroup,changeGroupAccess,addGroupStudentRow,removeGroupStudentRow,
@@ -817,7 +817,7 @@ test('all-notes filter reset and session reset remove prior coordinator selectio
   assert.deepEqual(clone(app.state.notesFilters),{course:'todas',className:'todas',date:'',status:'todas',search:''});
 });
 
-test('coordinator all-notes HTML escapes stored text and remains read-only for all professors',()=>{
+test('coordinator all-notes HTML escapes stored text and only monograph controls are editable',()=>{
   const h=harness('coord'),{app}=h;
   app.state.groups.g1.name='<script>groupAttack()</script>';app.state.groups.g1.title='<img src=x onerror=titleAttack()>';
   app.state.groups.g1.students.s1='<svg onload=studentAttack()>';app.state.boards.b1.memberNames.t2='<img src=x onerror=teacherAttack()>';
@@ -825,7 +825,7 @@ test('coordinator all-notes HTML escapes stored text and remains read-only for a
   const rendered=app.allNotesView()+app.boardNotesHtml('b1');
   for(const literal of ['<script>groupAttack()','<img src=x onerror=titleAttack()','<svg onload=studentAttack()','<img src=x onerror=teacherAttack()'])assert.ok(!rendered.includes(literal),literal);
   for(const escaped of ['&lt;script&gt;groupAttack()','&lt;img src=x onerror=titleAttack()','&lt;svg onload=studentAttack()','&lt;img src=x onerror=teacherAttack()'])assert.ok(rendered.includes(escaped),escaped);
-  assert.ok(!rendered.includes('data-grade-form='));assert.ok(!rendered.includes('data-delivery-form='));
+  assert.ok(!rendered.includes('data-grade-form='));assert.ok(rendered.includes('data-delivery-form='));
   assert.ok(app.navItems().some(([route,,title])=>route==='notas'&&title==='Todas as notas'));
 });
 
@@ -954,4 +954,79 @@ test('closed coordinator evaluations are locked until reopening then accept only
   assert.equal(h.calls.confirmations.length,1);assert.equal(h.data.seals.b1,undefined);
   delete app.state.seals.b1;await app.saveGrade(form);
   assert.deepEqual(h.data.grades.b1.coord.s1,grade(9,9,9,9));assert.deepEqual(h.data.grades.b1.t1,unchanged);
+});
+
+function installCompleteCoordinatorCatalog(h){
+  installNotesCatalog(h);
+  h.data.groups.unassigned={id:'unassigned',name:'SEM_BANCA_GERAL',title:'Monografia sem agendamento',courseName:'Direito',className:'5A',students:{eva:'EVA_SEM_BANCA'},active:true};
+  Object.assign(h.app.state,clone(h.data));
+}
+
+test('complete coordinator export includes every saved bank and unassigned student regardless of report or consultation filters',()=>{
+  const h=harness('coord'),{app}=h;installCompleteCoordinatorCatalog(h);
+  Object.assign(app.state,{courseFilter:'NO_MATCH',filter:'NO_MATCH',boardDateFilter:'2099-01-01',reportCourseFilter:'NO_MATCH',reportFilter:'NO_MATCH',reportDateFilter:'2099-01-01'});
+  Object.assign(app.state.notesFilters,{course:'NO_MATCH',className:'NO_MATCH',date:'2099-01-01',status:'encerradas',search:'NO_MATCH'});
+  const boards=app.coordinatorReportBoards();
+  assert.equal(boards.filter(board=>!board.unassigned).length,4);
+  assert.equal(boards.flatMap(board=>board.students).length,9);
+  assert.ok(boards.some(board=>board.archived&&board.sealed));
+  assert.ok(boards.some(board=>!board.sealed&&!board.unassigned));
+  const unassigned=boards.find(board=>board.unassigned);assert.equal(unassigned.students[0].name,'EVA_SEM_BANCA');
+  const partial=boards.find(board=>board.id==='b3');assert.ok(partial);
+  assert.equal(partial.students.find(student=>student.id==='s1').evaluators.find(evaluator=>evaluator.uid==='t2').code,null);
+  const zero=boards.find(board=>board.id==='b1').students.find(student=>student.id==='s2');
+  assert.equal(zero.evaluators.find(evaluator=>evaluator.uid==='t1').presentation,0);assert.equal(zero.result.entrega,0);assert.equal(zero.result.final,3);
+  assert.equal(app.state.notesFilters.course,'NO_MATCH');assert.equal(app.state.reportCourseFilter,'NO_MATCH');
+  app.state.user={uid:'t1'};app.state.profile=clone(h.data.users.t1);assert.throws(()=>app.coordinatorReportBoards(),/coordena|restrito/i);
+});
+
+test('complete coordinator PDF keeps incomplete notes and monograph zero while official reports still require completion',async()=>{
+  const h=harness('coord'),{app}=h;installCompleteCoordinatorCatalog(h);
+  const before=clone(h.data);
+  const blob=app.buildCoordinatorReportPdf(),pdf=await blob.text();
+  assert.equal(blob.type,'application/pdf');assert.ok(pdf.startsWith('%PDF-1.4'));assert.match(pdf,/%%EOF\s*$/);
+  for(const text of ['ABERTA_COMPLETA','ABERTA_PENDENTE','ENCERRADA_HISTORICA','ENCERRADA_PENDENTE','EVA_SEM_BANCA','Professor Um','Professor Hist','Pendente','0,00','Monografia','Todos os alunos'])assert.ok(pdf.includes(text),text);
+  assert.ok(pdf.includes('7,80'),'provisional complete score remains distinguishable from pending values');
+  assert.throws(()=>app.buildEvaluationPdf(['b1']),/bancas concluídas/);
+  assert.throws(()=>app.buildEvaluationPdf(['b4']),/notas pendentes/);
+  const charts=await app.buildCoordinatorReportPdf({chartsOnly:true}).text();assert.ok(charts.startsWith('%PDF-1.4'));
+  const chartText=charts.replace(/\\([0-7]{3})/g,(_,octal)=>String.fromCharCode(parseInt(octal,8))).normalize('NFD').replace(/\p{Diacritic}/gu,'').toLocaleLowerCase('pt-BR');
+  for(const marker of ['EVA_SEM_BANCA','Professor Um','Professora Dois','Apresentacao','pratica','codigo','tempo'])assert.ok(chartText.includes(marker.toLocaleLowerCase('pt-BR')),`chart PDF includes ${marker}`);
+  assert.deepEqual(h.data,before);assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
+});
+
+test('coordinator global export refreshes the entire saved catalog and downloads PDF, CSV and chart files',async()=>{
+  const h=harness('coord'),{app}=h;installCompleteCoordinatorCatalog(h);
+  h.data.grades.b1.t1.s1.presentation=0;app.state.grades.b1.t1.s1.presentation=10;
+  for(const kind of ['pdf','csv','charts'])await app.exportCoordinatorReport(kind);
+  assert.equal(h.downloads.length,3);
+  const roots=new Set(h.calls.reads);for(const root of ['users','groups','boards','grades','deliveries','seals','timers'])assert.ok(roots.has(root),root);
+  assert.equal(app.state.grades.b1.t1.s1.presentation,0,'export uses fresh saved notes');
+  for(const entry of h.downloads){const body=await entry.blob.text();assert.ok(body.includes('EVA_SEM_BANCA'));assert.ok(body.includes('ENCERRADA_HISTORICA'));}
+  assert.equal(h.downloads.filter(entry=>entry.filename.endsWith('.pdf')).length,2);assert.equal(h.downloads.filter(entry=>entry.filename.endsWith('.csv')).length,1);
+  assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
+});
+
+test('coordinator exports reject offline, pending drafts, unauthorized access and a changed session before download',async()=>{
+  const offline=harness('coord');offline.app.state.connected=false;await assert.rejects(offline.app.exportCoordinatorReport('pdf'),/internet|conect/i);assert.equal(offline.downloads.length,0);
+  const unsaved=harness('coord');unsaved.app.state.drafts.set('delivery/b1/s1',{delivery:'4'});await assert.rejects(unsaved.app.exportCoordinatorReport('csv'),/salv|rascunh/i);assert.equal(unsaved.downloads.length,0);
+  const teacher=harness();await assert.rejects(teacher.app.exportCoordinatorReport('pdf'),/coordena|restrito/i);assert.equal(teacher.downloads.length,0);
+  const changed=harness('coord');changed.options.onRead=()=>{changed.app.state.user={uid:'t1'};changed.app.state.profile=clone(changed.data.users.t1);};
+  await assert.rejects(changed.app.exportCoordinatorReport('charts'),/sessão|acesso|coordena/i);assert.equal(changed.downloads.length,0);
+});
+
+test('coordinator monograph saving accepts zero only for an existing editable student and preserves evaluator notes',async()=>{
+  const h=harness('coord'),{app}=h,before=clone(h.data.grades),form={dataset:{deliveryForm:'b1',student:'s1'},values:{delivery:'0'}};
+  await app.saveDelivery(form);assert.equal(h.data.deliveries.b1.s1,0);assert.deepEqual(h.data.grades,before);assert.equal(h.calls.sets[0][0],'deliveries/b1/s1');
+  for(const change of [
+    current=>{current.app.state.user=null;},
+    current=>{current.app.state.connected=false;},
+    current=>{current.app.state.groups.g1.active=false;},
+    current=>{current.app.state.seals.b1={by:'coord',at:current.now()};},
+    current=>{delete current.app.state.groups.g1.students.s1;},
+    current=>{delete current.app.state.boards.b1;}
+  ]){
+    const current=harness('coord');change(current);await assert.rejects(current.app.saveDelivery(form));assert.equal(current.calls.sets.length,0);
+  }
+  const teacher=harness();await assert.rejects(teacher.app.saveDelivery(form),/restrito|coordena/i);assert.equal(teacher.calls.sets.length,0);
 });
