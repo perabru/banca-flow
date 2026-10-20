@@ -104,13 +104,24 @@ test('CSV preserves unassigned students and exports metadata and precise scores 
   assert.equal(rows[1][9], '7,1235');
   assert.equal(rows[1][13], '8,5309');
   assert.equal(rows[1][18], '8,0741');
-  assert.deepEqual(rows[1].slice(20), ['20/10/2026 18:00', 'Sala 1', 'Orientador', 'Sim', 'Não', 'Não', '123456', '1200000']);
+  assert.deepEqual(rows[1].slice(20), ['20/10/2026 18:00', 'Sala 1', 'Orientador', 'Sim', 'Não', 'Não', '123456', '1200000', '']);
   assert.equal(rows[2][4], '');
   assert.equal(rows[2][6], 'Bia');
   assert.deepEqual(rows[2].slice(7, 19), Array(12).fill(''));
   assert.equal(rows[2][19], 'Sem banca');
   assert.equal(rows[2][25], 'Sim');
   assert.equal(rows[2].length, rows[0].length);
+});
+
+test('multi-year exports and charts identify repeated group names by academic year without shifting original CSV columns', () => {
+  const source = [board('Grupo 01', [student('Ana', result(8))], { academicYear: 2030 }), board('Grupo 01', [student('Bia', result(9))], { academicYear: 2031 })];
+  const rows = parseCsv(report.csv(source));
+  assert.equal(rows[0][0], 'Curso'); assert.equal(rows[0][6], 'Aluno');
+  assert.equal(rows[0].at(-1), 'Ano letivo');
+  assert.equal(rows[1].at(-1), '2030'); assert.equal(rows[2].at(-1), '2031');
+  const charts = report.charts(source);
+  assert.match(charts[0].rows[0].label, /Ano 2030/); assert.match(charts[0].rows[1].label, /Ano 2031/);
+  assert.match(charts[2].rows[0].label, /Ano 2030/); assert.match(charts[2].rows[1].label, /Ano 2031/);
 });
 
 test('CSV quotes delimiters and line breaks and neutralizes every textual formula prefix', () => {

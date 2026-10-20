@@ -7,12 +7,13 @@
       "$uid": {
         ".read": "auth !== null && auth.uid === $uid",
         ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && auth.uid !== $uid && (!data.exists() || ((data.child('role').val() === 'teacher' || data.child('role').val() === 'coordinator') && data.child('key').val() !== 'alberson')) && newData.exists() && (newData.child('role').val() === 'teacher' || newData.child('role').val() === 'coordinator') && newData.child('key').val() !== 'alberson' && (!data.exists() || (newData.child('email').val() === data.child('email').val() && newData.child('key').val() === data.child('key').val() && (newData.child('role').val() === data.child('role').val() || (data.child('role').val() === 'teacher' && newData.child('role').val() === 'coordinator'))))",
-        ".validate": "newData.hasChildren(['name','role']) && (data.exists() || newData.hasChildren(['email','key','active'])) && (newData.child('role').val() === 'teacher' || newData.child('role').val() === 'coordinator') && newData.child('key').val() !== 'alberson'",
+        ".validate": "newData.hasChildren(['name','role']) && (data.exists() || newData.hasChildren(['email','key','active'])) && (newData.child('role').val() === 'teacher' || newData.child('role').val() === 'coordinator') && (newData.child('key').val() !== 'alberson' || (data.exists() && data.child('key').val() === 'alberson' && newData.child('key').val() === data.child('key').val()))",
         "name": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
         },
         "email": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 254"
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 254",
+          ".write": "auth !== null && auth.uid === $uid && data.parent().exists() && data.parent().child('active').val() !== false && (data.parent().child('role').val() === 'teacher' || data.parent().child('role').val() === 'coordinator') && auth.token.email_verified === true && auth.token.email != null && newData.exists() && newData.isString() && newData.val().length > 0 && newData.val().length <= 254 && newData.val() === auth.token.email"
         },
         "key": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60"
@@ -99,6 +100,9 @@
         "archivedAt": {
           ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && data.parent().exists()",
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 60000 && newData.val() % 1 === 0"
+        },
+        "academicYear": {
+          ".validate": "newData.isNumber() && newData.val() >= 2000 && newData.val() <= 9999 && newData.val() % 1 === 0"
         }
       }
     },
@@ -311,6 +315,40 @@
             ".validate": false
           }
         }
+      }
+    },
+    "accountContacts": {
+      ".read": false,
+      ".write": false,
+      "$uid": {
+        ".read": "auth !== null && auth.uid === $uid && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator')",
+        ".write": false
+      }
+    },
+    "accountSecurity": {
+      ".read": false,
+      ".write": false,
+      "rateLimits": {
+        ".indexOn": [
+          "expiresAt"
+        ]
+      },
+      "challenges": {
+        "enroll": {
+          ".indexOn": [
+            "expiresAt"
+          ]
+        },
+        "reset": {
+          ".indexOn": [
+            "expiresAt"
+          ]
+        }
+      },
+      "emailChanges": {
+        ".indexOn": [
+          "expiresAt"
+        ]
       }
     }
   }

@@ -52,7 +52,7 @@
   function charts(boards) {
     const source = list(boards), records = studentsOf(source);
     const students = source.flatMap((board, boardIndex) => list(board?.students).map((student, studentIndex) => ({
-      label: [studentLabel(student, studentIndex), boardLabel(board, boardIndex), clean(board?.className), clean(board?.courseName), statusOf(board, student)].filter(Boolean).join(' · '),
+      label: [studentLabel(student, studentIndex), boardLabel(board, boardIndex), clean(board?.className), clean(board?.courseName), Number.isInteger(board?.academicYear) ? `Ano ${board.academicYear}` : '', statusOf(board, student)].filter(Boolean).join(' · '),
       values: ['banca', 'entrega', 'final'].map(key => grade(student?.result?.[key]))
     })));
     const criteria = CRITERIA.map(([key, label]) => {
@@ -60,7 +60,7 @@
       return { label: `${label} · ${values.length} ${values.length === 1 ? 'nota salva' : 'notas salvas'}`, values: [mean(values)] };
     });
     const durations = source.flatMap((board, index) => board?.unassigned ? [] : [{
-      label: [boardLabel(board, index), clean(board?.className), clean(board?.courseName)].filter(Boolean).join(' · '),
+      label: [boardLabel(board, index), clean(board?.className), clean(board?.courseName), Number.isInteger(board?.academicYear) ? `Ano ${board.academicYear}` : ''].filter(Boolean).join(' · '),
       values: [number(board?.elapsedMs), number(board?.plannedMs)]
     }]);
     const maximumDuration = durations.flatMap(row => row.values).reduce((maximum, value) => value === null ? maximum : Math.max(maximum, value), 60000);
@@ -110,7 +110,7 @@
       'Média do avaliador', 'Média da banca', 'Monografia e entregas', 'Parcela da banca (60%)',
       'Parcela da monografia e entregas (40%)', 'Resultado calculado', 'Situação', 'Data e horário',
       'Sala', 'Orientador', 'Banca encerrada', 'Turma arquivada', 'Sem banca',
-      'Tempo registrado (ms)', 'Intervalo reservado (ms)'
+      'Tempo registrado (ms)', 'Intervalo reservado (ms)', 'Ano letivo'
     ]];
     list(boards).forEach((board, boardIndex) => list(board?.students).forEach((student, studentIndex) => {
       const evaluators = list(student?.evaluators), result = student?.result;
@@ -123,7 +123,7 @@
         statusOf(board, student), board?.startLabel, board?.room, board?.advisorName,
         board?.unassigned ? '' : board?.sealed ? 'Sim' : 'Não', board?.archived ? 'Sim' : 'Não',
         board?.unassigned || student?.status === 'Sem banca' ? 'Sim' : 'Não',
-        board?.unassigned ? '' : csvDuration(board?.elapsedMs), board?.unassigned ? '' : csvDuration(board?.plannedMs)
+        board?.unassigned ? '' : csvDuration(board?.elapsedMs), board?.unassigned ? '' : csvDuration(board?.plannedMs), Number.isInteger(board?.academicYear) ? board.academicYear : ''
       ]));
     }));
     return '\uFEFF' + rows.map(row => row.map(csvCell).join(';')).join('\r\n') + '\r\n';

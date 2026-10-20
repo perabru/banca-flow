@@ -145,6 +145,28 @@ O navegador também confere o atalho **Preparar cadastro de administrador** com 
 
 A atribuição de avaliadores em bancas existentes tem uma suíte pura própria (`node --test tests/board-assignment.test.cjs`) e cenários integrados. O diálogo preserva os autores com notas registradas, inclusive nota zero e professores desabilitados, e permite incluir ou retirar um terceiro avaliador sem notas. Os testes conferem reservas de horário atômicas e a liberação imediata das reservas locais e remotas, conflitos, leitura recente das notas, catálogo alterado em outra janela, banca encerrada, grupo arquivado, sessão revogada e rascunhos pendentes. Apenas a composição e suas reservas mudam; agenda, alunos, critérios, entregas e cronômetro são comparados antes e depois. Desabilitar um professor não apaga sua participação nem suas avaliações anteriores.
 
+## Anos letivos, contas e cópia de segurança
+
+Os módulos de anos letivos, segurança da conta, página de confirmação e serviço de mensagens têm testes sem dependências externas:
+
+```bash
+node --test tests/academic-years.test.cjs tests/account-security.test.cjs tests/account-action.test.cjs tests/account-backend.test.cjs
+```
+
+As regressões conferem inferência compatível do ano de registros antigos, limites de calendário em São Paulo, filtros sem regravar dados, mensagens personalizadas, confirmação antes de mudar senha/e-mail, reautenticação, proteção contra respostas atrasadas e falhas de envio. O serviço SMS é testado com telefone previamente verificado, códigos de uso único, expiração, limite de tentativas, intervalo de reenvio e armazenamento protegido. Nenhum e-mail ou SMS real é enviado.
+
+`app.test.cjs` e `browser.test.cjs` cobrem a integração: troca de ano sem perder rascunhos, permanência do histórico, conta no celular e exportação da cópia acadêmica em JSON. O backup tem versão de formato, inclui todos os anos e preserva notas e bancas; exclui credenciais, contatos privados e segredos de recuperação. Somente coordenadores podem exportá-lo. Os testes também mantêm as verificações anteriores de chat, cronômetro, relatórios e PDFs.
+
+Com as dependências de emulador descritas abaixo, a validação nativa de Auth e banco pode ser executada junto das regras e do chat:
+
+```bash
+npx firebase emulators:exec --project demo-banca-flow-account --only auth,database --config tests/firebase-account.json "node --test --test-force-exit tests/account-auth-sdk.test.mjs tests/rules.test.mjs tests/chat-sdk.test.mjs"
+```
+
+O cenário usa Auth em `127.0.0.1:9099` e banco em `127.0.0.1:9000`, com identidades fictícias e regras carregadas por namespace. Os códigos são lidos pela API local do emulador. São verificadas a recuperação nativa de senha, a troca de e-mail somente após confirmação, a preservação do UID e dos registros acadêmicos e a sincronização do e-mail pelo token verificado, inclusive para Alberson. Códigos inválidos ou já utilizados são recusados. `--test-force-exit` encerra os temporizadores internos do SDK após os testes.
+
+O Auth Emulator 14.22 não modela o prazo de expiração dos links de e-mail. A resposta a links expirados é testada com adaptadores em `account-action.test.cjs`; a expiração dos códigos SMS do servidor é exercitada separadamente em `account-backend.test.cjs`. Essa suíte não comprova entrega por provedores reais nem publica configurações em produção.
+
 ## Regras do Firebase
 
 Requer Node.js 20 ou 22 e Java 17 ou posterior. O Firebase CLI 14.22.0 permite usar Java 17. Na raiz do repositório:

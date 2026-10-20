@@ -131,7 +131,7 @@
       startSection(board.unassigned ? `Alunos sem banca · ${clean(board.label)}` : `Banca ${boardNumber} · ${clean(board.label)}`);
       pdf.activeBoardLabel = board.unassigned ? 'Alunos sem banca' : `Banca ${boardNumber}`;
       pdf.paragraph(`Projeto: ${clean(board.project)}`, 10, true, INK, 6);
-      pdf.paragraph(`Curso: ${clean(board.courseName)} · Turma: ${clean(board.className)}`, 9, false, MUTED, 6);
+      pdf.paragraph(`Curso: ${clean(board.courseName)} · Turma: ${clean(board.className)}${Number.isInteger(board.academicYear) ? ` · Ano letivo: ${board.academicYear}` : ''}`, 9, false, MUTED, 6);
       pdf.paragraph(`Orientador: ${clean(board.advisorName)}`, 9, false, MUTED, 6);
       if (board.unassigned) pdf.paragraph(`Sem banca designada.${board.archived ? ' Grupo arquivado.' : ''}`, 9, true, MUTED, 9);
       else {

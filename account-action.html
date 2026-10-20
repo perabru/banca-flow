@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com 'sha256-Rm/wleL+B0sTz0SVyP2Nlbjmxym3PTTfzKMrEuF3VXU='; style-src 'self'; img-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com; frame-src https://*.firebaseapp.com; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<title>Segurança da conta · BancaFlow</title>
+<link rel="icon" href="assets/app-icon-192.png">
+<link rel="stylesheet" href="assets/account-security.css?v=dae62a4c3b3e">
+<script src="assets/account-action.js?v=979f0e3006ac"></script>
+</head>
+<body class="bf-auth-action">
+<header class="account-site-header"><span class="account-brand-icon" aria-hidden="true">B</span><div class="account-brand-text"><strong>BancaFlow</strong><small>UNIVAP · Gestão de bancas de TCC</small></div></header>
+<main id="account-action-root" aria-live="polite" aria-busy="true"><div class="account-action-heading"><span class="account-eyebrow">SEGURANÇA DA CONTA</span><h1>Conferindo seu acesso</h1></div><p class="account-status">Aguarde a confirmação do link recebido.</p><noscript><p>Ative o JavaScript para concluir esta ação com segurança.</p><a href="./index.html">Voltar ao BancaFlow</a></noscript></main>
+<footer>BancaFlow · Segurança da sua conta e preservação do seu histórico</footer>
+<script type="module">
+const firebaseConfig = {
+  apiKey: 'AIzaSyC86wZVe_YnjqbmacKGS-gT-Ulb8W8cxaU',
+  authDomain: 'avaliadortcc.firebaseapp.com',
+  databaseURL: 'https://avaliadortcc-default-rtdb.firebaseio.com',
+  projectId: 'avaliadortcc',
+  storageBucket: 'avaliadortcc.firebasestorage.app',
+  messagingSenderId: '609127153657',
+  appId: '1:609127153657:web:9879a69692f730efa90728'
+};
+const params = globalThis.BancaAccountAction?.parseActionInput(location.href, firebaseConfig.apiKey);
+// Códigos não permanecem no histórico, no endereço ou em armazenamento local.
+history.replaceState(null, '', location.pathname);
+const root = document.getElementById('account-action-root');
+try {
+  if (!globalThis.BancaAccountAction) throw Error('page-unavailable');
+  const [{ initializeApp }, { getAuth, verifyPasswordResetCode, confirmPasswordReset, validatePassword, checkActionCode, applyActionCode, reload, getIdToken }] = await Promise.all([import('https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js'), import('https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js')]);
+  const auth = getAuth(initializeApp(firebaseConfig)); auth.languageCode = 'pt-BR';
+  let mounted;
+  const controller = BancaAccountAction.createController({ auth, params, api: { verifyPasswordResetCode, confirmPasswordReset, validatePassword, checkActionCode, applyActionCode, reload, getIdToken }, onChange(state) { root.setAttribute('aria-busy', String(state.busy)); mounted?.paint(state); } });
+  mounted = BancaAccountAction.mount(root, controller);
+  void controller.start();
+} catch {
+  root.setAttribute('aria-busy', 'false');
+  root.innerHTML = globalThis.BancaAccountAction ? BancaAccountAction.render({ phase: 'error', error: 'A confirmação não carregou. Confira a conexão e abra novamente o link recebido.' }) : '<h1>Confirmação indisponível</h1><p>A página não carregou. Confira sua conexão e abra novamente o link recebido.</p><a class="account-login-link" href="./index.html">Voltar ao BancaFlow</a>';
+}
+</script>
+</body>
+</html>

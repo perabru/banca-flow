@@ -58,7 +58,7 @@
       pdf.activeBoardLabel = board.unassigned ? 'Alunos sem banca' : `Banca ${String(index + 1).padStart(2, '0')}`;
       pdf.paragraph(boardTitle, 14, true, BLUE, 8);
       pdf.paragraph(`Projeto: ${text(board.project)}`, 10, true, INK);
-      pdf.paragraph(`Curso: ${text(board.courseName)} · Turma: ${text(board.className)}`, 10, false, INK);
+      pdf.paragraph(`Curso: ${text(board.courseName)} · Turma: ${text(board.className)}${Number.isInteger(board.academicYear) ? ` · Ano letivo: ${board.academicYear}` : ''}`, 10, false, INK);
       if (!board.unassigned) {
         pdf.paragraph(`Data: ${text(board.startLabel)} · Sala / link: ${text(board.room)}`, 9, false, MUTED);
         pdf.paragraph(`Orientador: ${text(board.advisorName)}`, 9, false, MUTED);

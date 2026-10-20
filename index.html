@@ -9,10 +9,11 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BancaFlow">
 <link rel="stylesheet" href="assets/analytics.css">
+<link rel="stylesheet" href="assets/account-security.css?v=dae62a4c3b3e">
 <link rel="stylesheet" href="assets/weighted-report.css?v=d9d716668535">
 <link rel="stylesheet" href="assets/report-center.css?v=d34fd1a391e3">
 <link rel="stylesheet" href="assets/board-chat.css?v=0a6b9c746a2e">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-FeR4MR09V/OitUHCq9K2e8gT9hOqW1+CyMS4VpIYMyA='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-t43wKcw11EpPaAVS6ysV1jcl4vg2IjevyCOwf/6awjg='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com https://southamerica-east1-avaliadortcc.cloudfunctions.net; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>BancaFlow · Gestão de bancas | Univap</title><style>
 /* Mobile first. Cores institucionais Univap; recursos locais em assets/. */
@@ -600,7 +601,7 @@ button.avatar{width:44px;height:44px;padding:0}
 <noscript><p class="notice">Ative o JavaScript para acessar o BancaFlow. Em caso de dúvida, procure a coordenação.</p></noscript>
 <div id="toast" role="status" aria-live="polite"></div>
 <section id="login-view" class="auth-page">
-  <div class="auth-deco"><span class="pill">UNIVAP · TRABALHOS DE CONCLUSÃO DE CURSO</span><h1>BancaFlow</h1><p>Gestão de bancas de TCC</p><p class="auth-term">Ano letivo 2026</p></div>
+  <div class="auth-deco"><span class="pill">UNIVAP · TRABALHOS DE CONCLUSÃO DE CURSO</span><h1>BancaFlow</h1><p>Gestão de bancas de TCC</p><p class="auth-term">Agenda, avaliações e histórico acadêmico</p></div>
   <form id="login-form" class="auth-card"><div class="logo"><span>TCC</span><div>BancaFlow<small>Bancas de TCC · Univap</small></div></div><p class="eyebrow">ACESSO DOS PROFESSORES</p><h2>Entrar</h2><p class="muted">Conta cadastrada pela coordenação.</p>
     <label for="email">E-mail de acesso ao BancaFlow</label><input id="email" type="email" inputmode="email" enterkeyhint="next" autocapitalize="none" spellcheck="false" autocomplete="username" placeholder="professor@univap.br" required>
     <label for="password">Senha</label><div class="password-wrap"><input id="password" type="password" enterkeyhint="go" autocomplete="current-password" placeholder="Sua senha" required minlength="6"><button type="button" id="toggle-password" class="password-toggle" aria-label="Mostrar senha" aria-pressed="false"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
@@ -624,7 +625,7 @@ button.avatar{width:44px;height:44px;padding:0}
 </section>
 <div id="app-view" class="app-shell hidden">
   <aside class="sidebar"><div class="logo"><span>TCC</span><div>BancaFlow<small>Bancas de TCC · Univap</small></div></div><p class="side-heading">SISTEMA DE AVALIAÇÃO</p><nav id="desktop-nav" aria-label="Navegação principal"></nav><div class="side-foot"><div class="avatar" id="side-avatar">P</div><div><strong id="side-name">Professor</strong><small id="side-role">Avaliador</small></div><button type="button" id="logout" class="icon-btn" title="Sair" aria-label="Sair"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M9 12h12m-4-4 4 4-4 4"/></svg></button></div></aside>
-  <div class="main-column"><header class="topbar"><div><p class="eyebrow" id="page-eyebrow">PAINEL</p><h1 id="page-title">Visão geral</h1></div><div class="top-right"><span class="live-dot"></span><span class="online-label">BancaFlow · Univap</span><button type="button" id="open-chat" class="icon-btn" aria-label="Abrir chat dos professores" aria-haspopup="dialog" aria-controls="chat-widget" aria-expanded="false"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8 10h8M8 14h5"/></svg><span id="chat-unread-badge" class="bf-chat-top-badge" hidden aria-hidden="true"></span></button><button type="button" id="top-initials" class="avatar" aria-label="Abrir menu da conta" aria-haspopup="dialog" aria-controls="mobile-menu">P</button></div></header>
+  <div class="main-column"><header class="topbar"><div><p class="eyebrow" id="page-eyebrow">PAINEL</p><h1 id="page-title">Visão geral</h1></div><div class="top-right"><span class="live-dot"></span><span class="online-label">BancaFlow · Univap</span><button type="button" id="open-account" class="icon-btn" aria-label="Minha conta e segurança" title="Minha conta e segurança" aria-haspopup="dialog" aria-controls="account-dialog"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 22v-2a8 8 0 0 1 16 0v2"/></svg></button><button type="button" id="open-chat" class="icon-btn" aria-label="Abrir chat dos professores" aria-haspopup="dialog" aria-controls="chat-widget" aria-expanded="false"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8 10h8M8 14h5"/></svg><span id="chat-unread-badge" class="bf-chat-top-badge" hidden aria-hidden="true"></span></button><button type="button" id="top-initials" class="avatar" aria-label="Abrir menu da conta" aria-haspopup="dialog" aria-controls="mobile-menu">P</button></div></header>
     <aside id="chat-notification-banner" class="bf-chat-notification-banner" hidden role="status" aria-live="polite"></aside>
     <main id="view" tabindex="-1"></main><footer class="app-identity">BancaFlow · Professores da Univap · Coordenação: Alberson <a href="privacidade.html">Sobre e privacidade</a></footer>
   </div><nav id="mobile-nav" class="mobile-nav" aria-label="Navegação mobile"></nav>
@@ -632,6 +633,7 @@ button.avatar{width:44px;height:44px;padding:0}
   <section id="chat-widget" class="bf-chat-widget" data-chat-widget="1" role="dialog" aria-modal="false" aria-label="Chat dos professores" tabindex="-1" hidden><header class="bf-chat-widget-bar"><div><strong>Chat dos professores</strong><small>Continue a conversa enquanto avalia.</small></div><div class="bf-chat-widget-controls"><button type="button" class="icon-btn" data-chat-minimize="1" aria-label="Minimizar chat" title="Minimizar chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17h14"/></svg></button><button type="button" class="icon-btn" data-chat-close="1" aria-label="Fechar chat" title="Fechar chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div></header><div id="chat-widget-content" class="bf-chat-widget-content"></div></section>
 </div>
 <dialog id="mobile-menu" class="mobile-menu" aria-labelledby="mobile-menu-title"></dialog>
+<dialog id="account-dialog" aria-label="Acesso e segurança da conta"><div id="account-dialog-content"></div></dialog>
 <section id="print-root" aria-hidden="true"></section>
 <script type="application/json" id="roster-criptografado">{"salt":"YkpWDmCVpVfVIe39F2gKQQ==","iv":"ycNQJ1EKZxyo5RzB","data":"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","iterations":210000}</script>
 <script type="application/json" id="firebase-rules">{
@@ -643,12 +645,13 @@ button.avatar{width:44px;height:44px;padding:0}
       "$uid": {
         ".read": "auth !== null && auth.uid === $uid",
         ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && auth.uid !== $uid && (!data.exists() || ((data.child('role').val() === 'teacher' || data.child('role').val() === 'coordinator') && data.child('key').val() !== 'alberson')) && newData.exists() && (newData.child('role').val() === 'teacher' || newData.child('role').val() === 'coordinator') && newData.child('key').val() !== 'alberson' && (!data.exists() || (newData.child('email').val() === data.child('email').val() && newData.child('key').val() === data.child('key').val() && (newData.child('role').val() === data.child('role').val() || (data.child('role').val() === 'teacher' && newData.child('role').val() === 'coordinator'))))",
-        ".validate": "newData.hasChildren(['name','role']) && (data.exists() || newData.hasChildren(['email','key','active'])) && (newData.child('role').val() === 'teacher' || newData.child('role').val() === 'coordinator') && newData.child('key').val() !== 'alberson'",
+        ".validate": "newData.hasChildren(['name','role']) && (data.exists() || newData.hasChildren(['email','key','active'])) && (newData.child('role').val() === 'teacher' || newData.child('role').val() === 'coordinator') && (newData.child('key').val() !== 'alberson' || (data.exists() && data.child('key').val() === 'alberson' && newData.child('key').val() === data.child('key').val()))",
         "name": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
         },
         "email": {
-          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 254"
+          ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 254",
+          ".write": "auth !== null && auth.uid === $uid && data.parent().exists() && data.parent().child('active').val() !== false && (data.parent().child('role').val() === 'teacher' || data.parent().child('role').val() === 'coordinator') && auth.token.email_verified === true && auth.token.email != null && newData.exists() && newData.isString() && newData.val().length > 0 && newData.val().length <= 254 && newData.val() === auth.token.email"
         },
         "key": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60"
@@ -735,6 +738,9 @@ button.avatar{width:44px;height:44px;padding:0}
         "archivedAt": {
           ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && data.parent().exists()",
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 60000 && newData.val() % 1 === 0"
+        },
+        "academicYear": {
+          ".validate": "newData.isNumber() && newData.val() >= 2000 && newData.val() <= 9999 && newData.val() % 1 === 0"
         }
       }
     },
@@ -948,6 +954,40 @@ button.avatar{width:44px;height:44px;padding:0}
           }
         }
       }
+    },
+    "accountContacts": {
+      ".read": false,
+      ".write": false,
+      "$uid": {
+        ".read": "auth !== null && auth.uid === $uid && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator')",
+        ".write": false
+      }
+    },
+    "accountSecurity": {
+      ".read": false,
+      ".write": false,
+      "rateLimits": {
+        ".indexOn": [
+          "expiresAt"
+        ]
+      },
+      "challenges": {
+        "enroll": {
+          ".indexOn": [
+            "expiresAt"
+          ]
+        },
+        "reset": {
+          ".indexOn": [
+            "expiresAt"
+          ]
+        }
+      },
+      "emailChanges": {
+        ".indexOn": [
+          "expiresAt"
+        ]
+      }
     }
   }
 }</script>
@@ -955,16 +995,19 @@ button.avatar{width:44px;height:44px;padding:0}
 <script src="assets/roster-import.js" defer></script>
 <script src="assets/analytics.js?v=5b8f4de832f9" defer></script>
 <script src="assets/analytics-pdf.js?v=20031c644fba" defer></script>
-<script src="assets/coordinator-report.js" defer></script>
-<script src="assets/coordinator-report-pdf.js" defer></script>
+<script src="assets/coordinator-report.js?v=11477a3cb705" defer></script>
+<script src="assets/coordinator-report-pdf.js?v=d1a110585bf1" defer></script>
 <script src="assets/weighted-model.js?v=5887802b715c" defer></script>
 <script src="assets/weighted-report-ui.js?v=5d38189b0766" defer></script>
-<script src="assets/weighted-report-pdf.js?v=b67d56aa5325" defer></script>
+<script src="assets/weighted-report-pdf.js?v=90d9640d6b99" defer></script>
 <script src="assets/weighted-workbench.js?v=9735e4307f6c" defer></script>
 <script src="assets/board-chat.js?v=4e32dcc63119" defer></script>
 <script src="assets/chat-notifications.js?v=c18cc9a27802" defer></script>
 <script src="assets/board-import.js" defer></script>
 <script src="assets/board-assignment.js?v=beb6bc65da14" defer></script>
+<script src="assets/academic-years.js?v=52488822812e" defer></script>
+<script src="assets/account-config.js?v=d3f4b7a6f32f" defer></script>
+<script src="assets/account-security.js?v=b69ba12c51c2" defer></script>
 <script type="module">
 // Configuração pública do app Firebase (não é uma chave administrativa).
 // A segurança das notas depende das regras do Realtime Database.
@@ -1035,13 +1078,14 @@ function embaralharSeguro(lista, randomInt = max => {
 const fmt = value => Number(value).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
-import { getAuth, initializeAuth, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, deleteUser } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
+import { getAuth, initializeAuth, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, deleteUser, EmailAuthProvider, reauthenticateWithCredential, verifyBeforeUpdateEmail, reload, getIdToken, getIdTokenResult, confirmPasswordReset, validatePassword, updateProfile } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
 import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, runTransaction, query, orderByChild, limitToLast, endBefore, startAt, onDisconnect, remove } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 
 
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app), db = getDatabase(app);
+auth.languageCode='pt-BR';
 const $ = selector => document.querySelector(selector);
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const initials = name => String(name||'').replace(/^Prof\.?\s+/i,'').trim().split(/\s+/).slice(0,2).map(part=>part[0]||'').join('').toLocaleUpperCase('pt-BR')||'P';
@@ -1066,7 +1110,7 @@ const ICON_PATHS={
 };
 const icon=name=>`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name==='minhasavaliacoes'?'avaliar':name]||ICON_PATHS.bancas}</svg>`;
 const ROSTER_PROTEGIDO = JSON.parse(document.getElementById('roster-criptografado').textContent);
-const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', analyticsBoard:'', reportCharts:true, reportOfficialOpen:false, reportAnalyticsOpen:false, notesFilters:{course:'todas',className:'todas',date:'',status:'todas',search:''}, notesSearchDraft:'', notesChartBoard:'', notesChartsOpen:false, coordinatorExportBusy:false, notesExpanded:new Set(), chatOpen:false, chatRoom:'geral', chatMessages:{}, chatPresence:{}, chatDrafts:new Map(), chatLoading:false, chatError:'', chatPresenceError:'', chatSendError:'', chatSendCode:'', chatPendingIds:new Set(), chatSending:false, chatMutation:null, chatHasMore:false, chatLoadingOlder:false, unsubs:[], teacherSubs:new Map() };
+const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', academicYear:'todos', backupBusy:false, filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', analyticsBoard:'', reportCharts:true, reportOfficialOpen:false, reportAnalyticsOpen:false, notesFilters:{course:'todas',className:'todas',date:'',status:'todas',search:''}, notesSearchDraft:'', notesChartBoard:'', notesChartsOpen:false, coordinatorExportBusy:false, notesExpanded:new Set(), chatOpen:false, chatRoom:'geral', chatMessages:{}, chatPresence:{}, chatDrafts:new Map(), chatLoading:false, chatError:'', chatPresenceError:'', chatSendError:'', chatSendCode:'', chatPendingIds:new Set(), chatSending:false, chatMutation:null, chatHasMore:false, chatLoadingOlder:false, unsubs:[], teacherSubs:new Map() };
 const isActiveTeacher = profile => !!profile && ['coordinator','teacher'].includes(profile.role) && profile.active !== false;
 const activeTeachers = () => Object.entries(state.users).filter(([,profile])=>isActiveTeacher(profile));
 const isCoord = () => state.profile?.role === 'coordinator' && state.profile.active !== false;
@@ -1084,9 +1128,14 @@ function weightedReportsView(){
  return weightedWorkbench?`<div class="report-back"><button type="button" class="btn soft" data-route="relatorios">← Todos os relatórios</button></div>${weightedWorkbench.view()}`:empty('Recarregue a página para carregar os modelos e relatórios.');
 }
 const groupOf = board => state.groups[board?.groupId];
-const availableGroups = () => Object.values(state.groups).filter(g=>g.active!==false);
+function academicYearLabel(){const year=BancaAcademicYears.parseYear(state.academicYear);return year===null?'Todos os anos':String(year);}
+function academicYearFileTag(){return BancaAcademicYears.parseYear(state.academicYear)||'todos-os-anos';}
+function groupAcademicYear(group,boards=state.boards){return BancaAcademicYears.yearOfGroup(group,boards);}
+function groupMatchesAcademicYear(group,boards=state.boards){return BancaAcademicYears.matchesGroup(group,boards,state.academicYear);}
+function boardMatchesAcademicYear(board){return BancaAcademicYears.matchesBoard(board,groupOf(board),state.academicYear);}
+const availableGroups = () => Object.values(state.groups).filter(g=>g.active!==false&&groupMatchesAcademicYear(g));
 const courseLabel = group => group?.courseName || 'Curso não informado';
-const matchesReportGroup = group => !!group && (state.reportFilter==='todas'||group.className===state.reportFilter) && (state.reportCourseFilter==='todas'||courseLabel(group)===state.reportCourseFilter);
+const matchesReportGroup = group => !!group && groupMatchesAcademicYear(group) && (state.reportFilter==='todas'||group.className===state.reportFilter) && (state.reportCourseFilter==='todas'||courseLabel(group)===state.reportCourseFilter);
 const reportGroups = () => {
  const selectedGroups=new Set(filteredReportBoards().map(([,board])=>board.groupId));
  return Object.values(state.groups).filter(g=>(g.active!==false||state.groupBoards[g.id])&&matchesReportGroup(g)&&(!state.reportDateFilter||selectedGroups.has(g.id)));
@@ -1106,6 +1155,93 @@ const heading=(title,sub,action='')=>`<div class="section-heading"><div><h3>${es
 const stats = (label,n,code)=>`<div class="stat"><div class="stat-label"><span>${esc(label)}</span><span class="stat-icon">${icon(({'01':'entregas','02':'bancas','03':'relatorios','04':'professores','05':'professores','06':'sair'})[code])}</span></div><strong>${esc(n)}</strong></div>`;
 
 let accessRevision=0;
+const APP_VERSION='2.0.0';
+let accountReturnFocus=null,accountMarkup='';
+function accountActionSettings(){return {url:new URL('index.html',location.href).href,handleCodeInApp:false};}
+async function sendNativePasswordReset(email){
+ try{return await sendPasswordResetEmail(auth,email,accountActionSettings());}
+ catch(error){if(!/^auth\/(?:unauthorized-continue-uri|invalid-continue-uri)$/.test(String(error?.code||'')))throw error;return sendPasswordResetEmail(auth,email);}
+}
+async function sendNativeEmailChange(user,email,uid,revision){
+ try{return await verifyBeforeUpdateEmail(user,email,accountActionSettings());}
+ catch(error){if(!/^auth\/(?:unauthorized-continue-uri|invalid-continue-uri)$/.test(String(error?.code||'')))throw error;assertCurrentSession(uid,revision);return verifyBeforeUpdateEmail(user,email);}
+}
+async function requestAccountService(action,values={},authenticated=false){
+ const config=globalThis.BancaAccountConfig;
+ if(!config?.enabled)throw Object.assign(Error('O serviço de mensagens ainda não foi ativado.'),{code:'service-unavailable'});
+ const endpoint=new URL(config.serviceUrl);
+ if(endpoint.href!=='https://southamerica-east1-avaliadortcc.cloudfunctions.net/accountService')throw Object.assign(Error('Serviço de mensagens indisponível.'),{code:'service-unavailable'});
+ const uid=state.user?.uid,revision=accessRevision,headers={'Content-Type':'application/json'};
+ if(authenticated){if(!uid||auth.currentUser?.uid!==uid)throw Error('Entre novamente com sua conta.');headers.Authorization=`Bearer ${await getIdToken(auth.currentUser,true)}`;assertCurrentSession(uid,revision);}
+ const abort=new AbortController(),timeout=setTimeout(()=>abort.abort(),Math.max(3000,Math.min(30000,Number(config.timeoutMs)||15000)));
+ try{
+  const response=await fetch(endpoint.href,{method:'POST',headers,body:JSON.stringify({action,...values}),signal:abort.signal,credentials:'omit',cache:'no-store',referrerPolicy:'no-referrer'});
+  const result=await response.json();if(authenticated)assertCurrentSession(uid,revision);
+  if(!response.ok||result?.ok===false)throw Object.assign(Error('Não foi possível concluir a solicitação.'),{code:result?.error?.code||'service-unavailable'});
+  return result;
+ }finally{clearTimeout(timeout);}
+}
+async function syncVerifiedAccountEmail(user,profile,revision=accessRevision){
+ const uid=user?.uid;
+ const current=()=>!!uid&&revision===accessRevision&&auth.currentUser?.uid===uid;
+ if(!current())throw Error('A sessão mudou. Entre novamente.');
+ if(!isActiveTeacher(profile))return profile;
+ const token=await getIdTokenResult(user,true);if(!current())throw Error('A sessão mudou. Entre novamente.');
+ const email=token?.claims?.email;
+ if(token?.claims?.email_verified!==true||typeof email!=='string'||email.length>254||!email||email!==auth.currentUser.email||email===profile.email)return profile;
+ await set(ref(db,`users/${uid}/email`),email);if(!current())throw Error('A sessão mudou. Entre novamente.');
+ return {...profile,email};
+}
+const accountSecurity=typeof BancaAccountSecurity==='undefined'?null:BancaAccountSecurity.createController({
+ getSession:()=>({user:state.user,profile:state.profile,revision:accessRevision}),request:requestAccountService,
+ authApi:{
+  resetEmail:sendNativePasswordReset,
+  reauthenticate:async password=>{const user=auth.currentUser,uid=state.user?.uid,revision=accessRevision;if(!uid||user?.uid!==uid||!user.email)throw Error('Entre novamente com sua conta.');await reauthenticateWithCredential(user,EmailAuthProvider.credential(user.email,password));assertCurrentSession(uid,revision);},
+  verifyEmailChange:async email=>{const user=auth.currentUser,uid=state.user?.uid,revision=accessRevision;if(!uid||user?.uid!==uid)throw Error('Entre novamente com sua conta.');if(typeof updateProfile==='function'&&user.displayName!==state.profile?.name)await updateProfile(user,{displayName:state.profile.name});assertCurrentSession(uid,revision);await sendNativeEmailChange(user,email,uid,revision);assertCurrentSession(uid,revision);},
+  validatePassword:password=>validatePassword(auth,password),confirmReset:(code,password)=>confirmPasswordReset(auth,code,password),
+  refreshAccount:async()=>{const uid=state.user?.uid,revision=accessRevision,user=auth.currentUser;if(!uid||user?.uid!==uid)throw Error('Entre novamente com sua conta.');await reload(user);assertCurrentSession(uid,revision);state.profile=await syncVerifiedAccountEmail(user,state.profile,revision);state.user=user;render();return {user,profile:state.profile};}
+ },onChange:renderAccountSecurity,onNotice:message=>notice(message)
+});
+function renderAccountSecurity(){
+ const dialog=$('#account-dialog'),content=$('#account-dialog-content');if(!dialog||!content||!accountSecurity)return;
+ const current=accountSecurity.getState();
+ if(!current.open){if(dialog.open)dialog.close();content.innerHTML='';accountMarkup='';return;}
+ const focused=dialog.contains?.(document.activeElement)?document.activeElement:null;
+ const selection=focused?{id:focused.id,start:focused.selectionStart,end:focused.selectionEnd}:null;
+ const markup=accountSecurity.view();if(markup!==accountMarkup){content.innerHTML=markup;accountMarkup=markup;}
+ if(!dialog.open)dialog.showModal();
+ if(selection?.id){const field=document.getElementById(selection.id);field?.focus?.({preventScroll:true});if(typeof selection.start==='number')field?.setSelectionRange?.(selection.start,selection.end);}
+}
+function openAccountSecurity(){if(!accountSecurity)throw Error('Atualize a página para abrir sua conta.');closeMobileMenu();accountReturnFocus=document.activeElement;accountSecurity.openAccount();}
+function openRecoveryDialog(){if(!accountSecurity)throw Error('Atualize a página para recuperar sua conta.');accountReturnFocus=document.activeElement;accountSecurity.openRecovery(state.user?.email||$('#email').value.trim());}
+function closeAccountSecurity(){accountSecurity?.close();accountReturnFocus?.focus?.({preventScroll:true});accountReturnFocus=null;}
+function setAcademicYear(value){
+ const selected=value==='todos'?'todos':BancaAcademicYears.parseYear(value);
+ if(selected===null)throw Error('Escolha um ano letivo válido.');
+ captureDrafts();if(typeof captureGroupAdminDrafts==='function')captureGroupAdminDrafts();
+ const draft=state.groupFormDraft;
+ if(!state.groupEditId&&draft&&!['name','className','courseName','title','advisorUid'].some(key=>String(draft[key]||'').trim())&&!(draft.students||[]).some(student=>String(student.name||'').trim())){
+  draft.academicYear=BancaAcademicYears.newGroupYear(selected);state.groupFormVersion=(state.groupFormVersion||0)+1;
+ }
+ state.groupFilterCourse='';state.groupFilterClass='';state.groupSearch='';
+ state.academicYear=selected;state.plan=[];state.planMeta=null;state.planUnassigned=[];state.filter='todas';state.courseFilter='todas';state.reportFilter='todas';state.reportCourseFilter='todas';state.boardDateFilter='';state.reportDateFilter='';state.analyticsBoard='';resetNotesFilters();state.notesExpanded.clear();render();
+}
+function academicYearToolbar(){
+ if(typeof BancaAcademicYears==='undefined'||['chat','professores','avaliar'].includes(state.route))return '';
+ return BancaAcademicYears.renderYearSelector({selected:state.academicYear,years:BancaAcademicYears.years(state.groups,state.boards),currentYear:BancaAcademicYears.calendarYear()});
+}
+async function exportAcademicBackup(){
+ if(!isCoord())throw Error('A cópia de segurança é exclusiva da coordenação.');if(!state.connected)throw Error('Conecte-se à internet para baixar os dados salvos.');if(state.backupBusy)return;
+ assertWeightedGradesSaved();const uid=state.user.uid,revision=accessRevision;state.backupBusy=true;
+ try{
+  const paths=['users','groups','boards','groupBoards','locks','roomLocks','grades','deliveries','seals','timers'];
+  const snapshots=await Promise.all(paths.map(path=>get(ref(db,path))));assertCurrentSession(uid,revision);if(!isCoord())throw Error('Acesso restrito à coordenação.');assertWeightedGradesSaved();
+  const data=Object.fromEntries(paths.map((path,index)=>[path,snapshots[index].val()||{}]));
+  if(data.users[uid]?.role!=='coordinator'||data.users[uid]?.active===false)throw Error('Sua permissão foi atualizada. Entre novamente.');
+  const backup={format:'BancaFlowAcademicBackup',schemaVersion:1,appVersion:APP_VERSION,projectId:firebaseConfig.projectId,generatedAt:new Date().toISOString(),scope:'all-academic-years',data};
+  downloadBlob(new Blob([JSON.stringify(backup,null,2)],{type:'application/json;charset=utf-8'}),`bancaflow_backup_${localDayKey(Date.now())}.json`);notice('Cópia acadêmica baixada. Guarde o arquivo em um local de acesso restrito.');
+ }finally{if(state.user?.uid===uid&&revision===accessRevision)state.backupBusy=false;}
+}
 // Chat: salas e presença isoladas das avaliações e dos relatórios.
 const chatRuntime={epoch:0,room:'',messagesOff:null,presenceOff:null,connection:null,presenceStarting:false,retryTicket:null,retryAttempt:0,messageScope:'',liveMessages:{},history:{},historyStart:null,pendingWrites:new Map(),watchTicket:null,surfaceMarkup:'',savedUi:null,returnFocus:null};
 function isChatVisible(){return !!state.user&&isActiveTeacher(state.profile)&&(state.chatOpen===true||state.route==='chat');}
@@ -1535,6 +1671,7 @@ function showAccessProblem(message,user=auth.currentUser){
  $('#access-help').open=true;notice(message,true);
 }
 function resetAppData(){
+ accountSecurity?.reset();renderAccountSecurity();accountReturnFocus=null;state.academicYear='todos';state.backupBusy=false;
  stopChat();
  weightedWorkbench?.reset();
  closeBoardAssignment(true);
@@ -1560,7 +1697,13 @@ $('#login-form').addEventListener('submit', async e => {
  catch(err){console.error(err);const message=errorMessage(err);$('#login-status').textContent=message;$('#login-status').classList.remove('hidden');notice(message,true);}
  finally{b.disabled=false;}
 });
-$('#reset-password').addEventListener('click',async()=>{const email=$('#email').value.trim();if(!email){notice('Informe seu e-mail primeiro.',true);return;}try{await sendPasswordResetEmail(auth,email);notice('Se o e-mail estiver cadastrado, você receberá instruções.');}catch(e){fail(e);}});
+$('#reset-password').addEventListener('click',()=>handle(openRecoveryDialog));
+$('#open-account').addEventListener('click',()=>handle(openAccountSecurity));
+$('#account-dialog').addEventListener('submit',event=>{event.preventDefault();const form=event.target;void accountSecurity?.submit(form.id,new FormData(form));});
+$('#account-dialog').addEventListener('click',event=>{const button=event.target.closest('button');if(!button||button.disabled)return;const action=button.dataset.accountAction;if(action==='close')return closeAccountSecurity();if(action)void accountSecurity?.action(action);});
+$('#account-dialog').addEventListener('change',event=>{if(['account-recovery-channel','account-security-channel'].includes(event.target.id))accountSecurity?.setChannel(event.target.value);else if(event.target.name)accountSecurity?.setDraft(event.target.name,event.target.type==='checkbox'?event.target.checked:event.target.value);});
+$('#account-dialog').addEventListener('input',event=>{if(event.target.name&&event.target.type!=='password')accountSecurity?.setDraft(event.target.name,event.target.value);});
+$('#account-dialog').addEventListener('cancel',event=>{event.preventDefault();closeAccountSecurity();});
 $('#toggle-password').addEventListener('click',()=>{
  const password=$('#password'),button=$('#toggle-password'),visible=password.type==='password';
  password.type=visible?'text':'password';button.setAttribute('aria-pressed',String(visible));button.setAttribute('aria-label',visible?'Ocultar senha':'Mostrar senha');button.innerHTML=icon(visible?'ocultar':'olho');
@@ -1601,6 +1744,7 @@ $('#top-initials').addEventListener('click',openMobileMenu);
 $('#mobile-menu').addEventListener('close',()=>document.body.classList.remove('menu-open'));
 $('#mobile-menu').addEventListener('click',e=>{
  const button=e.target.closest('button');
+ if(button?.dataset.accountOpen)return handle(openAccountSecurity);
  if(e.target===$('#mobile-menu')||button?.dataset.closeMenu!==undefined)return closeMobileMenu();
  if(!button?.dataset.route)return;
  if(button.dataset.route==='sair'){closeMobileMenu();logoutAccount().catch(fail);}else if(button.dataset.route==='chat')handle(openGeneralChat);else go(button.dataset.route);
@@ -1628,10 +1772,11 @@ async function verificarAcesso(user){
  try{
   const snap=await get(ref(db,`users/${user.uid}`));if(revision!==accessRevision || auth.currentUser?.uid!==user.uid)return;
   if(!snap.exists()){showAccessProblem('E-mail e senha confirmados. Falta cadastrar o perfil em users/'+user.uid+'. Peça à administração para vincular o UID desta conta.',user);return;}
-  const profile=snap.val();
+  let profile=snap.val();
   if(profile.active===false){await signOut(auth);showAccessProblem('Seu acesso foi removido. Peça à coordenação para reativar o professor.',null);return;}
   if(!isActiveTeacher(profile)){showAccessProblem('O perfil desta conta não tem um papel válido. A administração deve conferir role no Firebase: coordinator para coordenadores ou teacher para professores avaliadores.',user);return;}
   if(typeof profile.name!=='string'||!profile.name.trim()){showAccessProblem('O perfil desta conta está sem nome. Peça à administração para completar o campo name no Firebase.',user);return;}
+  try{profile=await syncVerifiedAccountEmail(user,profile,revision);}catch(error){if(revision!==accessRevision||auth.currentUser?.uid!==user.uid)return;console.error('Sincronização do e-mail de acesso pendente.');}
   state.user=user;state.profile=profile;
   $('#login-view').classList.add('hidden');$('#app-view').classList.remove('hidden');state.route='inicio';
   $('#side-name').textContent=state.profile.name;$('#side-role').textContent=isCoord()?'Coordenação':'Professor avaliador';$('#side-avatar').textContent=initials(state.profile.name);$('#top-initials').textContent=initials(state.profile.name);
@@ -1651,37 +1796,39 @@ function openMobileMenu(){
  if(!state.user)return;const menu=$('#mobile-menu');if(menu.open)return;
  const extra=isCoord()?[['chat','Chat dos professores','Conversa geral e salas das bancas'],['professores','Equipe','Gerenciar professores avaliadores'],['sortear','Sorteio','Agendar e distribuir bancas'],['notas','Todas as notas','Consultar notas de todas as bancas'],['grupos','Grupos e cursos','Cadastrar grupos e importar planilhas'],['entregas','Monografia e entregas','Completar a nota individual dos 40%'],['relatorios','Relatórios e médias','Baixar arquivos, conferir resultados e ajustar os pesos']]:[];
  menu.innerHTML=`<div class="menu-content"><div class="menu-grip" aria-hidden="true"></div><div class="menu-header"><h2 id="mobile-menu-title">Sua conta e outras áreas</h2><button type="button" class="icon-btn" data-close-menu="1" aria-label="Fechar menu" autofocus>${icon('fechar')}</button></div><div class="menu-profile"><span class="avatar" aria-hidden="true">${esc(initials(state.profile.name))}</span><div><strong>${esc(state.profile.name)}</strong><small>${isCoord()?'Coordenação':'Professor avaliador'}</small><small>${esc(state.profile.email||state.user.email||'')}</small></div></div><nav class="menu-links" aria-label="Outras áreas">${extra.map(([route,label,description])=>`<button type="button" data-route="${route}" class="${state.route===route?'active':''}" ${state.route===route?'aria-current="page"':''}>${icon(route)}<span><b>${label}</b><small>${description}</small></span>${icon('seta')}</button>`).join('')}<button type="button" data-route="sair" class="menu-logout">${icon('sair')}<span><b>Sair da conta</b><small>Encerrar esta sessão no dispositivo</small></span></button></nav></div>`;
+ menu.querySelector('.menu-links')?.insertAdjacentHTML?.('afterbegin','<button type="button" data-account-open="1"><span><b>Minha conta</b><small>Senha, e-mail e celular de recuperação</small></span></button>');
  menu.showModal();document.body.classList.add('menu-open');
 }
 function go(route,board=''){closeMobileMenu();if(board)state.selectedBoard=board;state.route=route;render();$('#view').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
 function render(){if(!state.user)return;const chatUi=captureChatUi()||chatRuntime.savedUi;const notesFocus=state.route==='notas'&&document.activeElement?.id==='notes-search'?{start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null;captureDrafts();captureReportPanels();weightedWorkbench?.capture($('#view'));if(typeof captureGroupAdminDrafts==='function')captureGroupAdminDrafts();const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'||(state.route==='personalizados'&&isCoord())))state.route='inicio';
  if(state.route==='chat'){$('#chat-widget-content').innerHTML='';chatRuntime.surfaceMarkup='';}
  const pageTitles={inicio:'Visão geral',bancas:'Bancas de avaliação',sortear:'Sorteio de bancas',entregas:'Monografia e entregas',relatorios:'Relatórios e médias',personalizados:'Média personalizada',professores:'Professores',grupos:'Grupos e cursos',avaliar:'Avaliação individual',minhasavaliacoes:'Minhas avaliações',notas:'Todas as notas',chat:'Chat dos professores'};
- $('#page-title').textContent=pageTitles[state.route];$('#page-eyebrow').textContent=isCoord()?'COORDENAÇÃO • TCC 2026':'CORPO DOCENTE • TCC 2026';
+ $('#page-title').textContent=pageTitles[state.route];$('#page-eyebrow').textContent=(isCoord()?'COORDENAÇÃO':'CORPO DOCENTE')+' · '+academicYearLabel();
  const active=route=>state.route===route||(route==='relatorios'&&state.route==='personalizados')||(route==='bancas'&&state.route==='avaliar'&&isCoord());
  const navButton=(route,label)=>`<button type="button" class="${active(route)?'active':''}" data-route="${route}" ${active(route)?'aria-current="page"':''} ${route==='chat'?`aria-haspopup="dialog" aria-controls="chat-widget" aria-expanded="${state.chatOpen===true}"`:''}><span class="nav-ico">${icon(route)}</span><span>${label}${route==='chat'?'<span class="bf-chat-nav-badge" data-nav-chat-count hidden aria-hidden="true"></span>':''}</span></button>`;
  $('#desktop-nav').innerHTML=routes.map(([route,,label])=>navButton(route,label)).join('');
  const primary=isCoord()?[['inicio','Início'],['bancas','Bancas'],['minhasavaliacoes','Avaliar'],['notas','Notas']]:[['inicio','Início'],['bancas','Bancas'],['avaliar','Avaliar'],['chat','Chat']];
  $('#mobile-nav').innerHTML=primary.map(([route,label])=>navButton(route,label)).join('')+(isCoord()?`<button type="button" data-open-menu="1" class="${['sortear','entregas','relatorios','personalizados','grupos','professores','chat'].includes(state.route)?'active':''}" aria-label="Mais áreas e opções da conta" aria-haspopup="dialog" aria-controls="mobile-menu"><span class="nav-ico">${icon('mais')}</span><span>Mais</span></button>`:navButton('sair','Sair'));
- const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,personalizados:weightedReportsView,professores:teachersView,grupos:groupsView,notas:allNotesView,minhasavaliacoes:myEvaluationsView,chat:chatView};$('#view').innerHTML=views[state.route]?.()||'';restoreDrafts();if(notesFocus){const field=$('#notes-search');field?.focus({preventScroll:true});field?.setSelectionRange(notesFocus.start,notesFocus.end);}
+ const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,personalizados:weightedReportsView,professores:teachersView,grupos:groupsView,notas:allNotesView,minhasavaliacoes:myEvaluationsView,chat:chatView};$('#view').innerHTML=academicYearToolbar()+(views[state.route]?.()||'');restoreDrafts();if(notesFocus){const field=$('#notes-search');field?.focus({preventScroll:true});field?.setSelectionRange(notesFocus.start,notesFocus.end);}
  if(state.route==='personalizados')weightedWorkbench?.restoreUi($('#view'));renderChatWidget(chatUi);restoreChatUi(chatUi);syncChat();syncChatAlerts();consumeChatNotificationLink();
 }
-function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,b])=>{const g=groupOf(b);return g&&isCoord()&&situacao(b,g,boardGrades(id),state.deliveries[id]).pronta;});
+function dashboard(){const boards=activeBoards().filter(([,board])=>boardMatchesAcademicYear(board));const ready=boards.filter(([id,b])=>{const g=groupOf(b);return g&&isCoord()&&situacao(b,g,boardGrades(id),state.deliveries[id]).pronta;});
  const completed=isCoord()?ready.length:boards.filter(([id,b])=>{const g=groupOf(b);return g&&studentsOf(g).every(([sid])=>mediaAvaliador(state.grades[id]?.[state.user.uid]?.[sid])!==null);}).length;
- return `<div class="hero"><div><span class="pill">UNIVAP · ANO LETIVO 2026</span><h2>${isCoord()?'Painel da coordenação':'Painel do professor'}</h2><p>${isCoord()?'Agenda, avaliações e relatórios.':'Consulta de bancas e registro de notas.'}</p></div><button class="btn" data-route="${isCoord()?'minhasavaliacoes':'bancas'}">${isCoord()?'Lançar minhas notas':'Minhas bancas'} ${icon('seta')}</button></div>
+ return `<div class="hero"><div><span class="pill">UNIVAP · ${esc(academicYearLabel())}</span><h2>${isCoord()?'Painel da coordenação':'Painel do professor'}</h2><p>${isCoord()?'Agenda, avaliações e relatórios.':'Consulta de bancas e registro de notas.'}</p></div><button class="btn" data-route="${isCoord()?'minhasavaliacoes':'bancas'}">${isCoord()?'Lançar minhas notas':'Minhas bancas'} ${icon('seta')}</button></div>
  <div class="grid">${stats(isCoord()?'Grupos ativos':'Bancas atribuídas',isCoord()?availableGroups().length:boards.length,'01')}${stats('Bancas agendadas',boards.length,'02')}${stats(isCoord()?'Prontas para concluir':'Minhas bancas avaliadas',completed,'03')}${stats(isCoord()?'Professores ativos':'Alunos para avaliar',isCoord()?activeTeachers().length:boards.reduce((s,[,b])=>s+studentsOf(groupOf(b)).length,0),'04')}</div>
  <section class="card">${heading('Sala dos professores','Conversa entre todos os professores cadastrados e a coordenação. Não é necessário estar em uma banca.',`<button type="button" class="btn primary" data-general-chat="1">Abrir chat ${icon('seta')}</button>`)}</section>
+ ${isCoord()?'<section class="card"><div class="row space"><div><h3>Histórico e cópia de segurança</h3><p class="muted tiny">Baixe os cadastros, bancas, notas e tempos salvos de todos os anos.</p></div><button class="btn soft" type="button" data-academic-backup="1">Baixar cópia acadêmica</button></div></section>':''}
  ${isCoord() && !Object.keys(state.groups).length ? '<div class="notice">Nenhum grupo cadastrado. Acesse Grupos e cursos para cadastrar um grupo ou importar uma planilha.</div>' : ''}<section class="card">${heading('Agenda de bancas',isCoord()?'Agendamentos e situação das avaliações.':'Bancas atribuídas ao professor.',`<div class="row">${isCoord()?'<button class="btn soft" data-route="notas">Todas as notas</button>':''}<button class="btn soft" data-route="bancas">Ver todas →</button></div>`)}${boardList(boards.slice().sort((a,b)=>a[1].startAt-b[1].startAt).slice(0,5))}</section>`;
 }
 function boardStatus(bid,b){if(state.seals[bid])return badge('Avaliação encerrada','green');if(!isCoord())return badge('Agendada','blue');const g=groupOf(b);if(g&&situacao(b,g,boardGrades(bid),state.deliveries[bid]).pronta)return badge('Notas completas','green');return badge('Em avaliação','orange');}
 function boardList(boards){if(!boards.length)return empty(isCoord()?'Nenhuma banca cadastrada':'Nenhuma banca atribuída',isCoord()?'Cadastre uma banca em Sorteio.':'A atribuição das bancas é feita pela coordenação.');return `<div class="group-list">${boards.map(([id,b])=>{const g=groupOf(b);return `<article class="group-card board-card"><div><div class="row">${g?.courseName?badge(g.courseName):''}${badge(g?.className||'TCC','blue')}${boardStatus(id,b)}</div><h4>${esc(g?.name||b.groupId)}</h4><p class="project-name">${esc(g?.title||'')}</p><div class="board-info"><span>${icon('bancas')}${dateStr(b.startAt)}</span><span>${icon('sala')}${esc(b.room)}</span></div><p class="board-team">Orientador: ${esc(b.advisorName)} ${b.members?.[b.advisorUid]?'(participa)':'(não participa)'}<br>${Object.keys(b.members||{}).length} avaliadores · ${studentsOf(g).length} alunos</p></div>${isCoord()&&b.members?.[state.user?.uid]===true?`<div class="board-card-actions">${myGradingAction(id)}<button class="btn soft" data-open-board="${esc(id)}">Ver detalhes ${icon('seta')}</button></div>`:`<button class="btn soft" data-open-board="${esc(id)}">${isCoord()?'Ver detalhes':'Avaliar grupo'} ${icon('seta')}</button>`}</article>`;}).join('')}</div>`;}
 function boardMatchesDay(board,day){return !day||(Number.isFinite(board?.startAt)&&localDayKey(board.startAt)===day);}
 function filteredBoards(){
- return activeBoards().filter(([,board])=>(state.filter==='todas'||groupOf(board)?.className===state.filter)&&(state.courseFilter==='todas'||courseLabel(groupOf(board))===state.courseFilter)&&boardMatchesDay(board,state.boardDateFilter)).sort((a,b)=>a[1].startAt-b[1].startAt);
+ return activeBoards().filter(([,board])=>boardMatchesAcademicYear(board)&&(state.filter==='todas'||groupOf(board)?.className===state.filter)&&(state.courseFilter==='todas'||courseLabel(groupOf(board))===state.courseFilter)&&boardMatchesDay(board,state.boardDateFilter)).sort((a,b)=>a[1].startAt-b[1].startAt);
 }
 function filteredReportBoards(){
  if(!isCoord())return [];
- return Object.entries(state.boards).filter(([,board])=>matchesReportGroup(groupOf(board))&&boardMatchesDay(board,state.reportDateFilter)).sort((a,b)=>a[1].startAt-b[1].startAt);
+ return Object.entries(state.boards).filter(([,board])=>boardMatchesAcademicYear(board)&&matchesReportGroup(groupOf(board))&&boardMatchesDay(board,state.reportDateFilter)).sort((a,b)=>a[1].startAt-b[1].startAt);
 }
 function setBancaDateFilter(value,report=false){
  const day=String(value||'');
@@ -1694,7 +1841,7 @@ function bancaDateFilterHtml(report=false){
  return `<div class="banca-date-field"><label for="${id}">Data da banca</label><input id="${id}" class="filter" type="date" lang="pt-BR" value="${esc(day)}" aria-describedby="${id}-help"><small id="${id}-help">${day?'Somente '+esc(day.split('-').reverse().join('/')):'Todas as datas'}</small></div><div class="banca-date-actions"><button class="btn soft" type="button" data-date-today="${scope}">Hoje</button><button class="btn soft" type="button" data-date-clear="${scope}" ${!day?'disabled':''}>Todas as datas</button></div>`;
 }
 function boardsView(){const arr=filteredBoards();
- const all=Object.values(state.groups);return `${heading(isCoord()?'Agenda de bancas':'Bancas atribuídas',`${arr.length} banca(s) encontrada(s)${state.boardDateFilter?' em '+state.boardDateFilter.split('-').reverse().join('/'):''}.`,isCoord()?'<div class="row"><button class="btn soft" data-open-board-import="1">Importar bancas</button><button class="btn primary" data-route="sortear">+ Nova banca</button></div>':'')}
+ const all=Object.values(state.groups).filter(group=>groupMatchesAcademicYear(group));return `${heading(isCoord()?'Agenda de bancas':'Bancas atribuídas',`${arr.length} banca(s) encontrada(s)${state.boardDateFilter?' em '+state.boardDateFilter.split('-').reverse().join('/'):''}.`,isCoord()?'<div class="row"><button class="btn soft" data-open-board-import="1">Importar bancas</button><button class="btn primary" data-route="sortear">+ Nova banca</button></div>':'')}
  <div class="toolbar banca-filter-toolbar"><select id="filter-course" class="filter" aria-label="Filtrar bancas por curso">${opts([['todas','Todos os cursos'],...[...new Set(all.map(courseLabel))].sort().map(c=>[c,c])],state.courseFilter)}</select><select id="filter-class" class="filter" aria-label="Filtrar bancas por turma"><option value="todas">Todas as turmas</option>${[...new Set(all.map(g=>g.className))].sort().map(c=>`<option ${state.filter===c?'selected':''} value="${esc(c)}">Turma ${esc(c)}</option>`).join('')}</select>${bancaDateFilterHtml()}${isCoord()?`<button class="btn soft" data-pdf-agenda="1" ${!arr.length?'disabled':''}>Baixar PDF da agenda</button>`:''}</div>${arr.length?boardList(arr):empty('Nenhuma banca encontrada','Escolha outra data, curso ou turma para ajustar a busca.')}`;
 }
 const opts=(items,selected='')=>items.map(([v,text])=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(text)}</option>`).join('');
@@ -1772,6 +1919,7 @@ function filteredNotesBoards(){
  if(!state.user||!isCoord())return [];
  const f=state.notesFilters,normalize=value=>String(value||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR'),query=normalize(f.search).trim();
  return Object.entries(state.boards).filter(([bid,board])=>{
+  if(!boardMatchesAcademicYear(board))return false;
   const group=groupOf(board);
   if((f.course!=='todas'&&courseLabel(group)!==f.course)||(f.className!=='todas'&&group?.className!==f.className)||!boardMatchesDay(board,f.date))return false;
   if(f.status==='abertas'&&state.seals[bid]||f.status==='encerradas'&&!state.seals[bid])return false;
@@ -1804,18 +1952,18 @@ function boardNotesHtml(bid){
 // Retrato completo da coordenação: todos os alunos, inclusive sem banca ou com pendências.
 function coordinatorReportBoards(){
  if(!state.user||!isCoord())throw Error('O consolidado de notas é exclusivo da coordenação.');
- const assigned=new Set(),boards=Object.entries(state.boards).sort((a,b)=>(a[1].startAt||0)-(b[1].startAt||0)).map(([bid,board])=>{
+ const assigned=new Set(Object.values(state.boards).map(board=>board.groupId)),boards=Object.entries(state.boards).filter(([,board])=>boardMatchesAcademicYear(board)).sort((a,b)=>(a[1].startAt||0)-(b[1].startAt||0)).map(([bid,board])=>{
   assigned.add(board.groupId);
   const record=coordinatorBoardRecord(bid),group=record.group;
   const elapsed=state.timers[bid]&&!state.timerErrors[bid]?boardElapsed(bid):null;
-  return {id:bid,label:group?.name||board.groupId||bid,project:group?.title||'Cadastro do grupo indisponível',courseName:courseLabel(group),className:group?.className||'Não informada',startLabel:dateStr(board.startAt),room:board.room||'',advisorName:board.advisorName||who(board.advisorUid),sealed:record.sealed,archived:group?.active===false,unassigned:false,
+  return {id:bid,label:group?.name||board.groupId||bid,project:group?.title||'Cadastro do grupo indisponível',academicYear:BancaAcademicYears.yearOfBoard(board,group),courseName:courseLabel(group),className:group?.className||'Não informada',startLabel:dateStr(board.startAt),room:board.room||'',advisorName:board.advisorName||who(board.advisorUid),sealed:record.sealed,archived:group?.active===false,unassigned:false,
    elapsedMs:Number.isFinite(elapsed)&&elapsed>=0?elapsed:null,plannedMs:Number.isFinite(board.durationMin)&&board.durationMin>0?board.durationMin*60000:null,
    students:record.students.map(student=>({id:student.id,name:student.name,evaluators:student.evaluators.map(e=>({uid:e.uid,name:e.name,...Object.fromEntries(CRITERIOS.map(([key])=>[key,notaValida(e.scores[key])?e.scores[key]:null])),mean:e.mean})),
     result:{banca:student.banca,entrega:student.entrega,parcelaBanca:student.banca===null?null:student.banca*.6,parcelaEntrega:student.entrega===null?null:student.entrega*.4,final:student.result?.final??null},status:student.result?(record.sealed?'Encerrada':'Provisório'):'Pendente'}))};
  });
  for(const [gid,group] of Object.entries(state.groups)){
-  if(assigned.has(gid))continue;
-  boards.push({id:`sem-banca:${gid}`,label:group.name||gid,project:group.title||'',courseName:courseLabel(group),className:group.className||'Não informada',startLabel:'Sem banca agendada',room:'',advisorName:who(group.advisorUid),sealed:false,archived:group.active===false,unassigned:true,elapsedMs:null,plannedMs:null,
+  if(assigned.has(gid)||!groupMatchesAcademicYear(group))continue;
+  boards.push({id:`sem-banca:${gid}`,label:group.name||gid,project:group.title||'',academicYear:groupAcademicYear(group),courseName:courseLabel(group),className:group.className||'Não informada',startLabel:'Sem banca agendada',room:'',advisorName:who(group.advisorUid),sealed:false,archived:group.active===false,unassigned:true,elapsedMs:null,plannedMs:null,
    students:studentsOf(group).map(([id,name])=>({id,name,evaluators:[],result:{banca:null,entrega:null,parcelaBanca:null,parcelaEntrega:null,final:null},status:'Sem banca'}))});
  }
  return boards;
@@ -1830,7 +1978,7 @@ function coordinatorReportPanel(){
  const selected=boards.find(b=>b.id===state.notesChartBoard),chartBoards=selected?[selected]:boards;
  const details=selected?coordinatorDetailCharts(selected):BancaCoordinatorReport.charts(boards);
  return `<section class="coordinator-panel" aria-labelledby="coordinator-report-heading"><div class="section-heading"><div><p class="eyebrow">CONSOLIDADO GERAL</p><h3 id="coordinator-report-heading">Todos os alunos</h3><p>Arquivo completo com as notas salvas de todas as bancas, monografia e resultados calculados.</p></div></div><div class="coordinator-export-actions"><button type="button" class="btn soft" data-route="personalizados">Ajustar média e relatórios</button><button type="button" class="btn primary" data-coordinator-export="pdf" ${!summary.studentCount?'disabled':''}>PDF completo ${icon('pdf')}</button><button type="button" class="btn soft" data-coordinator-export="csv" ${!summary.studentCount?'disabled':''}>Planilha de notas (CSV)</button><button type="button" class="btn soft" data-coordinator-export="charts" ${!summary.studentCount?'disabled':''}>PDF dos gráficos ${icon('pdf')}</button></div>
- <p class="tiny coordinator-scope">Os três arquivos incluem todos os cursos, turmas e alunos, independentemente dos filtros abaixo. Incluem bancas abertas, grupos removidos e alunos sem banca. Resultados de bancas abertas são provisórios; notas ausentes permanecem pendentes.</p>
+ <p class="tiny coordinator-scope">Ano letivo: ${esc(academicYearLabel())}. Os três arquivos incluem todos os cursos, turmas e alunos deste período, independentemente dos filtros abaixo. Incluem bancas abertas, grupos removidos e alunos sem banca. Resultados de bancas abertas são provisórios; notas ausentes permanecem pendentes.</p>
  <div class="coordinator-metrics"><div><span>Alunos cadastrados</span><strong>${summary.studentCount}</strong></div><div><span>Resultados encerrados</span><strong>${summary.officialCount}</strong></div><div><span>Resultados provisórios</span><strong>${summary.provisionalCount}</strong></div><div><span>Alunos com pendências</span><strong>${summary.pendingCount}</strong><small>${summary.unassignedCount} sem banca</small></div></div>
  <details class="coordinator-charts" data-coordinator-charts="1" ${state.notesChartsOpen?'open':''}><summary>Gráficos e resumo de todos os alunos ${icon('relatorios')}</summary><div class="coordinator-charts-body"><div class="field"><label for="notes-chart-board">Dados do gráfico na tela</label><select id="notes-chart-board">${opts([['','Todos os alunos'],...boards.map(b=>[b.id,`${b.label} · ${b.className}${b.unassigned?' · Sem banca':''}`])],selected?.id||'')}</select><small>A seleção altera apenas os gráficos na tela. Os arquivos sempre incluem todos os alunos.</small></div><div class="analytics-chart-grid">${details.map(chart=>BancaAnalytics.renderChart(chart)).join('')}</div>
  <h4>Resumo por aluno · ${selected?'banca selecionada':'todos os cursos'}</h4><div class="table-scroll"><table class="data-table coordinator-students"><thead><tr><th>Aluno / grupo</th><th>Média da banca</th><th>Monografia</th><th>Resultado (0–10)</th><th>Situação</th></tr></thead><tbody>${chartBoards.flatMap(board=>board.students.map(student=>`<tr data-summary-student="${esc(board.id)}/${esc(student.id)}"><td data-label="Aluno / grupo"><strong>${esc(student.name)}</strong><small>${esc(board.label)} · ${esc(board.className)} · ${esc(board.courseName)}${board.archived?' · Grupo removido':''}</small></td><td data-label="Média da banca">${display(student.result.banca)}</td><td data-label="Monografia">${display(student.result.entrega)}</td><td data-label="Resultado (0–10)"><strong>${display(student.result.final)}</strong></td><td data-label="Situação">${esc(student.status)}</td></tr>`)).join('')}</tbody></table></div></div></details></section>`;
@@ -1844,8 +1992,8 @@ function unassignedNotesHtml(){
 function allNotesView(){
  if(!state.user||!isCoord())return empty('Acesso exclusivo da coordenação');
  const boards=filteredNotesBoards(),records=boards.map(([bid])=>coordinatorBoardRecord(bid)),f=state.notesFilters;
- const courses=[...new Set(Object.values(state.groups).map(courseLabel))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
- const classes=[...new Set(Object.values(state.groups).filter(g=>f.course==='todas'||courseLabel(g)===f.course).map(g=>g.className).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ const courses=[...new Set(Object.values(state.groups).filter(group=>groupMatchesAcademicYear(group)).map(courseLabel))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
+ const classes=[...new Set(Object.values(state.groups).filter(g=>groupMatchesAcademicYear(g)&&(f.course==='todas'||courseLabel(g)===f.course)).map(g=>g.className).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  return `${heading('Notas e monografia','Notas de todos os professores e lançamento da monografia por aluno.')}
  ${coordinatorReportPanel()}
  <div class="notes-toolbar"><div class="field"><label for="notes-course-filter">Curso</label><select id="notes-course-filter">${opts([['todas','Todos os cursos'],...courses.map(c=>[c,c])],f.course)}</select></div><div class="field"><label for="notes-class-filter">Turma</label><select id="notes-class-filter">${opts([['todas','Todas as turmas'],...classes.map(c=>[c,c])],f.className)}</select></div><div class="field"><label for="notes-date-filter">Data da banca</label><input id="notes-date-filter" type="date" lang="pt-BR" value="${esc(f.date)}"></div><div class="field"><label for="notes-status-filter">Situação</label><select id="notes-status-filter">${opts([['todas','Todas as bancas'],['abertas','Em avaliação'],['encerradas','Encerradas'],['pendentes','Com notas pendentes']],f.status)}</select></div></div>
@@ -1866,7 +2014,7 @@ function myGradingAction(bid){
 function myEvaluationsView(){return gradeView({ownOnly:true});}
 function gradeView({ownOnly=false}={}){
  if(!state.user||!isActiveTeacher(state.profile))return empty('Acesso restrito aos avaliadores');
- const choices=ownOnly?evaluatorBoards():activeBoards();
+ const choices=(ownOnly?evaluatorBoards():activeBoards()).filter(([,board])=>boardMatchesAcademicYear(board));
  let id=state.selectedBoard;
  if(!choices.some(([bid])=>bid===id)){
   const first=choices.find(([bid,board])=>!state.seals[bid]&&studentsOf(groupOf(board)).some(([sid])=>mediaAvaliador(state.grades[bid]?.[state.user.uid]?.[sid])===null))||choices.find(([bid])=>!state.seals[bid])||choices[0];
@@ -1890,7 +2038,7 @@ function monographForm(bid,sid,name){
 }
 function deliveriesView(){
  if(!state.user||!isCoord())return empty('Acesso exclusivo da coordenação');
- const boards=activeBoards().sort((a,b)=>a[1].startAt-b[1].startAt);
+ const boards=activeBoards().filter(([,board])=>boardMatchesAcademicYear(board)).sort((a,b)=>a[1].startAt-b[1].startAt);
  return `${heading('Monografia e entregas · 40%','Lançamento individual pela coordenação.', '<button class="btn soft" data-route="notas">Consultar todas as notas</button>')}<div class="notice">Informe a nota completa da monografia e das entregas, de 0 a 10. O sistema calcula os 40% da nota final. Os lançamentos anteriores estão preservados.</div>${boards.length?boards.map(([bid,b])=>{const g=groupOf(b);if(!g)return '';return `<section class="card">${heading(g.name,g.title,boardStatus(bid,b))}<p class="muted tiny">Orientador: ${esc(b.advisorName)}</p><div class="board-actions">${boardActions(bid)}</div>${studentsOf(g).map(([sid,name])=>`<article class="student"><h4>${esc(name)}</h4>${monographForm(bid,sid,name)}</article>`).join('')}</section>`;}).join(''):empty('Nenhuma banca criada')}`;
 }
 function captureReportPanels(){
@@ -1903,11 +2051,11 @@ function reportsView(){if(!state.user||!isCoord())return empty('Acesso exclusivo
  const finished=filtered.filter(([id,b])=>state.seals[id]&&groupOf(b)&&situacao(b,groupOf(b),boardGrades(id),state.deliveries[id]).pronta);const targetGroups=reportGroups();const allReady=targetGroups.length>0&&targetGroups.every(g=>state.groupBoards[g.id]&&finished.some(([id])=>id===state.groupBoards[g.id]))&&filtered.length===targetGroups.length;
  const summary=typeof BancaCoordinatorReport==='undefined'?{studentCount:0,pendingCount:0}:BancaCoordinatorReport.summary(coordinatorReportBoards()),exportDisabled=!summary.studentCount||state.coordinatorExportBusy;
  return `<section id="report-center" class="report-center" aria-labelledby="report-center-title"><div class="report-center-heading"><div><p class="eyebrow">COORDENAÇÃO</p><h2 id="report-center-title">Relatórios e médias</h2><p>Escolha o arquivo ou ajuste a média antes de baixar.</p></div><button type="button" class="btn soft" data-route="notas">Consultar notas</button></div>
- <div class="report-quick-grid"><section class="report-quick-card" aria-labelledby="report-complete-title"><span class="report-card-tag">ARQUIVO COMPLETO</span><h3 id="report-complete-title">Todos os alunos</h3><p>Notas individuais, médias, monografia e gráficos em um PDF.</p><div class="report-quick-count"><strong>${summary.studentCount}</strong> aluno(s)<span>${summary.pendingCount} com pendências</span></div><button type="button" class="btn primary" data-coordinator-export="pdf" ${exportDisabled?'disabled':''}>${state.coordinatorExportBusy?'Preparando arquivo…':'Baixar PDF completo'} ${icon('pdf')}</button><div class="report-secondary-actions"><button type="button" class="btn soft" data-coordinator-export="csv" ${exportDisabled?'disabled':''}>Planilha CSV</button><button type="button" class="btn soft" data-coordinator-export="charts" ${exportDisabled?'disabled':''}>PDF dos gráficos</button></div><small>Todos os cursos e turmas, incluindo bancas abertas, encerradas, arquivadas e alunos sem banca. Notas ausentes aparecem como pendentes. Os filtros da seção oficial não limitam estes arquivos.</small></section>
+ <div class="report-quick-grid"><section class="report-quick-card" aria-labelledby="report-complete-title"><span class="report-card-tag">ARQUIVO COMPLETO</span><h3 id="report-complete-title">Todos os alunos</h3><p>Notas individuais, médias, monografia e gráficos em um PDF.</p><div class="report-quick-count"><strong>${summary.studentCount}</strong> aluno(s)<span>${summary.pendingCount} com pendências</span></div><button type="button" class="btn primary" data-coordinator-export="pdf" ${exportDisabled?'disabled':''}>${state.coordinatorExportBusy?'Preparando arquivo…':'Baixar PDF completo'} ${icon('pdf')}</button><div class="report-secondary-actions"><button type="button" class="btn soft" data-coordinator-export="csv" ${exportDisabled?'disabled':''}>Planilha CSV</button><button type="button" class="btn soft" data-coordinator-export="charts" ${exportDisabled?'disabled':''}>PDF dos gráficos</button></div><small>Todos os cursos e turmas, incluindo bancas abertas, encerradas, arquivadas e alunos sem banca. Notas ausentes aparecem como pendentes. Ano letivo: ${esc(academicYearLabel())}. Os filtros da seção oficial não limitam estes arquivos.</small></section>
  <section class="report-quick-card report-custom-card" aria-labelledby="report-custom-title"><span class="report-card-tag">MÉDIA PERSONALIZADA</span><h3 id="report-custom-title">Escolher alunos e pesos</h3><p>Selecione uma turma, confira a média e baixe o relatório da sua seleção.</p><div class="report-custom-steps"><span>1 · Alunos</span><span>2 · Média</span><span>3 · Baixar</span></div><button type="button" class="btn primary" data-route="personalizados">Preparar relatório ${icon('seta')}</button><small>Os pesos dos critérios e dos avaliadores, modelos salvos e opções do PDF ficam em Ajustar média e modelos. As notas oficiais são preservadas.</small></section></div>
  <details id="report-official-options" class="report-official-options" data-report-panel="reportOfficialOpen" ${state.reportOfficialOpen?'open':''}><summary><span><strong>Relatórios oficiais por banca</strong><small>Banca 60% + monografia 40% · Bancas encerradas com notas completas</small></span><span class="report-disclosure-label">Ver opções</span></summary><div class="report-official-body">
  ${heading('Emissão oficial','Use os filtros para escolher as bancas dos arquivos abaixo.',`<div class="row"><button class="btn soft" data-route="notas">Consultar todas as notas</button><button class="btn dark" data-export-csv="1" ${!finished.length?'disabled':''}>Exportar CSV (concluídas)</button></div>`)}
- <div class="toolbar banca-filter-toolbar"><select id="report-course-filter" class="filter" aria-label="Filtrar relatórios por curso">${opts([['todas','Todos os cursos'],...[...new Set(Object.values(state.groups).map(courseLabel))].sort().map(c=>[c,c])],state.reportCourseFilter)}</select><select id="report-filter" class="filter" aria-label="Filtrar relatórios por turma">${opts([['todas','Todas as turmas'],...new Set(Object.values(state.groups).map(g=>g.className))].map(x=>Array.isArray(x)?x:[x,`Turma ${x}`]),state.reportFilter)}</select>${bancaDateFilterHtml(true)}<button class="btn primary" data-print-all="1" ${!allReady?'disabled':''}>Baixar PDF consolidado</button></div>
+ <div class="toolbar banca-filter-toolbar"><select id="report-course-filter" class="filter" aria-label="Filtrar relatórios por curso">${opts([['todas','Todos os cursos'],...[...new Set(Object.values(state.groups).filter(group=>groupMatchesAcademicYear(group)).map(courseLabel))].sort().map(c=>[c,c])],state.reportCourseFilter)}</select><select id="report-filter" class="filter" aria-label="Filtrar relatórios por turma">${opts([['todas','Todas as turmas'],...new Set(Object.values(state.groups).filter(group=>groupMatchesAcademicYear(group)).map(g=>g.className))].map(x=>Array.isArray(x)?x:[x,`Turma ${x}`]),state.reportFilter)}</select>${bancaDateFilterHtml(true)}<button class="btn primary" data-print-all="1" ${!allReady?'disabled':''}>Baixar PDF consolidado</button></div>
  ${!allReady?'<div class="notice">O relatório consolidado só será habilitado quando todas as bancas do filtro estiverem encerradas e com todas as notas, incluindo as entregas. É possível emitir individualmente o relatório de uma banca encerrada e com notas completas.</div>':'<div class="notice good">Todas as bancas do filtro estão encerradas e com notas completas.</div>'}
  <label class="analytics-toggle"><input id="report-charts" type="checkbox" ${state.reportCharts?'checked':''}><span><b>Incluir gráficos nos relatórios PDF</b><small>Relatórios individuais, consolidado e PDFs oficiais preparados para compartilhar.</small></span></label>
  <details id="report-analytics-options" class="report-analytics-options" data-report-panel="reportAnalyticsOpen" ${state.reportAnalyticsOpen?'open':''}><summary>Gráficos dos resultados oficiais</summary><div class="report-analytics-body">${analyticsView()}</div></details>
@@ -2248,7 +2396,7 @@ async function saveTeacherEdit(form){
  }
 }
 
-function groupAdminNewDraft(){return {name:'',className:'',courseName:'',title:'',advisorUid:'',students:[{sid:'s1',name:''},{sid:'s2',name:''},{sid:'s3',name:''}]};}
+function groupAdminNewDraft(){return {name:'',academicYear:BancaAcademicYears.newGroupYear(state.academicYear),className:'',courseName:'',title:'',advisorUid:'',students:[{sid:'s1',name:''},{sid:'s2',name:''},{sid:'s3',name:''}]};}
 function ensureGroupAdmin(){
  if(!state.groupFormDraft)state.groupFormDraft=groupAdminNewDraft();
  if(!Number.isInteger(state.groupFormVersion))state.groupFormVersion=0;
@@ -2264,6 +2412,20 @@ function groupAdminFingerprint(group){
  const normalize=value=>Array.isArray(value)?value.map(normalize):value&&typeof value==='object'?Object.fromEntries(Object.keys(value).sort().map(key=>[key,normalize(value[key])])):value;
  return JSON.stringify(normalize(group));
 }
+const ACADEMIC_YEAR_RULES_NOTICE='Os dados foram salvos. Para usar a organização por ano, publique as regras atualizadas.';
+function academicYearRulesRequired(error){return new Error('A gravação foi recusada. Publique as regras atualizadas do banco para registrar este ano letivo e confira se a conta continua autorizada.',{cause:error});}
+function groupYearIdentity(group,boards=state.boards){return [groupAcademicYear(group,boards),group.courseName||'',group.className,group.name].map(value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()).join('|');}
+function assertGroupWriteContext(context,fields,editId,baseline,id=''){
+ if(!isActiveTeacher(context.users[fields.advisorUid]))throw Error('O acesso do orientador foi alterado. Atualize o cadastro antes de salvar.');
+ if(Object.entries(context.groups).some(([key,group])=>key!==editId&&groupYearIdentity({...group,id:group.id||key},context.boards)===groupYearIdentity(fields,context.boards)))throw Error('Já existe um grupo com este nome, curso, turma e ano letivo. Confira a lista, incluindo os removidos, antes de cadastrar.');
+ const previous=editId?context.groups[editId]:null;
+ if(editId){
+  if(!previous||previous.active===false)throw Error('Este grupo foi removido ou não está mais disponível.');
+  if(groupRelatedBoards(editId,context.boards,context.groupBoards).length)throw Error('O grupo recebeu uma banca e não pode mais ser editado. As avaliações e os relatórios foram preservados.');
+  if(groupAdminFingerprint(previous)!==baseline)throw Error('O grupo foi atualizado em outra sessão. Cancele a edição e abra os dados atuais antes de salvar.');
+ }else if(id&&context.groups[id])throw Error('O identificador do grupo já foi utilizado. Confira a lista antes de tentar novamente.');
+ return previous;
+}
 function groupRelatedBoards(id,boards=state.boards,groupBoards=state.groupBoards){
  const ids=Object.entries(boards||{}).filter(([,board])=>board.groupId===id).map(([bid])=>bid);
  if(groupBoards?.[id]&&!ids.includes(groupBoards[id]))ids.push(groupBoards[id]);
@@ -2275,7 +2437,7 @@ function captureGroupAdminDrafts(){
 }
 function readGroupForm(form){
  const value=name=>String(form.elements.namedItem(name)?.value||'');
- return {name:value('name'),className:value('className'),courseName:value('courseName'),title:value('title'),advisorUid:value('advisorUid'),students:[...form.querySelectorAll('[data-group-student]')].map(row=>({sid:row.dataset.groupStudent,name:row.querySelector('input').value}))};
+ return {name:value('name'),academicYear:value('academicYear')||state.groupFormDraft?.academicYear||(state.groupEditId?groupAcademicYear(state.groups[state.groupEditId]):BancaAcademicYears.newGroupYear(state.academicYear)),className:value('className'),courseName:value('courseName'),title:value('title'),advisorUid:value('advisorUid'),students:[...form.querySelectorAll('[data-group-student]')].map(row=>({sid:row.dataset.groupStudent,name:row.querySelector('input').value}))};
 }
 function groupStudentFields(students,disabled=false){
  return students.map((student,index)=>`<div class="group-student-row" data-group-student="${esc(student.sid)}"><span class="group-student-number" aria-hidden="true">${String(index+1).padStart(2,'0')}</span><div class="field"><label for="group-student-${esc(student.sid)}">Aluno ${index+1}</label><input id="group-student-${esc(student.sid)}" name="student-${esc(student.sid)}" maxlength="180" value="${esc(student.name)}" placeholder="Nome completo do aluno" required ${disabled?'disabled':''}></div><button class="btn soft" type="button" data-remove-group-student="${esc(student.sid)}" aria-label="Remover aluno ${index+1} do formulário" ${disabled||students.length===1?'disabled':''}>Remover</button></div>`).join('');
@@ -2283,7 +2445,7 @@ function groupStudentFields(students,disabled=false){
 function groupsView(){
  if(!canManageGroups())return empty('Acesso exclusivo da coordenação','O cadastro de grupos e a importação de planilhas são administrados pela coordenação.');
  ensureGroupAdmin();const draft=state.groupFormDraft,busy=!!state.groupBusy,editId=state.groupEditId||'';
- const all=Object.entries(state.groups),active=all.filter(([,group])=>group.active!==false),archived=all.filter(([,group])=>group.active===false);
+ const all=Object.entries(state.groups).filter(([,group])=>groupMatchesAcademicYear(group)),active=all.filter(([,group])=>group.active!==false),archived=all.filter(([,group])=>group.active===false);
  const courses=[...new Set(all.map(([,group])=>group.courseName||'').filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  const classes=[...new Set(all.filter(([,group])=>!state.groupFilterCourse||group.courseName===state.groupFilterCourse).map(([,group])=>group.className).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
  const search=String(state.groupSearch||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLocaleLowerCase('pt-BR').trim();
@@ -2292,14 +2454,15 @@ function groupsView(){
  const currentAdvisor=draft.advisorUid&&!teachers.some(([uid])=>uid===draft.advisorUid)?[[draft.advisorUid,`${who(draft.advisorUid)} (acesso removido)`]]:[];
  const card=([id,group])=>{
   const boardIds=groupRelatedBoards(id),open=boardIds.filter(bid=>!state.seals[bid]),inactive=group.active===false;
-  return `<article class="group-admin-card ${inactive?'is-archived':''}"><div class="group-admin-card-top"><div class="row">${badge(group.className,'blue')}${group.courseName?badge(group.courseName):''}${inactive?badge('Removido','orange'):badge(boardIds.length?'Banca agendada':'Disponível',boardIds.length?'blue':'green')}</div><h4>${esc(group.name)}</h4><p class="group-admin-title">${esc(group.title)}</p></div><div class="group-admin-meta"><span><b>Orientador</b>${esc(who(group.advisorUid))}</span><span><b>Alunos</b>${studentsOf(group).length} integrante(s)</span></div><details class="group-student-details"><summary>Ver integrantes</summary><ul>${studentsOf(group).map(([,name])=>`<li>${esc(name)}</li>`).join('')}</ul></details>${boardIds.length?`<p class="tiny muted group-history-note">${open.length?'Banca em aberto. Conclua a avaliação antes de remover o grupo.':'O histórico da banca e os relatórios serão preservados.'}</p>`:''}<div class="group-admin-actions">${inactive?`<button class="btn soft" type="button" data-restore-group="${esc(id)}" ${busy?'disabled':''}>Restaurar grupo</button>`:`<button class="btn soft" type="button" data-edit-group="${esc(id)}" ${busy||boardIds.length?'disabled':''}>Editar grupo</button><button class="btn danger" type="button" data-remove-group="${esc(id)}" ${busy||open.length?'disabled':''}>Remover grupo</button>`}</div>${boardIds.length&&!inactive?'<small class="muted">Dados do grupo protegidos após o agendamento.</small>':''}</article>`;
+  return `<article class="group-admin-card ${inactive?'is-archived':''}"><div class="group-admin-card-top"><div class="row">${badge(groupAcademicYear(group),'gray')}${badge(group.className,'blue')}${group.courseName?badge(group.courseName):''}${inactive?badge('Removido','orange'):badge(boardIds.length?'Banca agendada':'Disponível',boardIds.length?'blue':'green')}</div><h4>${esc(group.name)}</h4><p class="group-admin-title">${esc(group.title)}</p></div><div class="group-admin-meta"><span><b>Orientador</b>${esc(who(group.advisorUid))}</span><span><b>Alunos</b>${studentsOf(group).length} integrante(s)</span></div><details class="group-student-details"><summary>Ver integrantes</summary><ul>${studentsOf(group).map(([,name])=>`<li>${esc(name)}</li>`).join('')}</ul></details>${boardIds.length?`<p class="tiny muted group-history-note">${open.length?'Banca em aberto. Conclua a avaliação antes de remover o grupo.':'O histórico da banca e os relatórios serão preservados.'}</p>`:''}<div class="group-admin-actions">${inactive?`<button class="btn soft" type="button" data-restore-group="${esc(id)}" ${busy?'disabled':''}>Restaurar grupo</button>`:`<button class="btn soft" type="button" data-edit-group="${esc(id)}" ${busy||boardIds.length?'disabled':''}>Editar grupo</button><button class="btn danger" type="button" data-remove-group="${esc(id)}" ${busy||open.length?'disabled':''}>Remover grupo</button>`}</div>${boardIds.length&&!inactive?'<small class="muted">Dados do grupo protegidos após o agendamento.</small>':''}</article>`;
  };
  return `${heading('Grupos e cursos','Cadastro de grupos, alunos, cursos e orientadores.')}<div class="grid three">${stats('Grupos ativos',active.length,'01')}${stats('Alunos em grupos ativos',active.reduce((total,[,group])=>total+studentsOf(group).length,0),'04')}${stats('Grupos removidos',archived.length,'06')}</div>${typeof renderExcelImportCard==='function'?renderExcelImportCard():''}
  <section class="card group-editor-card" id="group-editor">${heading(editId?'Editar grupo':'Adicionar grupo',editId?'A edição é permitida antes de agendar uma banca.':'Cadastre o grupo e selecione o orientador responsável.')}
  <form id="group-form" class="form-grid" data-group-version="${state.groupFormVersion}">
  <div class="field"><label for="group-name">Nome do grupo</label><input id="group-name" name="name" maxlength="100" value="${esc(draft.name)}" placeholder="Ex.: Grupo 01 — DermaPrev" required ${busy?'disabled':''}></div>
  <div class="field"><label for="group-course">Curso</label><input id="group-course" name="courseName" maxlength="120" list="group-course-options" value="${esc(draft.courseName)}" placeholder="Ex.: Técnico em Informática" ${busy?'disabled':''}><datalist id="group-course-options">${courses.map(course=>`<option value="${esc(course)}"></option>`).join('')}</datalist></div>
- <div class="field"><label for="group-class">Turma</label><input id="group-class" name="className" maxlength="80" value="${esc(draft.className)}" placeholder="Ex.: 3IA — 2026" required ${busy?'disabled':''}></div>
+ <div class="field"><label for="group-year">Ano letivo do grupo</label><input id="group-year" name="academicYear" type="number" inputmode="numeric" min="2000" max="9999" step="1" value="${esc(draft.academicYear||BancaAcademicYears.newGroupYear(state.academicYear))}" aria-describedby="group-year-help" required ${busy?'disabled':''}><small id="group-year-help">Identifica o histórico do grupo, mesmo quando a apresentação ocorre em outro ano.</small></div>
+ <div class="field"><label for="group-class">Turma</label><input id="group-class" name="className" maxlength="80" value="${esc(draft.className)}" placeholder="Ex.: 3IA" required ${busy?'disabled':''}></div>
  <div class="field"><label for="group-advisor">Professor orientador</label><select id="group-advisor" name="advisorUid" required ${busy?'disabled':''}>${opts([['','Selecione um professor'],...teachers.map(([uid,teacher])=>[uid,teacher.name]),...currentAdvisor],draft.advisorUid)}</select></div>
  <div class="field wide"><label for="group-title">Título do trabalho</label><textarea id="group-title" name="title" maxlength="500" rows="2" placeholder="Título completo do projeto" required ${busy?'disabled':''}>${esc(draft.title)}</textarea></div>
  <fieldset class="wide group-students-fieldset" ${busy?'disabled':''}><legend>Integrantes do grupo</legend><p class="muted tiny">Cadastre de 1 a 20 alunos. As notas continuarão individuais.</p><div id="group-student-fields">${groupStudentFields(draft.students,busy)}</div><button class="btn soft" type="button" data-add-group-student="1" ${busy||draft.students.length>=20?'disabled':''}>+ Adicionar aluno</button></fieldset>
@@ -2311,7 +2474,7 @@ function editGroup(id){
  const group=state.groups[id];if(!group||group.active===false)throw Error('O grupo não está disponível para edição.');
  if(groupRelatedBoards(id).length)throw Error('Este grupo já possui uma banca. Seus dados estão protegidos para preservar as avaliações e os relatórios.');
  state.groupEditId=id;state.groupEditBaseline=groupAdminFingerprint(group);state.groupFormVersion=(state.groupFormVersion||0)+1;
- state.groupFormDraft={name:group.name,className:group.className,courseName:group.courseName||'',title:group.title,advisorUid:group.advisorUid,students:studentsOf(group).map(([sid,name])=>({sid,name}))};render();
+ state.groupFormDraft={name:group.name,academicYear:groupAcademicYear(group),className:group.className,courseName:group.courseName||'',title:group.title,advisorUid:group.advisorUid,students:studentsOf(group).map(([sid,name])=>({sid,name}))};render();
  $('#group-editor')?.scrollIntoView({behavior:'smooth',block:'start'});$('#group-name')?.focus({preventScroll:true});
 }
 function cancelGroupEdit(){
@@ -2340,6 +2503,8 @@ function groupFiltersChanged(event){
 }
 function validatedGroupDraft(draft,users=state.users){
  const name=String(draft.name||'').trim(),className=String(draft.className||'').trim(),courseName=String(draft.courseName||'').trim(),title=String(draft.title||'').trim(),advisorUid=String(draft.advisorUid||'').trim();
+ const academicYear=draft.academicYear===undefined||draft.academicYear===''?BancaAcademicYears.newGroupYear(state.academicYear):BancaAcademicYears.parseYear(draft.academicYear);
+ if(academicYear===null)throw Error('Informe um ano letivo inteiro entre 2000 e 9999.');
  if(!name||name.length>100)throw Error('Informe um nome de grupo de até 100 caracteres.');
  if(!className||className.length>80)throw Error('Informe uma turma de até 80 caracteres.');
  if(courseName.length>120)throw Error('O nome do curso deve ter até 120 caracteres.');
@@ -2354,7 +2519,7 @@ function validatedGroupDraft(draft,users=state.users){
   if(names.has(normalizedName))throw Error('Há alunos com o mesmo nome no grupo. Confira os integrantes antes de salvar.');
   names.add(normalizedName);students[sid]=studentName;
  }
- return {name,className,courseName,title,advisorUid,students};
+ return {name,academicYear,className,courseName,title,advisorUid,students};
 }
 async function readGroupAdminContext(uid,revision){
  const paths=['groups','boards','groupBoards','seals','users'];
@@ -2372,33 +2537,36 @@ async function saveGroup(form){
  form.querySelectorAll('button,input,textarea,select').forEach(input=>input.disabled=true);
  try{
   const context=await readGroupAdminContext(uid,revision),fields=validatedGroupDraft(draft,context.users);let id=editId,previous;
-  const identity=group=>[group.courseName||'',group.className,group.name].map(value=>String(value).normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim()).join('|');
-  if(Object.entries(context.groups).some(([key,group])=>key!==editId&&identity(group)===identity(fields)))throw Error('Já existe um grupo com este nome, curso e turma. Confira a lista, incluindo os removidos, antes de cadastrar.');
-  if(editId){
-   previous=context.groups[editId];if(!previous||previous.active===false)throw Error('Este grupo foi removido ou não está mais disponível.');
-   if(groupRelatedBoards(editId,context.boards,context.groupBoards).length)throw Error('O grupo recebeu uma banca e não pode mais ser editado. As avaliações e os relatórios foram preservados.');
-   if(groupAdminFingerprint(previous)!==baseline)throw Error('O grupo foi atualizado em outra sessão. Cancele a edição e abra os dados atuais antes de salvar.');
-  }else{id=push(ref(db,'groups')).key;if(!id)throw Error('Não foi possível criar o identificador do grupo. Tente novamente.');}
+  previous=assertGroupWriteContext(context,fields,editId,baseline);
+  if(!editId){id=push(ref(db,'groups')).key;if(!id)throw Error('Não foi possível criar o identificador do grupo. Tente novamente.');}
   assertCurrentSession(uid,revision);if(!canManageGroups()||!state.connected)throw Error('A sessão ou conexão mudou. Entre novamente antes de salvar.');
-  const timestamp=serverTimestamp(),changes={...fields,updatedBy:uid,updatedAt:timestamp};let savedGroup;
+  const timestamp=serverTimestamp(),changes={...fields,updatedBy:uid,updatedAt:timestamp};let savedGroup,usedLegacyYear=false;
   if(!fields.courseName)changes.courseName=null;
-  if(editId){
-   const next={...previous,...changes};for(const key of Object.keys(next))if(next[key]===null)delete next[key];
+  const candidate=editId?{...previous,...changes}:{id,...changes,courseName:fields.courseName||null,active:true,createdBy:uid,createdAt:timestamp};
+  if(editId)for(const key of Object.keys(candidate))if(candidate[key]===null)delete candidate[key];
+  const commit=async next=>{
+   if(!editId){await set(ref(db,`groups/${id}`),next);return;}
    const result=await runTransaction(ref(db,`groups/${id}`),current=>{
     assertCurrentSession(uid,revision);if(!canManageGroups()||!state.connected)throw Error('A sessão ou conexão mudou.');
     return current&&groupAdminFingerprint(current)===baseline?next:undefined;
    },{applyLocally:false});
    if(!result.committed)throw Error('O grupo foi alterado em outra sessão. Cancele a edição e abra os dados atuais.');
-   savedGroup=result.snapshot.val();
-  }else{
-   await set(ref(db,`groups/${id}`),{id,...changes,courseName:fields.courseName||null,active:true,createdBy:uid,createdAt:timestamp});
-   assertCurrentSession(uid,revision);savedGroup=(await get(ref(db,`groups/${id}`))).val();
+   return result.snapshot.val();
+  };
+  try{savedGroup=await commit(candidate);}
+  catch(error){
+   if(!isPermissionDenied(error))throw error;
+   const latest=await readGroupAdminContext(uid,revision),latestPrevious=assertGroupWriteContext(latest,fields,editId,baseline,id);
+   const legacy=BancaAcademicYears.legacyGroupWrite(candidate,{previous:latestPrevious,boards:latest.boards,serverTime:Date.now()+state.serverOffset});
+   if(!legacy)throw academicYearRulesRequired(error);
+   savedGroup=await commit(legacy);usedLegacyYear=true;
   }
+  if(!editId){assertCurrentSession(uid,revision);savedGroup=(await get(ref(db,`groups/${id}`))).val();}
   assertCurrentSession(uid,revision);
   if(!savedGroup)throw Error('O grupo foi enviado, mas não foi possível confirmar os dados. Atualize a lista antes de tentar novamente.');
   state.groups[id]=savedGroup;
   if(version===state.groupFormVersion){state.groupEditId='';state.groupEditBaseline='';state.groupFormDraft=groupAdminNewDraft();state.groupFormVersion++;}
-  notice(editId?'Grupo atualizado. Os identificadores dos alunos foram mantidos.':'Grupo adicionado e disponível para agendamento.');
+  notice(usedLegacyYear?ACADEMIC_YEAR_RULES_NOTICE:editId?'Grupo atualizado. Os identificadores dos alunos foram mantidos.':'Grupo adicionado e disponível para agendamento.');
  }finally{if(state.user?.uid===uid&&accessRevision===revision){state.groupBusy=false;render();}}
 }
 async function changeGroupAccess(id,active){
@@ -2450,11 +2618,17 @@ function assertExcelImportSession(session){
 }
 async function readExcelCatalog(session){
  assertExcelImportSession(session);
- const [groups,users]=await Promise.all([get(ref(db,'groups')),get(ref(db,'users'))]);
+ const [groups,users,boards]=await Promise.all([get(ref(db,'groups')),get(ref(db,'users')),get(ref(db,'boards'))]);
  assertExcelImportSession(session);
  const allUsers=users.val()||{},profile=allUsers[session.uid];
  if(!profile||profile.active===false||profile.role!=='coordinator')throw Error('Sua permissão de importação mudou. Entre novamente.');
- return {existingGroups:groups.val()||{},users:allUsers};
+ return {existingGroups:groups.val()||{},users:allUsers,boards:boards.val()||{}};
+}
+function parseAcademicExcelRows(rows,catalog,defaultCourse='',academicYear=BancaAcademicYears.newGroupYear(state.academicYear)){
+ const year=BancaAcademicYears.parseYear(academicYear);if(year===null)throw Error('Informe um ano letivo inteiro entre 2000 e 9999 para a importação.');
+ const existingGroups=Object.fromEntries(Object.entries(catalog.existingGroups||{}).filter(([id,group])=>groupAcademicYear({...group,id:group.id||id},catalog.boards||state.boards)===year));
+ const preview=BancaFlowImport.parseRows(rows,{...catalog,existingGroups,defaultCourse});
+ return {...preview,groups:preview.groups.map(group=>({...group,academicYear:year}))};
 }
 function excelPreviewFingerprint(preview){
  return JSON.stringify({groups:preview.groups,skipped:preview.skipped,errors:preview.errors});
@@ -2466,7 +2640,7 @@ function paintExcelImportPreview(session){
  const preview=session.preview;
  if(!preview){target.innerHTML='<div class="empty"><strong>Selecione o arquivo e a aba</strong><div>Nenhum grupo será cadastrado antes da sua confirmação.</div></div>';commit.disabled=true;return;}
  const errors=preview.errors.slice(0,30);
- const describe=group=>`<article class="excel-preview-group"><div class="row space"><h4>${esc(group.name)}</h4>${badge(group.courseName,'blue')}</div><p>${esc(group.className)} · ${esc(group.title)}</p><p><b>Orientador:</b> ${esc(session.catalog.users[group.advisorUid]?.name||group.advisorUid)}</p><p class="tiny">${Object.values(group.students).map(esc).join(' · ')}</p></article>`;
+ const describe=group=>`<article class="excel-preview-group"><div class="row space"><h4>${esc(group.name)}</h4>${badge(group.courseName,'blue')}${badge(group.academicYear,'gray')}</div><p>${esc(group.className)} · ${esc(group.title)}</p><p><b>Orientador:</b> ${esc(session.catalog.users[group.advisorUid]?.name||group.advisorUid)}</p><p class="tiny">${Object.values(group.students).map(esc).join(' · ')}</p></article>`;
  target.innerHTML=`<div class="grid three excel-import-stats">${stats('Grupos novos',preview.groups.length,'01')}${stats('Alunos novos',preview.studentCount,'02')}${stats('Já cadastrados',preview.skipped.length,'03')}</div>${errors.length?`<div class="notice error" role="alert"><b>Corrija a planilha antes de importar.</b><ul>${errors.map(error=>`<li>${esc(error)}</li>`).join('')}</ul>${preview.errors.length>errors.length?`<p>Há mais ${preview.errors.length-errors.length} erro(s). Corrija estes e carregue novamente.</p>`:''}</div>`:''}${preview.warnings.map(message=>`<p class="notice">${esc(message)}</p>`).join('')}<div class="excel-preview-list">${preview.groups.slice(0,50).map(describe).join('')||(!errors.length?'<p class="notice">Nenhum grupo novo para cadastrar.</p>':'')}${preview.groups.length>50?`<p class="muted tiny">Exibindo os primeiros 50 de ${preview.groups.length} grupos. Todos os grupos válidos serão cadastrados na confirmação.</p>`:''}</div>${preview.skipped.length?`<details><summary>Ver grupos preservados (${preview.skipped.length})</summary>${preview.skipped.slice(0,50).map(group=>`<p class="tiny"><b>${esc(group.name)}</b> · ${esc(group.courseName)} · ${esc(group.className)} — ${esc(group.reason)}</p>`).join('')}</details>`:''}`;
  commit.textContent=`Confirmar ${preview.groups.length} grupo(s)`;
  commit.disabled=session.busy||!!preview.errors.length||!preview.groups.length;
@@ -2489,8 +2663,9 @@ async function prepareExcelImport(session){
   const rows=BancaFlowImport.readSheet(session.workbook,sheetName,globalThis.XLSX);
   const catalog=await readExcelCatalog(session);
   assertExcelImportSession(session);
-  session.rows=rows;session.defaultCourse=defaultCourse;session.sheetName=sheetName;session.catalog=catalog;
-  session.preview=BancaFlowImport.parseRows(rows,{...catalog,defaultCourse});
+  const academicYear=BancaAcademicYears.parseYear(document.getElementById('excel-import-year').value);if(academicYear===null)throw Error('Informe um ano letivo inteiro entre 2000 e 9999 para a importação.');
+  session.rows=rows;session.defaultCourse=defaultCourse;session.academicYear=academicYear;session.sheetName=sheetName;session.catalog=catalog;
+  session.preview=parseAcademicExcelRows(rows,catalog,defaultCourse,academicYear);
   session.fingerprint=excelPreviewFingerprint(session.preview);
  }finally{setExcelImportBusy(session,false);}
 }
@@ -2498,12 +2673,12 @@ async function confirmExcelImport(session){
  assertExcelImportSession(session);
  if(session.busy)return;
  if(!session.preview||session.preview.errors.length||!session.preview.groups.length)throw Error('Selecione uma planilha válida e confira a prévia antes de confirmar.');
- if(!confirm(`Cadastrar ${session.preview.groups.length} grupo(s) e ${session.preview.studentCount} aluno(s)? Os grupos existentes e as avaliações serão preservados.`))return;
+ if(!confirm(`Cadastrar ${session.preview.groups.length} grupo(s) e ${session.preview.studentCount} aluno(s) no ano letivo ${session.academicYear}? Os grupos existentes e as avaliações serão preservados.`))return;
  setExcelImportBusy(session,true,'Validando novamente e cadastrando…');
  try{
   const catalog=await readExcelCatalog(session);
   assertExcelImportSession(session);
-  const checked=BancaFlowImport.parseRows(session.rows,{...catalog,defaultCourse:session.defaultCourse});
+  const checked=parseAcademicExcelRows(session.rows,catalog,session.defaultCourse,session.academicYear);
   if(checked.errors.length||excelPreviewFingerprint(checked)!==session.fingerprint){
    session.catalog=catalog;session.preview=checked;session.fingerprint=excelPreviewFingerprint(checked);
    throw Error('O cadastro de grupos ou professores mudou. Confira a prévia atualizada e confirme novamente.');
@@ -2514,12 +2689,25 @@ async function confirmExcelImport(session){
    if(!id||catalog.existingGroups[id])throw Error('Não foi possível gerar um identificador para o grupo. Tente novamente.');
    changes[`groups/${id}`]={...data,id,createdBy:session.uid,createdAt:serverTimestamp()};
   }
-  assertExcelImportSession(session);
-  await update(ref(db),changes);
+  assertExcelImportSession(session);let usedLegacyYear=false;
+  try{await update(ref(db),changes);}
+  catch(error){
+   if(!isPermissionDenied(error))throw error;
+   const latest=await readExcelCatalog(session);assertExcelImportSession(session);
+   const refreshed=parseAcademicExcelRows(session.rows,latest,session.defaultCourse,session.academicYear);
+   if(refreshed.errors.length||excelPreviewFingerprint(refreshed)!==session.fingerprint){session.catalog=latest;session.preview=refreshed;session.fingerprint=excelPreviewFingerprint(refreshed);throw Error('O cadastro de grupos ou professores mudou. Confira a prévia atualizada e confirme novamente.');}
+   const legacyChanges={};
+   for(const [path,candidate]of Object.entries(changes)){
+    const id=path.slice('groups/'.length);if(latest.existingGroups[id])throw Error('O identificador de um grupo já foi utilizado. Confira a lista antes de tentar novamente.');
+    const legacy=BancaAcademicYears.legacyGroupWrite(candidate,{boards:latest.boards,serverTime:Date.now()+state.serverOffset});
+    if(!legacy)throw academicYearRulesRequired(error);legacyChanges[path]=legacy;
+   }
+   assertExcelImportSession(session);await update(ref(db),legacyChanges);usedLegacyYear=true;
+  }
   assertExcelImportSession(session);
   const count=checked.groups.length;
   session.busy=false;closeExcelImport(true);state.plan=[];state.planMeta=null;state.planUnassigned=[];
-  notice(`${count} grupo(s) cadastrado(s). Os dados anteriores foram preservados.`);
+  notice(usedLegacyYear?ACADEMIC_YEAR_RULES_NOTICE:`${count} grupo(s) cadastrado(s). Os dados anteriores foram preservados.`);
  }finally{setExcelImportBusy(session,false);}
 }
 function openExcelImport(){
@@ -2528,9 +2716,9 @@ function openExcelImport(){
  if(!globalThis.BancaFlowImport||!globalThis.XLSX)throw Error('A biblioteca de Excel não carregou. Recarregue a página.');
  closeExcelImport();
  if(excelImportState)return;
- const session={uid:state.user.uid,revision:accessRevision,busy:false,workbook:null,preview:null};excelImportState=session;
+ const session={uid:state.user.uid,revision:accessRevision,academicYear:BancaAcademicYears.newGroupYear(state.academicYear),busy:false,workbook:null,preview:null};excelImportState=session;
  const dialog=document.createElement('dialog');dialog.id='excel-import-dialog';dialog.className='share-dialog excel-import-dialog';dialog.setAttribute('aria-labelledby','excel-import-title');
- dialog.innerHTML=`<div class="row space"><div><p class="eyebrow">Importar grupos</p><h3 id="excel-import-title">Importar grupos da planilha</h3></div><button class="btn soft" id="excel-import-close" type="button" aria-label="Fechar importação">Fechar</button></div><p class="muted">Confira curso, turma, orientador e alunos. A importação acrescenta novos grupos e preserva todos os existentes.</p><div class="form-grid"><div class="field wide"><label for="excel-import-file">Arquivo Excel ou CSV</label><input id="excel-import-file" type="file" accept=".xlsx,.xls,.csv"><small>Até 5 MB, 10.000 linhas e 1.000 grupos. O arquivo é lido neste navegador.</small></div><div class="field"><label for="excel-import-sheet">Aba da planilha</label><select id="excel-import-sheet"><option value="">Selecione um arquivo</option></select></div><div class="field"><label for="excel-import-course">Curso, se a planilha não tiver esta coluna</label><input id="excel-import-course" maxlength="120" placeholder="Ex.: Engenharia de Computação"></div></div><details class="excel-import-help"><summary>Formato aceito e modelo</summary><p>Use os cabeçalhos <b>Curso, Turma, Grupo, Título, Orientador, Aluno</b>. Repita os dados do grupo em cada linha de aluno. Também são aceitas colunas <b>Aluno 1, Aluno 2…</b> na mesma linha.</p><p>Em Orientador, use e-mail, identificador, UID ou o nome completo de um professor ativo. Nomes ambíguos precisam ser substituídos por um identificador exclusivo. Fórmulas não são importadas: cole somente os valores.</p><button class="btn soft" id="excel-import-model" type="button">Baixar modelo CSV</button></details><p class="muted tiny" id="excel-import-status" role="status" aria-live="polite"></p><div id="excel-import-preview"></div><div class="excel-import-footer"><button class="btn primary" id="excel-import-confirm" type="button" disabled>Confirmar importação</button><button class="btn soft" id="excel-import-cancel" type="button">Cancelar</button></div>`;
+ dialog.innerHTML=`<div class="row space"><div><p class="eyebrow">Importar grupos</p><h3 id="excel-import-title">Importar grupos da planilha</h3></div><button class="btn soft" id="excel-import-close" type="button" aria-label="Fechar importação">Fechar</button></div><p class="muted">Confira curso, turma, orientador e alunos. A importação acrescenta novos grupos e preserva todos os existentes.</p><div class="form-grid"><div class="field wide"><label for="excel-import-file">Arquivo Excel ou CSV</label><input id="excel-import-file" type="file" accept=".xlsx,.xls,.csv"><small>Até 5 MB, 10.000 linhas e 1.000 grupos. O arquivo é lido neste navegador.</small></div><div class="field"><label for="excel-import-year">Ano letivo dos grupos</label><input id="excel-import-year" type="number" inputmode="numeric" min="2000" max="9999" step="1" value="${session.academicYear}" required><small>Todos os novos grupos desta importação pertencem a este ano.</small></div><div class="field"><label for="excel-import-sheet">Aba da planilha</label><select id="excel-import-sheet"><option value="">Selecione um arquivo</option></select></div><div class="field"><label for="excel-import-course">Curso, se a planilha não tiver esta coluna</label><input id="excel-import-course" maxlength="120" placeholder="Ex.: Engenharia de Computação"></div></div><details class="excel-import-help"><summary>Formato aceito e modelo</summary><p>Use os cabeçalhos <b>Curso, Turma, Grupo, Título, Orientador, Aluno</b>. Repita os dados do grupo em cada linha de aluno. Também são aceitas colunas <b>Aluno 1, Aluno 2…</b> na mesma linha.</p><p>Em Orientador, use e-mail, identificador, UID ou o nome completo de um professor ativo. Nomes ambíguos precisam ser substituídos por um identificador exclusivo. Fórmulas não são importadas: cole somente os valores.</p><button class="btn soft" id="excel-import-model" type="button">Baixar modelo CSV</button></details><p class="muted tiny" id="excel-import-status" role="status" aria-live="polite"></p><div id="excel-import-preview"></div><div class="excel-import-footer"><button class="btn primary" id="excel-import-confirm" type="button" disabled>Confirmar importação</button><button class="btn soft" id="excel-import-cancel" type="button">Cancelar</button></div>`;
  document.body.appendChild(dialog);
  dialog.addEventListener('cancel',event=>{if(session.busy)event.preventDefault();else closeExcelImport();});
  for(const id of ['excel-import-close','excel-import-cancel'])document.getElementById(id).addEventListener('click',()=>closeExcelImport());
@@ -2539,6 +2727,7 @@ function openExcelImport(){
  const prepare=()=>prepareExcelImport(session).catch(error=>{session.preview=null;paintExcelImportPreview(session);fail(error);});
  document.getElementById('excel-import-sheet').addEventListener('change',prepare);
  document.getElementById('excel-import-course').addEventListener('change',prepare);
+ document.getElementById('excel-import-year').addEventListener('change',prepare);
  document.getElementById('excel-import-file').addEventListener('change',async event=>{
   if(session.busy)return;
   session.preview=null;session.workbook=null;paintExcelImportPreview(session);
@@ -2592,6 +2781,10 @@ async function readBoardImportCatalog(session){
 function boardImportFingerprint(preview,catalog={groups:state.groups}){
  return JSON.stringify({boards:preview.boards,errors:preview.errors,warnings:preview.warnings,groups:(preview.boards||[]).map(board=>[board.groupId,groupAdminFingerprint(catalog.groups?.[board.groupId])])});
 }
+function parseAcademicBoardRows(rows,catalog,academicYear=state.academicYear){
+ const groups=Object.fromEntries(Object.entries(catalog.groups||{}).filter(([id,group])=>BancaAcademicYears.matchesGroup({...group,id:group.id||id},catalog.boards,academicYear)));
+ return BancaBoardImport.parseRows(rows,{...catalog,groups,now:Date.now()});
+}
 function paintBoardImportPreview(session){
  if(boardImportState!==session)return;
  const target=document.getElementById('board-import-preview'),commit=document.getElementById('board-import-confirm');
@@ -2618,7 +2811,7 @@ async function prepareBoardImport(session){
  try{
   const rows=BancaBoardImport.readSheet(session.workbook,sheetName,globalThis.XLSX);
   const catalog=await readBoardImportCatalog(session);assertBoardImportSession(session);
-  const preview=BancaBoardImport.parseRows(rows,{...catalog,now:Date.now()});
+  const preview=parseAcademicBoardRows(rows,catalog,session.academicYear??state.academicYear);
   session.rows=rows;session.sheetName=sheetName;session.catalog=catalog;session.preview=preview;session.fingerprint=boardImportFingerprint(preview,catalog);
  }finally{setBoardImportBusy(session,false);}
 }
@@ -2629,7 +2822,7 @@ async function confirmBoardImport(session){
  setBoardImportBusy(session,true,'Conferindo novamente a agenda antes de criar as bancas…');
  try{
   const catalog=await readBoardImportCatalog(session);assertBoardImportSession(session);
-  const checked=BancaBoardImport.parseRows(session.rows,{...catalog,now:Date.now()});
+  const checked=parseAcademicBoardRows(session.rows,catalog,session.academicYear??state.academicYear);
   if(checked.errors?.length||boardImportFingerprint(checked,catalog)!==session.fingerprint){
    session.catalog=catalog;session.preview=checked;session.fingerprint=boardImportFingerprint(checked,catalog);
    throw Error('A agenda ou os cadastros mudaram. Confira a prévia atualizada e confirme novamente.');
@@ -2670,7 +2863,7 @@ function openBoardImport(){
  if(!state.connected)throw Error('Conecte-se à internet para importar as bancas.');
  if(typeof BancaBoardImport==='undefined'||typeof BancaFlowImport==='undefined'||!globalThis.XLSX)throw Error('A biblioteca de Excel não carregou. Recarregue a página.');
  closeBoardImport();if(boardImportState)return;
- const session={uid:state.user.uid,revision:accessRevision,busy:false,workbook:null,preview:null,returnFocus:document.activeElement};boardImportState=session;
+ const session={uid:state.user.uid,revision:accessRevision,academicYear:state.academicYear,busy:false,workbook:null,preview:null,returnFocus:document.activeElement};boardImportState=session;
  const dialog=document.createElement('dialog');dialog.id='board-import-dialog';dialog.className='share-dialog excel-import-dialog';dialog.setAttribute('aria-labelledby','board-import-title');
  dialog.innerHTML=`<div class="row space"><div><p class="eyebrow">Agenda de bancas</p><h3 id="board-import-title">Importar bancas do Excel</h3></div><button class="btn soft" id="board-import-close" type="button" aria-label="Fechar importação de bancas">Fechar</button></div><p class="muted">Uma linha por banca, com grupo, data, horário, sala e avaliadores. Os grupos precisam estar cadastrados. As bancas e avaliações existentes serão preservadas.</p><div class="form-grid"><div class="field wide"><label for="board-import-file">Arquivo Excel ou CSV</label><input id="board-import-file" type="file" accept=".xlsx,.xls,.csv"><small>Até 5 MB. O arquivo é lido neste navegador; os dados só são gravados após a confirmação.</small></div><div class="field wide"><label for="board-import-sheet">Aba da planilha</label><select id="board-import-sheet"><option value="">Selecione um arquivo</option></select></div></div><details class="excel-import-help"><summary>Colunas aceitas e modelo</summary><p>Use <b>Curso, Turma, Grupo, Data, Hora, Duração, Sala, Avaliador 1, Avaliador 2</b> e, se necessário, <b>Avaliador 3</b>. A coluna opcional <b>ID do grupo</b> evita ambiguidades entre grupos de mesmo nome.</p><p>Datas em <b>dd/mm/aaaa</b> ou <b>aaaa-mm-dd</b>, horários <b>HH:mm</b> a cada 15 minutos e duração de <b>30, 45, 60 ou 90 minutos</b>. Para cada avaliador, use e-mail, identificador, UID ou nome completo exclusivo de um professor ou coordenador ativo. Fórmulas não são aceitas.</p><button class="btn soft" id="board-import-model" type="button">Baixar modelo Excel</button></details><p class="muted tiny" id="board-import-status" role="status" aria-live="polite"></p><div id="board-import-preview"></div><div class="excel-import-footer"><button class="btn primary" id="board-import-confirm" type="button" disabled>Confirmar importação</button><button class="btn soft" id="board-import-cancel" type="button">Cancelar</button></div>`;
  document.body.appendChild(dialog);
@@ -2978,7 +3171,7 @@ async function changeBoardStatus(bid,reopen){
 const closeBoard=bid=>changeBoardStatus(bid,false);
 const reopenBoard=bid=>changeBoardStatus(bid,true);
 
-function reportHtml(ids){let html=`<header><h1>Relatório de Avaliação de TCC</h1><p>Ano letivo: 2026 · Emissão: ${esc(new Date().toLocaleString('pt-BR'))} · Responsável: ${esc(state.profile.name)}</p><p>Critérios por avaliador: apresentação, parte prática, domínio do código e domínio do tempo (0 a 10). Média da banca = média dos avaliadores. Nota final = banca × 0,60 + entregas × 0,40.</p></header>`;
+function reportHtml(ids){let html=`<header><h1>Relatório de Avaliação de TCC</h1><p>Ano letivo: ${esc(academicYearLabel())} · Emissão: ${esc(new Date().toLocaleString('pt-BR'))} · Responsável: ${esc(state.profile.name)}</p><p>Critérios por avaliador: apresentação, parte prática, domínio do código e domínio do tempo (0 a 10). Média da banca = média dos avaliadores. Nota final = banca × 0,60 + entregas × 0,40.</p></header>`;
  for(const [index,bid] of ids.entries()){const b=state.boards[bid],g=groupOf(b);if(!b||!g||!state.seals[bid])throw Error('A emissão exige bancas concluídas.');const grades=boardGrades(bid),deliveries=state.deliveries[bid]||{};if(!situacao(b,g,grades,deliveries).pronta)throw Error('Há notas pendentes; relatório cancelado.');
  html+=`<article class="${index?'print-break':''}"><h2>${esc(g.name)} — ${esc(g.title)}</h2><p><b>Curso:</b> ${esc(courseLabel(g))} &nbsp; <b>Turma:</b> ${esc(g.className)} &nbsp; <b>Orientador:</b> ${esc(b.advisorName)} (${b.members?.[b.advisorUid]?"participa":"não participa"}) &nbsp; <b>Banca:</b> ${dateStr(b.startAt)}, ${esc(b.room)}</p><p><b>Tempo de apresentação:</b> ${state.timers[bid]?formatElapsed(boardElapsed(bid)):'Não registrado'}</p><p><b>Avaliadores:</b> ${Object.keys(b.members).map(uid=>esc(b.memberNames[uid]||who(uid))).join(' • ')} &nbsp; <b>Responsável pela nota de entregas:</b> ${esc(state.profile.name)}</p>`;
  for(const [sid,name] of studentsOf(g)){const r=resultadoAluno(b,sid,grades,deliveries);if(!r)throw Error('Nota incompleta encontrada.');html+=`<h3>Aluno(a): ${esc(name)}</h3><table><thead><tr><th>Professor avaliador</th><th>Apresent.</th><th>Prática</th><th>Código</th><th>Tempo</th><th>Média</th></tr></thead><tbody>${Object.keys(b.members).map(uid=>{const n=grades[uid][sid];return `<tr><td>${esc(b.memberNames[uid]||who(uid))}</td>${CRITERIOS.map(([k])=>`<td>${fmt(n[k])}</td>`).join('')}<td>${fmt(mediaAvaliador(n))}</td></tr>`;}).join('')}</tbody></table><table><thead><tr><th>Média banca (0–10)</th><th>Banca × 60%</th><th>Entregas × 40%</th><th>Nota final (0–10)</th></tr></thead><tbody><tr><td>${fmt(r.banca)}</td><td>${fmt(r.parcelaBanca)}</td><td>${fmt(r.parcelaEntrega)} (entregas: ${fmt(r.entrega)})</td><td><b>${fmt(r.final)}</b></td></tr></tbody></table>`;}
@@ -3037,7 +3230,7 @@ class SchedulePdf{
   this.pages.push([]);this.rect(0,0,this.width,6,'#e0001a');this.rect(0,6,this.width,83,'#014996');
   this.text('UNIVERSIDADE DO VALE DO PARAÍBA',this.margin,20,10,true,'#ffffff');
   this.text(this.preview?'Sorteio de bancas · Prévia':'Agenda de bancas confirmadas',this.margin,43,19,true,'#ffffff');
-  this.text('Sistema de Avaliação de TCC · 2026',this.margin,69,9,false,'#ffffff');
+  this.text('Sistema de Avaliação de TCC · BancaFlow',this.margin,69,9,false,'#ffffff');
   const responsible=this.wrap(`Emissão: ${this.issued} · Responsável: ${this.responsible}`,this.width-2*this.margin,9);
   responsible.forEach((line,i)=>this.text(line,this.margin,102+i*12,9,false,'#60738a'));
   this.y=109+responsible.length*12;
@@ -3085,7 +3278,7 @@ class EvaluationPdf extends SchedulePdf {
   this.rect(0,6,this.width,83,'#014996');
   this.text('UNIVERSIDADE DO VALE DO PARAÍBA',this.margin,20,10,true,'#ffffff');
   this.text('Relatório de avaliação de TCC',this.margin,43,19,true,'#ffffff');
-  this.text('Notas individuais e médias ponderadas · 2026',this.margin,69,9,false,'#ffffff');
+  this.text('Notas individuais e médias ponderadas',this.margin,69,9,false,'#ffffff');
   const issued=this.wrap(`Emissão: ${this.issued} · Responsável: ${this.responsible}`,this.width-2*this.margin,9);
   issued.forEach((line,i)=>this.text(line,this.margin,102+i*12,9,false,'#60738a'));
   this.y=109+issued.length*12;
@@ -3211,7 +3404,7 @@ function buildCoordinatorReportPdf({chartsOnly=false}={}){
  const boards=coordinatorReportBoards(),summary=BancaCoordinatorReport.summary(boards);
  if(!summary.studentCount)throw Error('Nenhum aluno cadastrado para exportar.');
  const charts=BancaCoordinatorReport.charts(boards),pdf=new CoordinatorReportPdf(false,new Date().toLocaleString('pt-BR'),state.profile.name||'Coordenação');
- const scopeLabel='Todos os cursos, turmas e alunos cadastrados. Inclui bancas abertas, encerradas, grupos removidos e alunos sem banca. Os filtros da tela não limitam este arquivo.';
+ const scopeLabel=`Ano letivo: ${academicYearLabel()}. Todos os cursos, turmas e alunos deste período. Inclui bancas abertas, encerradas, grupos removidos e alunos sem banca. Os demais filtros da tela não limitam este arquivo.`;
  if(chartsOnly){
   pdf.paragraph('Gráficos de todos os alunos',17,true,'#173e6c',9);pdf.paragraph(scopeLabel,10);
   pdf.paragraph(`${summary.studentCount} aluno(s) · ${summary.officialCount} resultado(s) encerrado(s) · ${summary.provisionalCount} provisório(s) · ${summary.pendingCount} com pendências`,10,true);
@@ -3246,8 +3439,8 @@ async function exportCoordinatorReport(kind){
   Object.assign(state,latest);state.profile=latest.users[uid];state.timerErrors={};
   assertSaved();
   const stamp=localDayKey(Date.now());
-  if(kind==='csv')downloadBlob(new Blob([BancaCoordinatorReport.csv(coordinatorReportBoards())],{type:'text/csv;charset=utf-8'}),`notas_todos_alunos_${stamp}.csv`);
-  else downloadBlob(buildCoordinatorReportPdf({chartsOnly:kind==='charts'}),`${kind==='charts'?'graficos':'consolidado'}_todos_alunos_${stamp}.pdf`);
+  if(kind==='csv')downloadBlob(new Blob([BancaCoordinatorReport.csv(coordinatorReportBoards())],{type:'text/csv;charset=utf-8'}),`notas_todos_alunos_${academicYearFileTag()}_${stamp}.csv`);
+  else downloadBlob(buildCoordinatorReportPdf({chartsOnly:kind==='charts'}),`${kind==='charts'?'graficos':'consolidado'}_todos_alunos_${academicYearFileTag()}_${stamp}.pdf`);
   notice('Arquivo gerado com as notas salvas de todos os alunos.');
  }finally{
   if(state.user?.uid===uid&&accessRevision===revision){state.coordinatorExportBusy=false;render();}
@@ -3274,7 +3467,7 @@ function buildEvaluationPdf(ids,{charts=true}={}){
   pdf.activeBoardLabel=boardLabel;
   pdf.paragraph(`${boardLabel} · ${g.name||b.groupId}`,13,true,'#014996',8);
   pdf.paragraph(`Projeto: ${g.title||'Não informado'}`,11,true);
-  pdf.paragraph(`Curso: ${courseLabel(g)} · Turma: ${g.className||'TCC'} · Data: ${dateStr(b.startAt)} · Sala / link: ${b.room||'Não informado'}`,10);
+  pdf.paragraph(`Ano letivo: ${groupAcademicYear(g)} · Curso: ${courseLabel(g)} · Turma: ${g.className||'TCC'} · Data: ${dateStr(b.startAt)} · Sala / link: ${b.room||'Não informado'}`,10);
   pdf.paragraph(`Orientador: ${b.advisorName||who(b.advisorUid)} (${b.members?.[b.advisorUid]?'participa da banca':'não participa da banca'})`,10);
   pdf.paragraph(`Avaliadores: ${Object.keys(b.members||{}).map(uid=>b.memberNames?.[uid]||who(uid)).join(' · ')}`,10);
   pdf.paragraph(`Tempo de apresentação (minutos:segundos,centésimos): ${state.timers[bid]?formatElapsed(boardElapsed(bid)):'Não registrado'}`,10,true,'#014996');
@@ -3364,7 +3557,7 @@ function buildSharePdf(snapshot){
  pdf.paragraph(`${reportLabel} · ${snapshot.groupName||'Grupo'}`,13,true,'#014996',8);
  pdf.activeBoardLabel=reportLabel;
  pdf.paragraph(`Projeto: ${snapshot.projectTitle||'Não informado'}`,11,true);
- pdf.paragraph(`Curso: ${snapshot.courseName||'Não informado'} · Turma: ${snapshot.className||'TCC'} · Data da banca: ${Number.isFinite(snapshot.startAt)?new Date(snapshot.startAt).toLocaleString('pt-BR'):'Não informada'}`,10);
+ pdf.paragraph(`Ano letivo: ${snapshot.academicYear||BancaAcademicYears.yearOfBoard({startAt:snapshot.startAt})} · Curso: ${snapshot.courseName||'Não informado'} · Turma: ${snapshot.className||'TCC'} · Data da banca: ${Number.isFinite(snapshot.startAt)?new Date(snapshot.startAt).toLocaleString('pt-BR'):'Não informada'}`,10);
  pdf.paragraph(`Sala / link: ${snapshot.room||'Não informado'} · Orientador: ${snapshot.advisorName||'Não informado'}`,10);
  pdf.paragraph(`Tempo de apresentação (minutos:segundos,centésimos): ${Number.isFinite(snapshot.elapsedMs)&&snapshot.elapsedMs>=0?formatElapsed(snapshot.elapsedMs):'Não registrado'}`,10,true,'#014996');
  if(Number.isFinite(snapshot.closedAt))pdf.paragraph(`Banca encerrada em: ${new Date(snapshot.closedAt).toLocaleString('pt-BR')}`,9,false,'#60738a');
@@ -3405,7 +3598,7 @@ function buildSchedulePdf(boards,{preview=false,unassigned=[],className='todas'}
    [`${String(index+1).padStart(2,'0')} · ${g.name||b.groupId}`,12,true,'#014996'],
    [`Projeto: ${g.title||'Não informado'}`,10,true,'#22354c'],
    [`Data: ${dateStr(b.startAt)} · Término: ${hourLabel(b.startAt+b.durationMin*60000)} · Duração: ${b.durationMin} min`,10,false,'#22354c'],
-   [`Curso: ${courseLabel(g)} · Turma: ${g.className||'TCC'} · Sala / link: ${b.room}`,10,false,'#22354c'],
+   [`Ano letivo: ${groupAcademicYear(g)} · Curso: ${courseLabel(g)} · Turma: ${g.className||'TCC'} · Sala / link: ${b.room}`,10,false,'#22354c'],
    [`Orientador: ${b.advisorName||who(b.advisorUid)} (${b.members?.[b.advisorUid]?'participa da banca':'não participa da banca'})`,10,false,'#22354c'],
    [`Avaliadores: ${Object.keys(b.members||{}).map(uid=>b.memberNames?.[uid]||who(uid)).join(' · ')}`,10,false,'#22354c'],
    [`Alunos: ${Object.values(g.students||{}).join(' · ')||'Não informados'}`,10,false,'#60738a']
@@ -3443,9 +3636,9 @@ function csvCell(value){
  const safe=/^[\t\r\n]|^[\s\uFEFF]*[=+\-@]/.test(text)?"'"+text:text;
  return '"'+safe.replaceAll('"','""')+'"';
 }
-function exportCsv(ids){if(!isCoord())throw Error('Acesso restrito.');const csv=[['Turma','Grupo','Projeto','Orientador','Aluno','Professor avaliador','Apresentação','Parte prática','Domínio do código','Domínio do tempo','Média avaliador','Média banca','Entregas','Parcela banca 60%','Parcela entregas 40%','Nota final','Tempo da apresentação (mm:ss,cc)']];
- for(const bid of ids){if(!state.seals[bid])throw Error('Banca não concluída.');const b=state.boards[bid],g=groupOf(b),gr=boardGrades(bid),ds=state.deliveries[bid]||{};if(!situacao(b,g,gr,ds).pronta)throw Error('Notas incompletas.');for(const [sid,name] of studentsOf(g)){const r=resultadoAluno(b,sid,gr,ds);for(const uid of Object.keys(b.members)){const n=gr[uid][sid];csv.push([g.className,g.name,g.title,b.advisorName,name,b.memberNames[uid],...CRITERIOS.map(([k])=>fmt(n[k])),fmt(mediaAvaliador(n)),fmt(r.banca),fmt(r.entrega),fmt(r.parcelaBanca),fmt(r.parcelaEntrega),fmt(r.final),state.timers[bid]?formatElapsed(boardElapsed(bid)):'Não registrado']);}}}
- const content='\ufeff'+csv.map(row=>row.map(csvCell).join(';')).join('\r\n');const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download='relatorio_tcc_2026.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
+function exportCsv(ids){if(!isCoord())throw Error('Acesso restrito.');const csv=[['Turma','Grupo','Projeto','Orientador','Aluno','Professor avaliador','Apresentação','Parte prática','Domínio do código','Domínio do tempo','Média avaliador','Média banca','Entregas','Parcela banca 60%','Parcela entregas 40%','Nota final','Tempo da apresentação (mm:ss,cc)','Ano letivo']];
+ for(const bid of ids){if(!state.seals[bid])throw Error('Banca não concluída.');const b=state.boards[bid],g=groupOf(b),gr=boardGrades(bid),ds=state.deliveries[bid]||{};if(!situacao(b,g,gr,ds).pronta)throw Error('Notas incompletas.');for(const [sid,name] of studentsOf(g)){const r=resultadoAluno(b,sid,gr,ds);for(const uid of Object.keys(b.members)){const n=gr[uid][sid];csv.push([g.className,g.name,g.title,b.advisorName,name,b.memberNames[uid],...CRITERIOS.map(([k])=>fmt(n[k])),fmt(mediaAvaliador(n)),fmt(r.banca),fmt(r.entrega),fmt(r.parcelaBanca),fmt(r.parcelaEntrega),fmt(r.final),state.timers[bid]?formatElapsed(boardElapsed(bid)):'Não registrado',groupAcademicYear(g)]);}}}
+ const content='\ufeff'+csv.map(row=>row.map(csvCell).join(';')).join('\r\n');const url=URL.createObjectURL(new Blob([content],{type:'text/csv;charset=utf-8'}));const a=document.createElement('a');a.href=url;a.download=`relatorio_tcc_${academicYearFileTag()}.csv`;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 // Importação protegida: a senha NÃO é incluída no HTML e deve permanecer com a coordenação.
 function base64Bytes(str) { const bin = atob(str); return Uint8Array.from(bin, ch => ch.charCodeAt(0)); }
@@ -3471,10 +3664,12 @@ async function lerGruposProtegidos(password) {
 }
 async function importarGruposProtegidos() {
   if (!canManageGroups()) throw Error('A importação é exclusiva da coordenação.');
+  const uid=state.user.uid,revision=accessRevision,academicYear=BancaAcademicYears.newGroupYear(state.academicYear);
   const password=prompt('Informe a senha de importação dos 44 grupos (diferente da senha de acesso):');
   if (password===null) return;
   if (!password) throw Error('Informe a senha de importação.');
   const groups=await lerGruposProtegidos(password);
+  assertCurrentSession(uid,revision);
   const uidByKey=Object.fromEntries(Object.entries(state.users).map(([uid,u])=>[u.key,uid]));
   const absent=[...new Set(groups.map(g=>g.advisorKey))].filter(key=>!uidByKey[key]);
   if (absent.length) throw Error('Cadastre os perfis dos orientadores antes da importação. Chaves ausentes: '+absent.join(', '));
@@ -3484,13 +3679,26 @@ async function importarGruposProtegidos() {
   for(const group of groups) {
     if(existing[group.id])continue;
     const {advisorKey,...rest}=group;
-    changes[`groups/${group.id}`]={...rest,advisorUid:uidByKey[advisorKey]};
+    changes[`groups/${group.id}`]={...rest,academicYear,advisorUid:uidByKey[advisorKey]};
   }
   const count=Object.keys(changes).length;
   if (!count) {notice('Os 44 grupos já estão cadastrados. Nenhum dado foi modificado.');return;}
   if(!confirm(`Importar ${count} grupo(s)? Os existentes não serão alterados.`))return;
-  await update(ref(db),changes);
-  notice(`${count} grupo(s) importado(s) com sucesso.`);
+  assertCurrentSession(uid,revision);if(!canManageGroups())throw Error('A permissão da coordenação mudou. Entre novamente.');
+  let usedLegacyYear=false;
+  try{await update(ref(db),changes);}
+  catch(error){
+   if(!isPermissionDenied(error))throw error;
+   const latest=await readGroupAdminContext(uid,revision),legacyChanges={};
+   for(const [path,candidate]of Object.entries(changes)){
+    const id=path.slice('groups/'.length);if(latest.groups[id])throw Error('O cadastro de grupos mudou. Abra a importação novamente para preservar os dados atuais.');
+    if(!isActiveTeacher(latest.users[candidate.advisorUid]))throw Error('O acesso de um orientador foi alterado. Confira os professores antes de importar.');
+    const legacy=BancaAcademicYears.legacyGroupWrite(candidate,{boards:latest.boards,serverTime:Date.now()+state.serverOffset});
+    if(!legacy)throw academicYearRulesRequired(error);legacyChanges[path]=legacy;
+   }
+   assertCurrentSession(uid,revision);await update(ref(db),legacyChanges);usedLegacyYear=true;
+  }
+  assertCurrentSession(uid,revision);notice(usedLegacyYear?ACADEMIC_YEAR_RULES_NOTICE:`${count} grupo(s) importado(s) com sucesso.`);
 }
 
 async function copiarPoliticaDeAcesso(){
@@ -3674,7 +3882,7 @@ async function createBoardShareSnapshot(bid,{studentId=''}={}){
   return {id:sid,name,evaluators,result:scope==='official'?resultadoAluno(board,sid,grades,deliveries):null};
  });
  const fingerprintStudentIds=selected.map(([sid])=>sid);
- const snapshot={scope,actorUid:uid,accessRevision:revision,fingerprintStudentIds,boardId:bid,groupName:group.name,projectTitle:group.title,courseName:group.courseName||'',className:group.className,advisorName:board.advisorName,room:board.room,startAt:board.startAt,issuedAt:Date.now(),closedAt:state.seals[bid]?.at||null,preparedByName:state.profile.name,...(scope==='teacher'?{teacherName:state.profile.name}:{}),plannedMs:Number.isFinite(board.durationMin)&&board.durationMin>0?board.durationMin*60000:null,includeCharts:scope==='official'&&state.reportCharts!==false,elapsedMs:state.timers[bid]?boardElapsed(bid):null,students};
+ const snapshot={scope,actorUid:uid,accessRevision:revision,fingerprintStudentIds,boardId:bid,academicYear:groupAcademicYear(group),groupName:group.name,projectTitle:group.title,courseName:group.courseName||'',className:group.className,advisorName:board.advisorName,room:board.room,startAt:board.startAt,issuedAt:Date.now(),closedAt:state.seals[bid]?.at||null,preparedByName:state.profile.name,...(scope==='teacher'?{teacherName:state.profile.name}:{}),plannedMs:Number.isFinite(board.durationMin)&&board.durationMin>0?board.durationMin*60000:null,includeCharts:scope==='official'&&state.reportCharts!==false,elapsedMs:state.timers[bid]?boardElapsed(bid):null,students};
  snapshot.fingerprint=shareStateFingerprint(bid,scope,fingerprintStudentIds);
  return JSON.parse(JSON.stringify(snapshot)); // Uma prévia usa somente os dados salvos na preparação.
 }
@@ -3912,6 +4120,7 @@ $('#view').addEventListener('click',e=>{
  if(summary?.parentElement?.dataset.coordinatorCharts&&isCoord()){state.notesChartsOpen=!summary.parentElement.open;return;}
  if(notesBoard&&isCoord()){if(summary.parentElement.open)state.notesExpanded.delete(notesBoard);else state.notesExpanded.add(notesBoard);return;}
  const el=e.target.closest('button');if(!el||el.disabled)return;
+ if(el.dataset.academicBackup)return handle(exportAcademicBackup);
  if(el.dataset.generalChat||el.dataset.route==='chat')return handle(openGeneralChat);
  if(el.dataset.route)return go(el.dataset.route);
  if(el.dataset.coordinatorExport)return handle(()=>exportCoordinatorReport(el.dataset.coordinatorExport));
@@ -3969,7 +4178,7 @@ $('#view').addEventListener('click',e=>{
  });
  if(el.dataset.exportCsv)return handle(async()=>{const ids=filteredReportBoards().filter(([id,b])=>state.seals[id]&&situacao(b,groupOf(b),boardGrades(id),state.deliveries[id]).pronta).map(([id])=>id);await refreshReportData(ids);exportCsv(ids);});
 });
-$('#view').addEventListener('change',e=>{if(e.target.id==='filter-date'||e.target.id==='report-date-filter')return handle(()=>setBancaDateFilter(e.target.value,e.target.id==='report-date-filter'));if(['group-course-filter','group-class-filter','group-search','group-show-archived'].includes(e.target.id))return groupFiltersChanged(e);if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='teacher-method')teacherRegistrationMethod();if(e.target.id==='filter-course'){state.courseFilter=e.target.value;render();}if(e.target.id==='report-course-filter'){state.reportCourseFilter=e.target.value;state.analyticsBoard='';render();}if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;state.analyticsBoard='';render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
+$('#view').addEventListener('change',e=>{if(e.target.id==='academic-year-filter')return handle(()=>setAcademicYear(e.target.value));if(e.target.id==='filter-date'||e.target.id==='report-date-filter')return handle(()=>setBancaDateFilter(e.target.value,e.target.id==='report-date-filter'));if(['group-course-filter','group-class-filter','group-search','group-show-archived'].includes(e.target.id))return groupFiltersChanged(e);if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='teacher-method')teacherRegistrationMethod();if(e.target.id==='filter-course'){state.courseFilter=e.target.value;render();}if(e.target.id==='report-course-filter'){state.reportCourseFilter=e.target.value;state.analyticsBoard='';render();}if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;state.analyticsBoard='';render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
 $('#view').addEventListener('change',e=>{
  if(e.target.id==='chat-room-select')return handle(()=>openChatRoom(e.target.value));
  const notesKeys={'notes-course-filter':'course','notes-class-filter':'className','notes-date-filter':'date','notes-status-filter':'status'};

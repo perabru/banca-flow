@@ -4,7 +4,7 @@
 
 Aplicação estática em HTML, CSS e JavaScript, conectada ao projeto Firebase existente `avaliadortcc`. A atualização preserva os cadastros, grupos, alunos, agenda, notas, entregas, configuração Firebase e lista criptografada de grupos. Não faz migração destrutiva nem importação automática.
 
-`index.html` e `BancaFlow_TCC_2026_Unico.html` oferecem a mesma versão, incluindo a mesma política de acesso atualizada. O layout começa em 320 px e se adapta a tablets e computadores. O site continua sem etapa de compilação. A importação de Excel usa arquivos locais em `assets/`, que devem ser publicados junto dos HTMLs. `privacidade.html` identifica o sistema, os responsáveis e o tratamento dos dados.
+`index.html` e `BancaFlow_TCC_2026_Unico.html` oferecem a mesma versão, incluindo a mesma política de acesso atualizada. O segundo nome é mantido por compatibilidade com links antigos: o sistema aceita vários anos letivos. O layout começa em 320 px e se adapta a tablets e computadores. O site continua sem etapa de compilação. A importação de Excel usa arquivos locais em `assets/`, que devem ser publicados junto dos HTMLs. `privacidade.html` identifica o sistema, os responsáveis e o tratamento dos dados.
 
 ## Ativar a atualização
 
@@ -14,7 +14,30 @@ Aplicação estática em HTML, CSS e JavaScript, conectada ao projeto Firebase e
 
 O arquivo `firebase.json` também permite publicar somente as regras com `firebase deploy --only database --project avaliadortcc`, após autenticar uma conta autorizada.
 
-Publicar arquivos no GitHub não publica as regras no Firebase. A política atualizada é necessária para o cronômetro compartilhado, o encerramento/reabertura pelos avaliadores, a edição de contatos, a gestão de grupos e cursos e a edição/exclusão de mensagens próprias no chat. Se você publicou uma versão anterior das regras, publique novamente o arquivo desta versão. As regras preservam a privacidade e os demais caminhos originais; não existe acesso público ao banco nem cadastro público de coordenadores.
+Publicar arquivos no GitHub não publica as regras no Firebase. A política atualizada é necessária para o cronômetro compartilhado, o encerramento/reabertura pelos avaliadores, a edição de contatos, a gestão de grupos e cursos, o ano letivo dos grupos, a sincronização do próprio e-mail já verificado e a edição/exclusão de mensagens próprias no chat. Se você publicou uma versão anterior das regras, publique novamente o arquivo desta versão. As regras preservam a privacidade e os demais caminhos originais; não existe acesso público ao banco nem cadastro público de coordenadores.
+
+## Anos letivos e histórico
+
+O seletor **Ano letivo** começa em **Todos os anos**, para manter todo o acervo visível. Escolha um ano para consultar a agenda, os grupos, as notas e os relatórios desse período. Volte a **Todos os anos** para consultar o histórico completo. Equipe, contas e permissões permanecem compartilhadas; o filtro não remove professores nem encerra bancas.
+
+Novos grupos recebem o campo `academicYear`, informado no cadastro ou na importação. O ano atual é sugerido quando o filtro está em **Todos os anos**; o ano selecionado é sugerido quando há um período específico. Confira o campo antes de confirmar. Grupos de anos diferentes podem repetir o nome, curso e turma, mantendo identificadores próprios. Cadastre os novos alunos como novos grupos, sem reaproveitar um grupo histórico já avaliado.
+
+Grupos antigos continuam nos mesmos caminhos, sem migração: o ano é identificado pela data da banca, depois pela data de criação válida; registros sem essas informações permanecem em 2026, ano de origem do acervo. Uma marcação explícita de ano letivo tem prioridade sobre a data da apresentação. Os relatórios incluem a identificação do período.
+
+Em **Visão geral → Histórico e cópia de segurança → Baixar cópia acadêmica**, a coordenação pode baixar um JSON de todos os anos, mesmo com um ano filtrado. O arquivo inclui os cadastros e dados acadêmicos salvos, com `schemaVersion: 1`; não contém senhas de acesso, chat ou segredos de envio. As leituras dos caminhos são feitas separadamente, portanto a cópia não representa uma única transação instantânea. Guarde-a com acesso restrito e mantenha também as cópias institucionais do Firebase. A aplicação não restaura nem sobrescreve o banco automaticamente a partir desse arquivo.
+
+O [guia de operação contínua](OPERACAO_CONTINUA.md) descreve a abertura de cada ano, as cópias e a manutenção do sistema.
+
+## Minha conta, senha e e-mail
+
+Na entrada, **Esqueci minha senha** abre a recuperação de acesso. Depois de entrar, **Minha conta**, no cabeçalho ou no menu do celular, reúne a redefinição de senha, a troca de e-mail e o cadastro de celular para recuperação. As mensagens da interface usam o nome do professor quando ele está autenticado.
+
+- **Senha por e-mail:** o envio nativo do Firebase continua disponível quando o serviço personalizado está desligado. A resposta não revela se um endereço está cadastrado. O link permite escolher uma nova senha conforme a política de segurança do projeto.
+- **Troca de e-mail:** confirme a senha atual e informe o novo endereço. O login antigo continua válido até confirmar a mensagem recebida no novo e-mail. Use **Já confirmei o e-mail** ou entre novamente para atualizar os dados. O mesmo UID conserva as bancas, avaliações, função e histórico.
+- **SMS:** exige ativação do serviço de envio e um celular previamente confirmado por código na própria conta. Apenas digitar um número não o habilita para recuperar a senha. A redefinição termina no SDK Firebase; a API de mensagens não recebe a nova senha.
+- **Mensagens personalizadas:** o backend preparado em [functions/README.md](functions/README.md) envia e-mails com o nome salvo do professor e a identidade do BancaFlow, além de SMS de confirmação/recuperação e avisos de segurança de troca de e-mail. O aviso por SMS não substitui a confirmação do novo e-mail.
+
+Nesta entrega, o backend de mensagens **não foi publicado**, SMTP/Twilio **não foram conectados** e `assets/account-config.js` permanece com `enabled: false`. Não há promessa de SMS ou de corpo de e-mail personalizado antes dessa configuração. Para os e-mails nativos, a administração pode ajustar os modelos em **Firebase Authentication → Templates** e definir o manipulador `https://perabru.github.io/banca-flow/account-action.html`. Essa configuração no Console não é alterada pela publicação no GitHub. Ative o arquivo público de configuração somente depois de publicar e verificar o servidor; nunca inclua nele senhas ou tokens.
 
 ## Permissões e bancas
 
@@ -36,7 +59,7 @@ O encerramento pode ocorrer antes de todos os lançamentos. O relatório e o res
 
 A coordenação encontra as exportações em **Relatórios e médias**. No celular, abra **Mais → Relatórios e médias**.
 
-- **Todos os alunos:** baixe diretamente o PDF completo, a planilha CSV ou o PDF dos gráficos. Estes arquivos abrangem todos os cursos e turmas, incluindo bancas abertas, encerradas, arquivadas e alunos sem banca. Notas ausentes continuam pendentes.
+- **Todos os alunos:** baixe diretamente o PDF completo, a planilha CSV ou o PDF dos gráficos. Estes arquivos abrangem todos os cursos e turmas do ano letivo selecionado, incluindo bancas abertas, encerradas, arquivadas e alunos sem banca. Use **Todos os anos** para exportar o acervo completo. Notas ausentes continuam pendentes.
 - **Escolher alunos e pesos → Preparar relatório:** siga os três passos **Escolha os alunos → Confira a média → Baixe o arquivo**. Curso e turma ficam visíveis; os demais filtros estão em **Mais filtros**.
 - **Relatórios oficiais por banca:** abra a seção para acessar filtros de curso, turma e data, relatórios individuais, consolidado oficial, CSV de bancas concluídas, compartilhamento e gráficos oficiais. As exigências de conclusão e a fórmula de 60% / 40% permanecem as mesmas.
 
@@ -64,7 +87,7 @@ Todos os professores ativos e a coordenação podem abrir **Chat dos professores
 
 - **Sala dos professores** reúne todos os professores e a coordenação. Professores já cadastrados, inclusive perfis antigos sem os campos `active` ou `key`, e novos cadastros ativos têm acesso sem convite, autorização individual para o chat ou atribuição a uma banca.
 - **Sala da banca** é restrita aos avaliadores participantes e à coordenação. O encerramento das notas não encerra a conversa.
-- As mensagens mostram nome, data e horário, aceitam até 2.000 caracteres e ficam salvas no histórico. Não há envio automático nem edição de mensagens antigas.
+- As mensagens mostram nome, data e horário, aceitam até 2.000 caracteres e ficam salvas no histórico. Não há envio automático; cada autor pode editar ou apagar suas próprias mensagens confirmadas.
 - O envio aparece como **Enviando…** até o servidor confirmar a gravação. **Enviada** confirma que a mensagem foi salva na sala. O cadastro do autor é conferido antes da gravação para usar o nome atual e verificar o acesso.
 - Se o servidor recusar a mensagem, ela é retirada da conversa do remetente, o texto permanece no campo e o erro fica visível junto ao formulário. Um novo envio depende da ação do professor. Em caso de bloqueio de permissão, a coordenação pode usar **Copiar regras de acesso** no próprio aviso e publicar a política atualizada no Firebase.
 - Cada professor pode **Editar** ou **Apagar** suas próprias mensagens confirmadas. A edição aparece com a indicação **editada**; apagar exige confirmação e remove o texto para todos, deixando **Mensagem apagada** no histórico. As alterações também chegam às páginas antigas já carregadas. Outros professores e coordenadores não alteram mensagens alheias. Alterações simultâneas são bloqueadas para evitar sobrescrever uma versão mais recente.
@@ -212,7 +235,7 @@ Em **Professores**, todos os coordenadores ativos podem selecionar **Professor a
 
 Uma conta ativa com `role: "coordinator"` gerencia os professores e coordenadores, consulta todas as notas, lança monografia, organiza bancas e emite os PDFs oficiais, individuais, analíticos e personalizados disponíveis no sistema. **Tornar coordenador** promove um professor na conta existente, com confirmação do nome e login. Wagner recebe os mesmos acessos ao ser promovido pelo seu UID; suas bancas e avaliações continuam vinculadas à mesma conta. A própria conta e o perfil principal com identificador `alberson` ficam protegidos de alteração por esta gestão.
 
-O **e-mail de contato** pode ser alterado sem afetar o login. O e-mail de acesso e o identificador nas planilhas permanecem vinculados à conta existente; a alteração de login é administrada no Firebase Authentication. Os nomes já registrados nas bancas não são reescritos ao editar o professor. **Desabilitar** bloqueia o acesso ao aplicativo e conserva o perfil, as bancas, as atribuições e todas as notas, inclusive em bancas abertas. **Reativar** restaura o acesso na mesma conta.
+O **e-mail de contato** pode ser alterado sem afetar o login. O identificador nas planilhas permanece vinculado à conta existente. O próprio professor pode trocar o e-mail de acesso em **Minha conta**, com senha atual e confirmação do novo endereço pelo Firebase Authentication; a tela administrativa de contatos não altera o login de outra pessoa. Os nomes já registrados nas bancas não são reescritos ao editar o professor. **Desabilitar** bloqueia o acesso ao aplicativo e conserva o perfil, as bancas, as atribuições e todas as notas, inclusive em bancas abertas. **Reativar** restaura o acesso na mesma conta.
 
 O atalho **Preparar cadastro de administrador** preenche nome, e-mail `admin@univap.br`, identificador `admin` e função de coordenador. A senha é informada no campo protegido pelo responsável e nunca fica publicada no HTML ou no cadastro de perfis. Esse administrador tem os mesmos acessos de gestão, avaliação e relatórios dos demais coordenadores. O provisionamento administrativo de Wagner e dessa conta também pode ser feito pelo [procedimento de ativação](scripts/ADMINISTRADORES.md), usando uma conexão administrativa autorizada com o Firebase. A publicação do site não cria contas nem publica regras no banco automaticamente.
 
@@ -238,7 +261,7 @@ Os dados acadêmicos do grupo ficam protegidos após o agendamento, para que alt
 
 Use as colunas **Curso, Turma, Grupo, Título, Orientador, Aluno**, uma linha por aluno, repetindo os dados do grupo. Também são aceitas colunas **Aluno 1, Aluno 2…** na mesma linha. Se não houver coluna Curso, informe-o no campo da importação. O botão **Baixar modelo CSV** gera um modelo fictício para abrir no Excel.
 
-Em Orientador, use o e-mail, o identificador, o UID ou o nome completo de um professor ativo. Nomes ambíguos são recusados; use um identificador exclusivo. Grupos repetidos são identificados por curso, turma e nome, inclusive os removidos, e não são sobrescritos. O sistema informa conflitos de título/orientador e nomes repetidos de alunos. Fórmulas são recusadas; use valores.
+Na importação, informe também o **Ano letivo dos grupos**; o valor se aplica aos novos grupos daquele lote. Em Orientador, use o e-mail, o identificador, o UID ou o nome completo de um professor ativo. Nomes ambíguos são recusados; use um identificador exclusivo. Grupos repetidos são identificados dentro do mesmo ano por curso, turma e nome, inclusive os removidos, e não são sobrescritos. O sistema informa conflitos de título/orientador e nomes repetidos de alunos. Fórmulas são recusadas; use valores.
 
 Limites: 5 MB, 10.000 linhas, 200 colunas, 1.000 grupos por arquivo e 20 alunos por grupo. O arquivo original é lido no navegador e não é enviado para um conversor. Somente os novos registros confirmados são enviados, em uma atualização atômica. Uma conferência recente detecta alterações desde a prévia e exige confirmação renovada. Evite operar o mesmo cadastro simultaneamente em duas abas: sem um índice global no servidor, a checagem de nomes/chaves entre novas criações simultâneas não é uma restrição de unicidade absoluta.
 

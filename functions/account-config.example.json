@@ -1,0 +1,20 @@
+{
+  "siteUrl": "https://perabru.github.io/banca-flow/",
+  "actionPageUrl": "https://perabru.github.io/banca-flow/account-action.html",
+  "allowedOrigins": ["https://perabru.github.io"],
+  "otpPepper": "SUBSTITUA_POR_64_CARACTERES_ALEATORIOS_GERADOS_LOCALMENTE",
+  "smtp": {
+    "host": "",
+    "port": 465,
+    "secure": true,
+    "user": "",
+    "pass": "",
+    "from": "BancaFlow Univap <seu-remetente-verificado@univap.br>"
+  },
+  "twilio": {
+    "accountSid": "",
+    "authToken": "",
+    "from": "",
+    "messagingServiceSid": ""
+  }
+}

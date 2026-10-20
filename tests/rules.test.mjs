@@ -48,6 +48,7 @@ const fixture = () => ({
   deliveries: { b1: { s1: 9, s2: 8 } }
 });
 const db = uid => uid ? env.authenticatedContext(uid).database() : env.unauthenticatedContext().database();
+const claimedDb = (uid, claims = {}) => env.authenticatedContext(uid, claims).database();
 const timer = (uid = 'teacher1', revision = 1, extra = {}) => ({ elapsedMs: 12345, startedAt: 0, updatedAt: Date.now(), updatedBy: uid, revision, ...extra });
 const seal = (uid = 'teacher1') => ({ by: uid, at: Date.now() });
 const bypass = async (path, value) => env.withSecurityRulesDisabled(async ctx => set(ref(ctx.database(), path), value));
@@ -69,6 +70,97 @@ test('published JSON matches embedded rules and individual evaluation privacy re
   assert.equal(rules.rules['.write'], false);
   assert.match(rules.rules.grades['$bid']['$uid']['.read'], /auth\.uid === \$uid/);
   assert.match(rules.rules.deliveries['.read'], /role'\)\.val\(\) === 'coordinator'/);
+});
+
+test('verified teachers synchronize only their own login email to the canonical Auth token, preserving academic records', async () => {
+  const beforeData = await readPrivileged('/');
+  const verified = claimedDb('teacher1', { email: 'new@example.test', email_verified: true });
+  await assertSucceeds(set(ref(verified, 'users/teacher1/email'), 'new@example.test'));
+  assert.equal(await readPrivileged('users/teacher1/email'), 'new@example.test');
+  await assertFails(set(ref(verified, 'users/teacher1/email'), 'one@example.test'));
+  await assertFails(set(ref(verified, 'users/teacher1/email'), 'spoof@example.test'));
+  await assertFails(remove(ref(verified, 'users/teacher1/email')));
+  const after = await readPrivileged('/');
+  beforeData.users.teacher1.email = 'new@example.test';
+  assert.deepEqual(after, beforeData);
+});
+
+test('email synchronization rejects unverified, stale-token, disabled, missing-profile and anonymous requests', async () => {
+  const unverified = claimedDb('teacher1', { email: 'new@example.test', email_verified: false });
+  const missingVerification = claimedDb('teacher1', { email: 'new@example.test' });
+  const stale = claimedDb('teacher1', { email: 'one@example.test', email_verified: true });
+  const disabled = claimedDb('disabled', { email: 'new@example.test', email_verified: true });
+  const missing = claimedDb('missing', { email: 'new@example.test', email_verified: true });
+  for (const connection of [unverified, missingVerification, stale, db('teacher1'), db(null)]) {
+    await assertFails(set(ref(connection, 'users/teacher1/email'), 'new@example.test'));
+  }
+  await assertFails(set(ref(disabled, 'users/disabled/email'), 'new@example.test'));
+  await assertFails(set(ref(missing, 'users/missing/email'), 'new@example.test'));
+  await assertFails(set(ref(claimedDb('teacher1', { email: '', email_verified: true }), 'users/teacher1/email'), ''));
+  const oversized = 'a'.repeat(250) + '@example.test';
+  await assertFails(set(ref(claimedDb('teacher1', { email: oversized, email_verified: true }), 'users/teacher1/email'), oversized));
+});
+
+test('self email permission cannot alter other profile fields through multi-path or parent writes', async () => {
+  const verified = claimedDb('teacher1', { email: 'new@example.test', email_verified: true });
+  const original = await readPrivileged('users/teacher1');
+  for (const [field, value] of Object.entries({ role: 'coordinator', key: 'admin', name: 'Nome adulterado', active: false, contactEmail: 'arbitrary@example.test' })) {
+    await assertFails(update(ref(verified), { 'users/teacher1/email': 'new@example.test', [`users/teacher1/${field}`]: value }));
+  }
+  await assertFails(set(ref(verified, 'users/teacher1'), { ...original, email: 'new@example.test', role: 'coordinator' }));
+  await assertFails(update(ref(verified), { 'users/teacher1/email': 'new@example.test', 'grades/b1/teacher2/s1/presentation': 0 }));
+  assert.deepEqual(await readPrivileged('users/teacher1'), original);
+});
+
+test('Alberson may synchronize his own verified email without granting edits to his identity or another account', async () => {
+  const verified = claimedDb('coord', { email: 'alberson-new@example.test', email_verified: true });
+  await assertSucceeds(set(ref(verified, 'users/coord/email'), 'alberson-new@example.test'));
+  assert.equal((await readPrivileged('users/coord')).key, 'alberson');
+  await assertFails(set(ref(verified, 'users/coord/key'), 'other'));
+  await assertFails(update(ref(verified), { 'users/coord/email': 'alberson-new@example.test', 'users/coord/name': 'Novo nome' }));
+  await assertFails(set(ref(verified, 'users/teacher2/email'), 'alberson-new@example.test'));
+  await assertFails(set(ref(claimedDb('otherCoord', { email: 'two-new@example.test', email_verified: true }), 'users/teacher2/email'), 'two-new@example.test'));
+  await assertFails(set(ref(db('otherCoord'), 'users/newAlberson'), { name: 'Intruso', role: 'coordinator', key: 'alberson', email: 'evil@example.test', active: true }));
+});
+
+test('only coordinators tag unscheduled groups with a valid academic year while legacy groups remain compatible', async () => {
+  const group = (await readPrivileged('groups/g2'));
+  await assertSucceeds(set(ref(db('coord'), 'groups/g2'), { ...group, academicYear: 2027 }));
+  await assertSucceeds(set(ref(db('coord'), 'groups/g2/academicYear'), 2028));
+  for (const academicYear of ['2029', 1999, 10000, 2027.5, false]) {
+    await assertFails(set(ref(db('coord'), 'groups/g2/academicYear'), academicYear));
+  }
+  for (const uid of ['teacher1', 'outsider', 'disabled', null]) {
+    await assertFails(set(ref(db(uid), 'groups/g2/academicYear'), 2029));
+  }
+  await assertFails(set(ref(db('coord'), 'groups/g1/academicYear'), 2027));
+  assert.equal(await readPrivileged('groups/g2/academicYear'), 2028);
+  assert.equal(await readPrivileged('groups/g1/academicYear'), null);
+});
+
+test('verified contact records belong to their active owner and every client is forbidden from writing verification state', async () => {
+  await bypass('accountContacts/teacher1', { phone: '+5511999999999', phoneVerified: true, verifiedAt: Date.now() });
+  await bypass('accountContacts/disabled', { phone: '+5511888888888', phoneVerified: true });
+  await assertSucceeds(get(ref(db('teacher1'), 'accountContacts/teacher1')));
+  for (const uid of ['teacher2', 'coord', 'outsider', 'disabled', null]) {
+    await assertFails(get(ref(db(uid), 'accountContacts/teacher1')));
+  }
+  await assertFails(get(ref(db('disabled'), 'accountContacts/disabled')));
+  await assertFails(get(ref(db('coord'), 'accountContacts')));
+  for (const uid of ['teacher1', 'coord', null]) {
+    await assertFails(set(ref(db(uid), 'accountContacts/teacher1'), { phone: '+5511777777777', phoneVerified: true }));
+    await assertFails(remove(ref(db(uid), 'accountContacts/teacher1')));
+  }
+});
+
+test('private account challenges and rate limits cannot be read or written by any client role', async () => {
+  await bypass('accountSecurity/challenges/example', { digest: 'server-only', attempts: 0 });
+  for (const uid of ['teacher1', 'coord', 'otherCoord', 'disabled', null]) {
+    await assertFails(get(ref(db(uid), 'accountSecurity')));
+    await assertFails(get(ref(db(uid), 'accountSecurity/challenges/example')));
+    await assertFails(set(ref(db(uid), 'accountSecurity/challenges/example/attempts'), 0));
+    await assertFails(remove(ref(db(uid), 'accountSecurity/challenges/example')));
+  }
 });
 
 test('teacher reads only own evaluations before and after closure; coordinator reads all', async () => {

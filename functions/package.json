@@ -1,0 +1,10 @@
+{
+  "name": "bancaflow-account-service",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Recuperação e alteração de conta do BancaFlow; nenhum dado acadêmico é migrado.",
+  "main": "index.cjs",
+  "engines": { "node": "22" },
+  "scripts": { "check": "node --check index.cjs && node --check account-service.cjs && node --check gateways.cjs && node --check http-handler.cjs", "test": "node --test ../tests/account-backend.test.cjs" },
+  "dependencies": { "firebase-admin": "14.5.0", "firebase-functions": "7.4.0", "nodemailer": "10.1.7" }
+}

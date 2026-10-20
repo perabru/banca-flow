@@ -1,0 +1,6 @@
+node_modules/
+.env
+.env.*
+.secret.local
+*-debug.log
+service-account*.json

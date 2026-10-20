@@ -33,7 +33,7 @@ const fixture = () => ({
 function harness(uid = 't1') {
   let now = 1_800_000_000_000;
   const data = fixture();
-  const calls = { reads: [], sets: [], updates: [], transactions: [], confirmations: [], authCreates:[], authDeletes:[], appDeletes:[], listens:[], disconnects:[], removals:[], pushCount:0, notificationRequests:0, notifications:[] };
+  const calls = { reads: [], sets: [], updates: [], transactions: [], confirmations: [], authCreates:[], authDeletes:[], appDeletes:[], listens:[], disconnects:[], removals:[], pushCount:0, notificationRequests:0, notifications:[], passwordResets:[], emailChanges:[], reauthentications:[], tokenRefreshes:[], authReloads:[], passwordConfirmations:[], accountRequests:[] };
   const options = { confirm: true, setError: null, updateError: null, transactionError: null };
   const elements = new Map(), pendingTimeouts = new Map();
   let timeoutId = 0;
@@ -89,9 +89,11 @@ function harness(uid = 't1') {
   const notificationRegistration = {showNotification:async(title,config)=>calls.notifications.push({title,config:clone(config)}),getNotifications:async()=>[]};
   const navigator = {serviceWorker:{register:async()=>notificationRegistration,ready:Promise.resolve(notificationRegistration),getRegistration:async()=>notificationRegistration,addEventListener(){}}};
   const location = {href:'https://bancaflow.example.test/',origin:'https://bancaflow.example.test',pathname:'/'};
+  const authUser = {uid,email:data.users[uid]?.email||uid+'@example.test',emailVerified:false,getIdToken:async force=>{calls.tokenRefreshes.push({uid,force});return'test-token';},getIdTokenResult:async force=>{calls.tokenRefreshes.push({uid,force});return{claims:{email:authUser.email,email_verified:authUser.emailVerified,...options.authClaims}};}};
+  const authAdapter={currentUser:authUser,languageCode:'pt-BR'};
   const context = vm.createContext({
     console, Date: Clock, Blob, File, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
-    FormData: FormDataAdapter, URL, atob, btoa, crypto:{randomUUID:()=> 'test-uuid'},
+    FormData: FormDataAdapter, URL, URLSearchParams, AbortController, atob, btoa, crypto:{randomUUID:()=> 'test-uuid'},
     window: { scrollTo() {}, addEventListener() {},localStorage,Notification:NotificationAdapter,navigator,location }, navigator, localStorage,Notification:NotificationAdapter,location,
     document: {
       hidden: false, visibilityState:'visible',addEventListener(){}, body: { classList: { add() {}, remove() {} } },
@@ -103,11 +105,20 @@ function harness(uid = 't1') {
     setTimeout(callback, delay=0) { const id=++timeoutId;pendingTimeouts.set(id,{callback,delay});return id; },
     clearTimeout(id) { pendingTimeouts.delete(id); },
     confirm(message) { calls.confirmations.push(message); return options.confirm; },
-    initializeApp: (_config,name='main') => ({name}), getAuth: () => ({}), getDatabase: () => ({}),
+    initializeApp: (_config,name='main') => ({name}), getAuth: () => authAdapter, getDatabase: () => ({}),
     initializeAuth: app => ({app}), inMemoryPersistence:{},
     createUserWithEmailAndPassword: async (_auth,email,password) => {calls.authCreates.push({email,password});if(options.authCreateError)throw options.authCreateError;return{user:{uid:options.newAuthUid||'new-teacher'}};},
     deleteUser: async user => {calls.authDeletes.push(user.uid);if(options.authDeleteError)throw options.authDeleteError;},
     deleteApp: async app => {calls.appDeletes.push(app.name);}, signOut:async()=>{},
+    sendPasswordResetEmail:async (_auth,email,settings)=>{calls.passwordResets.push({email,settings:clone(settings)});await options.beforeResetEmail?.(email,settings);if(options.resetEmailError)throw options.resetEmailError;},
+    EmailAuthProvider:{credential:(email,password)=>({email,password})},
+    reauthenticateWithCredential:async(user,credential)=>{calls.reauthentications.push({uid:user.uid,...credential});await options.beforeReauthenticate?.(user);if(options.reauthenticateError)throw options.reauthenticateError;},
+    verifyBeforeUpdateEmail:async(user,email,settings)=>{calls.emailChanges.push({uid:user.uid,email,settings:clone(settings)});await options.beforeEmailChange?.(user,email,settings);if(options.emailChangeError)throw options.emailChangeError;},
+    reload:async user=>{calls.authReloads.push(user.uid);await options.beforeAuthReload?.(user);if(options.authReloadError)throw options.authReloadError;},
+    getIdToken:async(user,force)=>user.getIdToken(force),getIdTokenResult:async(user,force)=>user.getIdTokenResult(force),
+    validatePassword:async(_auth,password)=>options.passwordStatus||{isValid:password.length>=8,passwordPolicy:{customStrengthOptions:{minPasswordLength:8}}},
+    confirmPasswordReset:async(_auth,code,password)=>{calls.passwordConfirmations.push({code,password});if(options.confirmPasswordError)throw options.confirmPasswordError;},
+    fetch:async(url,request={})=>{const body=request.body?JSON.parse(request.body):{};calls.accountRequests.push({url:String(url),body,headers:request.headers});if(options.accountRequestError)throw options.accountRequestError;const payload=await options.accountResponse?.(body)||{ok:true,emailAvailable:false,smsAvailable:false};return{ok:true,status:200,json:async()=>payload};},
     onAuthStateChanged: () => () => {}, onValue: (target,callback,error) => {calls.listens.push(pathOf(target));listeners.set(target,callback);listenerErrors.set(target,error);if(pathOf(target).startsWith('chat')){if(options.chatReadError){listeners.delete(target);listenerErrors.delete(target);error?.(Object.assign(Error('Permission denied'),{code:'PERMISSION_DENIED'}));}else if(!options.deferChatMessages||!pathOf(target).startsWith('chatMessages/'))callback(snapshot(queryValue(target)));}return()=>{listeners.delete(target);listenerErrors.delete(target);};},
     query:(target,...constraints)=>({path:pathOf(target),constraints}),orderByChild:key=>({kind:'order',key}),limitToLast:count=>({kind:'last',count}),endBefore:(value,key)=>({kind:'before',value,key}),startAt:(value,key)=>({kind:'start',value,key}),
     onDisconnect: target => ({remove:async()=>{calls.disconnects.push({kind:'remove',path:pathOf(target)});if(options.disconnectError)throw options.disconnectError;},cancel:async()=>calls.disconnects.push({kind:'cancel',path:pathOf(target)})}),
@@ -131,6 +142,7 @@ function harness(uid = 't1') {
     },
     update: async (base, changes) => {
       calls.updates.push(clone(changes));
+      await options.beforeUpdate?.(base,changes);
       if (options.updateError) throw options.updateError;
       Object.entries(changes).forEach(([path, value]) => write(base?`${base}/${path}`:path, value));
     },
@@ -146,13 +158,16 @@ function harness(uid = 't1') {
       return { committed: true, snapshot: snapshot(read(path)) };
     }
   });
-  for(const asset of ['roster-import.js','analytics.js','analytics-pdf.js','coordinator-report.js','coordinator-report-pdf.js','board-chat.js','board-import.js','chat-notifications.js','weighted-model.js','weighted-report-ui.js','weighted-report-pdf.js','weighted-workbench.js','board-assignment.js'].filter(asset=>require('node:fs').existsSync(join(__dirname,'..','assets',asset))))vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
+  for(const asset of ['academic-years.js','account-security.js','roster-import.js','analytics.js','analytics-pdf.js','coordinator-report.js','coordinator-report-pdf.js','board-chat.js','board-import.js','chat-notifications.js','weighted-model.js','weighted-report-ui.js','weighted-report-pdf.js','weighted-workbench.js','board-assignment.js'].filter(asset=>require('node:fs').existsSync(join(__dirname,'..','assets',asset))))vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
   vm.runInContext(source + `
     render = () => {};
     refreshTimerUi = () => {};
     globalThis.testDownloads = [];
     downloadBlob = (blob, filename) => globalThis.testDownloads.push({blob,filename});
-    globalThis.appTest = { state, CRITERIOS, notaValida, mediaAvaliador, situacao, resultadoAluno,
+    globalThis.appTest = { state, auth, accountSecurity:typeof accountSecurity!=='undefined'?accountSecurity:null,
+      syncVerifiedAccountEmail:typeof syncVerifiedAccountEmail==='function'?syncVerifiedAccountEmail:null,openAccountSecurity:typeof openAccountSecurity==='function'?openAccountSecurity:null,openRecoveryDialog:typeof openRecoveryDialog==='function'?openRecoveryDialog:null,closeAccountSecurity:typeof closeAccountSecurity==='function'?closeAccountSecurity:null,setAcademicYear:typeof setAcademicYear==='function'?setAcademicYear:null,exportAcademicBackup:typeof exportAcademicBackup==='function'?exportAcademicBackup:null,
+      getAccessRevision:()=>accessRevision,setAccessRevision:value=>accessRevision=value,
+      CRITERIOS, notaValida, mediaAvaliador, situacao, resultadoAluno,
       chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,isChatVisible:typeof isChatVisible==='function'?isChatVisible:null,toggleChatWidget:typeof toggleChatWidget==='function'?toggleChatWidget:null,closeChatWidget:typeof closeChatWidget==='function'?closeChatWidget:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,
       beginChatEdit:typeof beginChatEdit==='function'?beginChatEdit:null,beginChatDelete:typeof beginChatDelete==='function'?beginChatDelete:null,cancelChatMutation:typeof cancelChatMutation==='function'?cancelChatMutation:null,submitChatEdit:typeof submitChatEdit==='function'?submitChatEdit:null,confirmChatDelete:typeof confirmChatDelete==='function'?confirmChatDelete:null,
       requestChatNotifications:typeof requestChatNotifications==='function'?requestChatNotifications:null,toggleChatMuted:typeof toggleChatMuted==='function'?toggleChatMuted:null,syncChatAlerts:typeof syncChatAlerts==='function'?syncChatAlerts:null,stopChatAlerts:typeof stopChatAlerts==='function'?stopChatAlerts:null,getChatAlertsState:typeof getChatAlertsState==='function'?getChatAlertsState:null,
@@ -169,11 +184,11 @@ function harness(uid = 't1') {
       startBoardAssignment(bid){const paths=['users','groups','boards','grades','seals','locks'],catalog=Object.fromEntries(paths.map(key=>[key,state[key]||{}]));boardAssignmentSession={bid,uid:state.user.uid,revision:accessRevision,busy:false,fingerprint:assignmentFingerprint(catalog,bid),dialog:{open:false,remove(){},querySelectorAll(){return[];},querySelector(){return{textContent:''};}}};return boardAssignmentSession;},
       startTeacherEdit(uid){teacherEditSession={uid,ownerUid:state.user.uid,revision:accessRevision,profileFingerprint:teacherProfileFingerprint(state.users[uid]),dialog:{open:false,remove(){},querySelectorAll(){return[];}},saving:false};},
       prepareBankImport(rows){const catalog={users:state.users,groups:state.groups,boards:state.boards,groupBoards:state.groupBoards,locks:state.locks,roomLocks:state.roomLocks},preview=BancaBoardImport.parseRows(rows,{...catalog,now:Date.now()});boardImportState={uid:state.user.uid,revision:accessRevision,busy:false,rows,catalog,preview,fingerprint:boardImportFingerprint(preview)};return boardImportState;},
-      prepareImport(rows){const catalog={users:state.users,existingGroups:state.groups},preview=BancaFlowImport.parseRows(rows,catalog);excelImportState={uid:state.user.uid,revision:accessRevision,busy:false,rows,defaultCourse:'',catalog,preview,fingerprint:excelPreviewFingerprint(preview)};return excelImportState;},
+      prepareImport(rows){const catalog={users:state.users,existingGroups:state.groups,boards:state.boards},academicYear=BancaAcademicYears.newGroupYear(state.academicYear),preview=parseAcademicExcelRows(rows,catalog,'',academicYear);excelImportState={uid:state.user.uid,revision:accessRevision,academicYear,busy:false,rows,defaultCourse:'',catalog,preview,fingerprint:excelPreviewFingerprint(preview)};return excelImportState;},
       buildEvaluationPdf: typeof buildEvaluationPdf === 'function' ? buildEvaluationPdf : null };
   `, context, { filename: 'index.html.inline-module.js' });
   const app = context.appTest;
-  Object.assign(app.state, clone(data), { user: { uid }, profile: clone(data.users[uid]), connected: true });
+  Object.assign(app.state, clone(data), { user: authUser, profile: clone(data.users[uid]), connected: true });
   const runTimeouts = (maxDelay=Infinity) => { for(const[id,timer]of [...pendingTimeouts])if(timer.delay<=maxDelay&&pendingTimeouts.delete(id))timer.callback(); };
   return { app, data, calls, options, elements, context, downloads: context.testDownloads, now: () => now, advance: ms => { now += ms; }, read, write, emit, emitError, runTimeouts, pendingTimeouts };
 }
@@ -590,7 +605,7 @@ test('group validation rejects inactive advisors, duplicate names and unsafe stu
 });
 
 test('manual addition does not duplicate an existing or archived course/class/group identity',async()=>{
-  const h=harness('coord'),draft=newGroupDraft();h.data.groups.old={id:'old',...draft,students:{s1:'Outra pessoa'},active:false};h.app.resetGroupAdmin();
+  const h=harness('coord'),draft={...newGroupDraft(),academicYear:2026};h.data.groups.old={id:'old',...draft,students:{s1:'Outra pessoa'},active:false};h.app.resetGroupAdmin();
   await assert.rejects(h.app.saveGroup(groupForm(draft)),/já existe|já cadastrado|cadastrado|duplicado/i);
   assert.equal(h.calls.sets.length,0);assert.equal(h.data.groups.old.active,false);
 });
@@ -1760,4 +1775,145 @@ test('assignment rereads grades and blocks removal of a professor who has saved 
   h.app.startBoardAssignment('b1');h.data.grades.b1.t2={s1:{presentation:0}};const before=academicSnapshot(h);
   await assert.rejects(h.app.saveBoardAssignment(assignmentForm(['t1','coord2'])),/notas|avaliações.*preserv/i);
   assert.deepEqual(academicSnapshot(h),before);assert.equal(h.calls.updates.length,0);assert.equal(h.data.boards.b1.members.t2,true);
+});
+
+test('academic year filters preserve all saved years, notes and chat access while narrowing evaluation reports',()=>{
+  const h=harness('coord'),{app}=h;
+  const futureGroup={...clone(h.data.groups.g1),id:'g2027',name:'Grupo do próximo ano',academicYear:2027};
+  const futureBoard={...clone(h.data.boards.b1),groupId:'g2027',startAt:Date.UTC(2027,9,20,14)};
+  app.state.groups.g1.academicYear=2026;app.state.groups.g2027=futureGroup;app.state.boards.b2027=futureBoard;app.state.groupBoards.g2027='b2027';
+  app.state.grades.b2027=clone(app.state.grades.b1);app.state.deliveries.b2027=clone(app.state.deliveries.b1);
+  const academic=clone({groups:app.state.groups,boards:app.state.boards,grades:app.state.grades,deliveries:app.state.deliveries});
+  app.state.academicYear='2026';assert.deepEqual(clone(app.filteredBoards().map(([id])=>id)),['b1']);assert.deepEqual(clone(app.filteredReportBoards().map(([id])=>id)),['b1']);
+  assert.deepEqual(clone(app.filteredNotesBoards().map(([id])=>id)),['b1']);assert.deepEqual(clone(app.coordinatorReportBoards().map(board=>board.id)),['b1']);
+  assert.ok(app.chatRooms().some(room=>room.id==='b2027'),'year scope never revokes access to historical chat');
+  app.state.academicYear='2027';assert.deepEqual(clone(app.filteredBoards().map(([id])=>id)),['b2027']);assert.deepEqual(clone(app.coordinatorReportBoards().map(board=>board.id)),['b2027']);
+  app.state.academicYear='todos';assert.equal(app.filteredBoards().length,2);assert.equal(app.coordinatorReportBoards().length,2);
+  assert.deepEqual(clone({groups:app.state.groups,boards:app.state.boards,grades:app.state.grades,deliveries:app.state.deliveries}),academic);
+});
+
+test('manual group identities may repeat in another academic year but same-year duplicates remain protected',async()=>{
+  const h=harness('coord'),draft={...newGroupDraft(),academicYear:2026};
+  h.data.groups.old={id:'old',...draft,students:{s1:'Outra pessoa'},active:false};h.app.state.groups.old=clone(h.data.groups.old);h.app.resetGroupAdmin();
+  await assert.rejects(h.app.saveGroup(groupForm(draft)),/já existe|já cadastrado|cadastrado|duplicado/i);
+  assert.equal(h.calls.sets.length,0);
+  const next={...draft,academicYear:2027};await h.app.saveGroup(groupForm(next));
+  assert.equal(h.data.groups['new-group'].academicYear,2027);assert.equal(h.data.groups.old.academicYear,2026);assert.deepEqual(h.data.grades,fixture().grades);
+});
+
+test('annual Excel import skips only existing groups in the chosen year and persists the new year without changing past notes',async()=>{
+  const h=harness('coord'),{app}=h,before=clone(h.data.grades);
+  h.data.groups.old={id:'old',name:'Grupo novo',academicYear:2026,className:'1E',courseName:'Engenharia',title:'Sensores',advisorUid:'t1',students:{s1:'Carla',s2:'Daniel'}};
+  app.state.groups.old=clone(h.data.groups.old);app.state.academicYear='2027';
+  const next=app.prepareImport(importRows());assert.equal(next.preview.groups.length,1);assert.equal(next.preview.groups[0].academicYear,2027);
+  await app.confirmExcelImport(next);assert.equal(h.data.groups['new-group'].academicYear,2027);assert.equal(h.data.groups.old.academicYear,2026);assert.deepEqual(h.data.grades,before);
+  app.state.academicYear='2026';const original=app.prepareImport(importRows());assert.equal(original.preview.groups.length,0);assert.equal(original.preview.skipped.length,1);
+});
+
+test('password recovery keeps a generic personalized interface for missing and existing accounts without modifying any academics',async()=>{
+  const h=harness(),{app}=h,before=academicSnapshot(h);app.state.user=null;app.state.profile=null;
+  assert.ok(app.accountSecurity,'security controller is integrated');app.accountSecurity.openRecovery('unknown@example.test');
+  h.options.resetEmailError=Object.assign(Error('not found'),{code:'auth/user-not-found'});
+  await app.accountSecurity.submit('account-recovery-form',{email:'unknown@example.test',channel:'email'});
+  const generic=app.accountSecurity.getState().success;assert.match(generic,/Se os dados corresponderem/);assert.equal(app.accountSecurity.getState().error,'');
+  h.options.resetEmailError=null;app.accountSecurity.openRecovery('one@example.test');await app.accountSecurity.submit('account-recovery-form',{email:'one@example.test',channel:'email'});
+  assert.equal(app.accountSecurity.getState().success,generic);assert.equal(h.calls.passwordResets.length,2);assert.deepEqual(academicSnapshot(h),before);
+  assert.equal(h.calls.sets.length,0);assert.equal(h.calls.updates.length,0);assert.match(app.accountSecurity.view(),/SMS ainda não está disponível/);
+});
+
+test('changing the login email reauthenticates and sends verification while retaining UID, profile email and every saved note',async()=>{
+  const h=harness('coord'),{app}=h,before=clone(h.data);app.accountSecurity.openAccount();
+  await app.accountSecurity.submit('account-email-form',{newEmail:'novo.alberson@example.test',password:'CurrentPassword!12'});
+  assert.equal(h.calls.reauthentications.length,1);assert.equal(h.calls.reauthentications[0].uid,'coord');assert.equal(h.calls.reauthentications[0].email,'coord@example.test');
+  assert.equal(h.calls.emailChanges.length,1);assert.equal(h.calls.emailChanges[0].email,'novo.alberson@example.test');
+  assert.equal(app.state.user.uid,'coord');assert.equal(app.state.user.email,'coord@example.test');assert.equal(h.data.users.coord.email,'coord@example.test');
+  assert.match(app.accountSecurity.getState().success,/Alberson.*novo\.alberson@example\.test/);assert.equal(app.accountSecurity.getState().error,'');
+  assert.deepEqual(h.data,before);assert.ok(!JSON.stringify(app.accountSecurity.getState()).includes('CurrentPassword'));
+});
+
+test('an account switch during reauthentication cannot send another user email-change request or retain credential feedback',async()=>{
+  const h=harness('t1'),{app}=h;let release;
+  h.options.beforeReauthenticate=()=>new Promise(resolve=>release=resolve);app.accountSecurity.openAccount();
+  const task=app.accountSecurity.submit('account-email-form',{newEmail:'future@example.test',password:'CurrentPassword!12'});
+  await Promise.resolve();assert.equal(h.calls.reauthentications.length,1);
+  app.state.user={uid:'t2',email:'two@example.test'};app.state.profile=clone(h.data.users.t2);app.setAccessRevision(app.getAccessRevision()+1);release();await task;
+  assert.equal(h.calls.emailChanges.length,0);assert.equal(app.accountSecurity.getState().open,false);assert.equal(app.accountSecurity.getState().success,'');assert.equal(h.calls.updates.length,0);
+});
+
+test('only a verified canonical Auth email can synchronize its own profile without touching role, key, name or academic identities',async()=>{
+  const h=harness('coord'),{app}=h,academic=academicSnapshot(h),original=clone(h.data.users.coord);
+  assert.ok(app.syncVerifiedAccountEmail,'verified e-mail synchronizer is integrated');
+  app.auth.currentUser.email='confirmed@example.test';app.auth.currentUser.emailVerified=true;
+  const result=await app.syncVerifiedAccountEmail(app.auth.currentUser,clone(original),app.getAccessRevision());
+  assert.equal(h.data.users.coord.email,'confirmed@example.test');
+  const expected={...original,email:'confirmed@example.test'};assert.deepEqual(h.data.users.coord,expected);assert.equal(app.auth.currentUser.uid,'coord');assert.deepEqual(academicSnapshot(h),academic);
+  assert.ok(result===undefined||result.email==='confirmed@example.test');
+});
+
+test('unverified email claims and changed Auth identity never synchronize a profile login email',async()=>{
+  const h=harness('t1'),{app}=h,original=clone(h.data.users.t1);
+  app.auth.currentUser.email='unverified@example.test';app.auth.currentUser.emailVerified=false;
+  await app.syncVerifiedAccountEmail(app.auth.currentUser,clone(original),app.getAccessRevision());assert.deepEqual(h.data.users.t1,original);
+  const previous=app.auth.currentUser;app.auth.currentUser={uid:'t2',email:'two@example.test',emailVerified:true};
+  try{await app.syncVerifiedAccountEmail(previous,clone(original),app.getAccessRevision());}catch(error){assert.match(error.message,/sessão|conta|acesso/i);}
+  assert.deepEqual(h.data.users.t1,original);assert.equal(h.calls.updates.length,0);assert.equal(h.calls.sets.length,0);
+});
+
+test('coordinator backup captures every academic year with versioned metadata and excludes authentication and SMS recovery secrets',async()=>{
+  const h=harness('coord'),{app}=h;h.write('groups/future',{id:'future',name:'Grupo futuro',academicYear:2030,students:{s1:'Aluno futuro'}});
+  h.write('accountContacts/coord',{phone:'+5512999999999',verified:true});h.write('accountSecurity',{privateOtp:'NEVER_INCLUDE'});app.state.academicYear='2026';
+  const before=clone(h.data);await app.exportAcademicBackup();assert.equal(h.downloads.length,1);const result=JSON.parse(await h.downloads[0].blob.text());
+  assert.equal(result.format,'BancaFlowAcademicBackup');assert.equal(result.schemaVersion,1);assert.equal(result.scope,'all-academic-years');assert.equal(result.projectId,'avaliadortcc');assert.equal(result.data.groups.future.academicYear,2030);
+  assert.deepEqual(result.data.grades,before.grades);assert.deepEqual(result.data.boards,before.boards);assert.equal(result.data.accountContacts,undefined);assert.equal(result.data.accountSecurity,undefined);assert.ok(!JSON.stringify(result).includes('NEVER_INCLUDE'));assert.match(h.downloads[0].filename,/bancaflow_backup_.*\.json/);assert.equal(app.state.backupBusy,false);assert.deepEqual(h.data,before);
+  const teacher=harness('t1');await assert.rejects(teacher.app.exportAcademicBackup(),/coordenação/);assert.equal(teacher.downloads.length,0);
+});
+
+test('changing year initializes an empty new-group form for that year while preserving an unfinished historical draft',()=>{
+  const h=harness('coord'),{app}=h;app.resetGroupAdmin();app.setAcademicYear('2027');assert.equal(app.state.groupFormDraft.academicYear,2027);
+  app.state.groupFormDraft.name='Projeto em digitação';app.setAcademicYear('2028');assert.equal(app.state.groupFormDraft.academicYear,2027);assert.equal(app.state.groupFormDraft.name,'Projeto em digitação');
+  app.state.groupEditId='g1';app.state.groupFormDraft.name='';app.setAcademicYear('2029');assert.equal(app.state.groupFormDraft.academicYear,2027);assert.equal(app.state.groupEditId,'g1');
+});
+
+test('native recovery and email-change retry without a continue URL only when Firebase rejects that URL',async()=>{
+  const recovery=harness('t1');recovery.options.beforeResetEmail=(_email,settings)=>{if(settings)throw Object.assign(Error('continue URL rejected'),{code:'auth/unauthorized-continue-uri'});};
+  recovery.app.accountSecurity.openRecovery('one@example.test');await recovery.app.accountSecurity.submit('account-recovery-form',{email:'one@example.test',channel:'email'});
+  assert.equal(recovery.calls.passwordResets.length,2);assert.ok(recovery.calls.passwordResets[0].settings.url);assert.equal(recovery.calls.passwordResets[1].settings,undefined);assert.ok(recovery.app.accountSecurity.getState().success);assert.equal(recovery.app.accountSecurity.getState().error,'');
+  const change=harness('t1');change.options.beforeEmailChange=(_user,_email,settings)=>{if(settings)throw Object.assign(Error('continue URL invalid'),{code:'auth/invalid-continue-uri'});};
+  change.app.accountSecurity.openAccount();await change.app.accountSecurity.submit('account-email-form',{newEmail:'next@example.test',password:'CurrentPassword!12'});
+  assert.equal(change.calls.emailChanges.length,2);assert.ok(change.calls.emailChanges[0].settings.url);assert.equal(change.calls.emailChanges[1].settings,undefined);assert.equal(change.calls.reauthentications.length,1);assert.ok(change.app.accountSecurity.getState().success);assert.equal(change.data.users.t1.email,'one@example.test');
+  const denied=harness('t1');denied.options.resetEmailError=Object.assign(Error('network failed'),{code:'auth/network-request-failed'});denied.app.accountSecurity.openRecovery('one@example.test');await denied.app.accountSecurity.submit('account-recovery-form',{email:'one@example.test',channel:'email'});
+  assert.equal(denied.calls.passwordResets.length,1);assert.ok(denied.app.accountSecurity.getState().error);assert.equal(denied.app.accountSecurity.getState().success,'');
+});
+
+test('native email-change continue-URL fallback rechecks the actor before attempting a second verification message',async()=>{
+  const h=harness('t1'),{app}=h;h.options.beforeEmailChange=()=>{app.state.user={uid:'t2',email:'two@example.test'};app.state.profile=clone(h.data.users.t2);app.setAccessRevision(app.getAccessRevision()+1);throw Object.assign(Error('continue URL rejected'),{code:'auth/unauthorized-continue-uri'});};
+  app.accountSecurity.openAccount();await app.accountSecurity.submit('account-email-form',{newEmail:'next@example.test',password:'CurrentPassword!12'});
+  assert.equal(h.calls.emailChanges.length,1);assert.equal(h.data.users.t1.email,'one@example.test');assert.equal(app.accountSecurity.getState().open,false);
+});
+
+test('legacy database rules can accept a current-year manual group after a single metadata-only retry without changing saved academics',async()=>{
+  const h=harness('coord'),{app}=h,before=clone(h.data),year=require('../assets/academic-years.js').calendarYear(h.now());
+  app.state.academicYear=String(year);app.resetGroupAdmin();h.options.beforeSet=(path,value)=>{if(path.startsWith('groups/')&&Object.hasOwn(value,'academicYear'))throw Object.assign(Error('PERMISSION_DENIED'),{code:'PERMISSION_DENIED'});};
+  await app.saveGroup(groupForm({...newGroupDraft(),academicYear:year}));
+  assert.equal(h.calls.sets.length,2);assert.equal(h.calls.sets[0][1].academicYear,year);assert.equal(Object.hasOwn(h.calls.sets[1][1],'academicYear'),false);
+  const saved=h.data.groups['new-group'];assert.ok(saved);assert.equal(require('../assets/academic-years.js').yearOfGroup(saved,h.data.boards),year);assert.equal(saved.createdAt,h.now());
+  assert.deepEqual(h.data.groups.g1,before.groups.g1);assert.deepEqual(h.data.grades,before.grades);assert.deepEqual(h.data.boards,before.boards);assert.deepEqual(h.data.deliveries,before.deliveries);
+});
+
+test('legacy database rules can accept a current-year Excel batch atomically after removing only inferable new year metadata',async()=>{
+  const h=harness('coord'),{app}=h,before=clone(h.data),year=require('../assets/academic-years.js').calendarYear(h.now());
+  app.state.academicYear=String(year);const session=app.prepareImport(importRows());
+  h.options.beforeUpdate=(_base,changes)=>{if(Object.values(changes).some(value=>value&&typeof value==='object'&&Object.hasOwn(value,'academicYear')))throw Object.assign(Error('PERMISSION_DENIED'),{code:'PERMISSION_DENIED'});};
+  await app.confirmExcelImport(session);assert.equal(h.calls.updates.length,2);assert.equal(h.calls.updates[0]['groups/new-group'].academicYear,year);assert.equal(Object.hasOwn(h.calls.updates[1]['groups/new-group'],'academicYear'),false);
+  assert.equal(require('../assets/academic-years.js').yearOfGroup(h.data.groups['new-group'],h.data.boards),year);assert.deepEqual(h.data.groups.g1,before.groups.g1);assert.deepEqual(h.data.grades,before.grades);assert.deepEqual(h.data.boards,before.boards);
+});
+
+test('legacy compatibility never strips a future or already explicit year and never retries after fresh coordinator revocation',async()=>{
+  const future=harness('coord');future.app.state.academicYear='2030';future.app.resetGroupAdmin();future.options.beforeSet=()=>{throw Object.assign(Error('PERMISSION_DENIED'),{code:'PERMISSION_DENIED'});};
+  await assert.rejects(future.app.saveGroup(groupForm({...newGroupDraft(),academicYear:2030})),/regras|Firebase|PERMISSION_DENIED/i);assert.equal(future.calls.sets.length,1);assert.equal(future.data.groups['new-group'],undefined);
+  const existing=harness('coord'),year=require('../assets/academic-years.js').calendarYear(existing.now()),group={id:'historical',...existing.app.validatedGroupDraft({...newGroupDraft(),academicYear:year}),active:true};existing.write('groups/historical',group);existing.app.state.groups.historical=clone(group);existing.app.resetGroupAdmin();existing.app.editGroup('historical');
+  existing.options.beforeTransaction=()=>{throw Object.assign(Error('PERMISSION_DENIED'),{code:'PERMISSION_DENIED'});};
+  await assert.rejects(existing.app.saveGroup(groupForm({...newGroupDraft(),academicYear:year,title:'Alteração'})),/regras|Firebase|PERMISSION_DENIED/i);assert.equal(existing.calls.transactions.length,1);assert.deepEqual(existing.data.groups.historical,clone(group));
+  const revoked=harness('coord');revoked.app.resetGroupAdmin();revoked.options.beforeSet=()=>{revoked.data.users.coord.active=false;throw Object.assign(Error('PERMISSION_DENIED'),{code:'PERMISSION_DENIED'});};
+  await assert.rejects(revoked.app.saveGroup(groupForm(newGroupDraft())),/permissão|acesso|coordenação|PERMISSION_DENIED/i);assert.equal(revoked.calls.sets.length,1);assert.equal(revoked.data.groups['new-group'],undefined);
 });
