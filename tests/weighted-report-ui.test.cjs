@@ -47,9 +47,9 @@ test('filter and export controls retain submitted selection and content preferen
   assert.match(html, />Revisão da coordenação<\/textarea>/);
   assert.match(html, /id="weighted-report-notes"[^>]*maxlength="2000"/);
   for (const kind of ['pdf', 'csv', 'charts']) assert.doesNotMatch(tag(html, new RegExp(`<button[^>]*data-weighted-export="${kind}"[^>]*>`)), /disabled/);
-  assert.doesNotMatch(html, /<caption>Resultados por aluno/);
+  assert.match(html, /<caption>Resultados por aluno/);
   assert.match(html, /Notas individuais dos avaliadores/);
-  assert.doesNotMatch(html, /Gráficos da consulta/);
+  assert.match(html, /id="weighted-charts-options" class="weighted-options"/);
 });
 
 test('zero grades remain numeric while missing grades are explicitly pending', () => {
@@ -113,7 +113,7 @@ test('dirty draft shows a pending preview notice while the initial and applied s
   const initial = ui.render(fixture());
   assert.doesNotMatch(initial, /class="weighted-dirty"/);
   const dirty = ui.render(fixture({ dirty: true, draft: { ...model, boardWeight: 70 } }));
-  assert.match(dirty, /class="weighted-dirty" role="status" aria-live="polite">Há alterações no modelo\. Gere a prévia para aplicar os novos pesos\./);
+  assert.match(dirty, /class="weighted-dirty" role="status" aria-live="polite">Pesos alterados\. Atualize a prévia antes de baixar\./);
   assert.match(dirty, /name="boardWeight"[^>]*value="70"/);
   assert.match(dirty, /Fórmula do modelo aplicado · Modelo 2026/);
   assert.doesNotMatch(ui.render(fixture({ dirty: false })), /class="weighted-dirty"/);
@@ -142,4 +142,38 @@ test('historical evaluators remain configurable even when their registration is 
   const before = JSON.stringify({ model, boards });
   ui.render(fixture());
   assert.equal(JSON.stringify({ model, boards }), before);
+});
+
+test('simple flow keeps selection, applied average, all downloads and results available while advanced panels start closed', () => {
+  const html = ui.render(fixture());
+  const headings = ['Escolha os alunos', 'Confira a média', 'Baixe o arquivo'];
+  assert.ok(html.indexOf(headings[0]) < html.indexOf(headings[1]));
+  assert.ok(html.indexOf(headings[1]) < html.indexOf(headings[2]));
+  for (const id of ['weighted-filters-options', 'weighted-model-options', 'weighted-evaluator-options', 'weighted-content-options', 'weighted-individual-options', 'weighted-charts-options', 'weighted-formula-options']) {
+    const element = tag(html, new RegExp(`<details id="${id}"[^>]*>`));
+    assert.ok(element, id); assert.doesNotMatch(element, /\sopen(?:\s|>)/);
+  }
+  assert.match(html, /class="weighted-composition" aria-label="Composição do resultado aplicado"/);
+  assert.match(html, /<strong>60<small>%/);
+  assert.match(html, /<strong>40<small>%/);
+  assert.match(html, /Os resultados oficiais permanecem preservados/);
+  for (const kind of ['pdf', 'csv', 'charts']) assert.ok(html.indexOf(`data-weighted-export="${kind}"`) < html.indexOf('id="weighted-content-options"'));
+  assert.match(html, /id="weighted-model-form"[^>]*novalidate/);
+});
+
+test('advanced panel state is explicit and preserved independently from chosen PDF sections', () => {
+  const ids = ['weighted-model-options', 'weighted-evaluator-options', 'weighted-individual-options', 'weighted-formula-options'];
+  const html = ui.render(fixture({ uiOpen: Object.fromEntries(ids.map(id => [id, true])), report: { includeSummary: false, includeDetails: false, includeCharts: false } }));
+  for (const id of ids) assert.match(tag(html, new RegExp(`<details id="${id}"[^>]*>`)), /\sopen>/);
+  assert.doesNotMatch(tag(html, /<details id="weighted-charts-options"[^>]*>/), /\sopen(?:\s|>)/);
+  assert.match(html, /<caption>Resultados por aluno/);
+  assert.match(html, /Notas individuais dos avaliadores/);
+  assert.match(html, /Selecione o conteúdo do PDF abaixo/);
+});
+
+test('unapplied search text remains in its input and model errors are shown before downloads', () => {
+  const html = ui.render(fixture({ searchDraft: 'Bia <pendente>', filters: { search: 'Ana' }, error: 'Os pesos devem somar 100%.' }));
+  assert.match(html, /name="search" value="Bia &lt;pendente&gt;"/);
+  assert.ok(html.indexOf('id="weighted-report-error"') < html.indexOf('data-weighted-export="pdf"'));
+  assert.match(html, /Os pesos devem somar 100%\./);
 });

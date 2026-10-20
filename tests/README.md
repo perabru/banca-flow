@@ -111,6 +111,12 @@ As verificações usam notificações simuladas e abas visíveis ou em segundo p
 
 ## Relatórios personalizados da coordenação
 
+A área **Relatórios e médias** apresenta os arquivos de todos os alunos e o acesso aos cálculos personalizados antes das opções oficiais avançadas. O navegador verifica que o PDF completo pode ser baixado com os detalhes oficiais recolhidos. Filtros de data/curso/turma, consolidação oficial, gráficos oficiais e compartilhamento continuam cobertos depois de abrir essas opções.
+
+O fluxo personalizado começa com curso, turma, resumo da média e os três formatos de arquivo. Os testes baixam PDF, CSV e gráficos com o modelo padrão sem abrir configurações. Depois abrem os pesos, filtros adicionais, conteúdo do PDF, notas individuais e gráficos, verificando que todos os recursos continuam disponíveis. Alterar as seções do PDF mantém a tabela de resultados visível na prévia. As capturas `reports-simple` mostram a tela inicial em 320, 390 e 1440 px.
+
+As expansões de opções, o texto ainda não aplicado da busca, o modelo em edição e o foco/cursor de campos de texto são preservados durante navegação e atualizações do Firebase. Essas preferências da interface são limpas na troca de conta; os modelos salvos continuam isolados por coordenador.
+
 Os cálculos, controles, preferências locais e PDF possuem suítes próprias:
 
 ```bash

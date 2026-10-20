@@ -14,7 +14,7 @@ const html = readFileSync(join(__dirname, '..', 'index.html'), 'utf8');
 const source = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^import\s.+?;\s*$/gm, '');
 const markup = html.replace(/<script type="module">[\s\S]*?<\/script>/, '');
 const XLSX=require('../assets/vendor/xlsx-0.20.3.full.min.js');
-const localAssetPaths=['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js','/assets/board-chat.js','/assets/board-chat.css','/assets/board-import.js','/assets/chat-notifications.js','/assets/weighted-model.js','/assets/weighted-report-ui.js','/assets/weighted-report.css','/assets/weighted-report-pdf.js','/assets/weighted-workbench.js','/assets/board-assignment.js','/manifest.webmanifest','/chat-sw.js','/assets/app-icon-180.png','/assets/app-icon-192.png','/assets/app-icon-512.png','/assets/notification-badge.png'];
+const localAssetPaths=['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/report-center.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js','/assets/board-chat.js','/assets/board-chat.css','/assets/board-import.js','/assets/chat-notifications.js','/assets/weighted-model.js','/assets/weighted-report-ui.js','/assets/weighted-report.css','/assets/weighted-report-pdf.js','/assets/weighted-workbench.js','/assets/board-assignment.js','/manifest.webmanifest','/chat-sw.js','/assets/app-icon-180.png','/assets/app-icon-192.png','/assets/app-icon-512.png','/assets/notification-badge.png'];
 const assetContentType=path=>path.endsWith('.png')?'image/png':path.endsWith('.webmanifest')?'application/manifest+json':path.endsWith('.css')?'text/css':'text/javascript';
 const readLocalAsset=path=>readFileSync(join(__dirname,'..',path.slice(1)));
 const fixture = {
@@ -128,6 +128,19 @@ async function openApp(t,{timezoneId='UTC'}={}) {
   return { page, errors, requests, downloads, cspErrors, reload, createPeer };
 }
 
+// As opções avançadas ficam recolhidas no uso diário e são abertas pelo mesmo
+// controle nativo que um coordenador utiliza no navegador.
+async function openDetails(page, ...ids) {
+  for (const id of ids) {
+    const section = page.locator('#' + id);
+    if (await section.count() && !await section.evaluate(element => element.open)) await section.locator(':scope > summary').click();
+  }
+}
+async function openOfficialReports(page, analytics = false) {
+  await openDetails(page, 'report-official-options');
+  if (analytics) await openDetails(page, 'report-analytics-options');
+}
+
 test('actual mobile grading, shared timer and teacher/coordinator close/reopen preserve data and weighted PDF', {skip}, async t=>{
   const {page,errors,requests}=await openApp(t);
   const form=page.locator('[data-grade-form="b1"][data-student="s1"]'),input=form.locator('input[name="presentation"]');
@@ -163,7 +176,7 @@ test('actual mobile grading, shared timer and teacher/coordinator close/reopen p
   await delivery.locator('input[name="delivery"]').fill('9.5');await delivery.locator('button[type="submit"]').click();
   await page.waitForFunction(()=>firebaseMock.data.deliveries.b1.s1===9.5);
   page.once('dialog',dialog=>dialog.accept());await page.locator('[data-seal="b1"]').click();await page.waitForFunction(()=>!!firebaseMock.data.seals.b1);
-  await page.evaluate(()=>appTest.go('relatorios'));
+  await page.evaluate(()=>appTest.go('relatorios'));await openOfficialReports(page);
   const pending=page.waitForEvent('download');await page.locator('[data-print-one="b1"]').click();const file=await pending;
   const pdf=readFileSync(await file.path(),'ascii');assert.ok(pdf.startsWith('%PDF-1.4'));
   for(const value of ['Ana','Bruno','Professor Um','Professora Dois','6,88','4,13','3,80','7,93'])assert.ok(pdf.includes(value),value);
@@ -405,7 +418,7 @@ test('mobile date filters use local midnight, combine course/class, scope every 
   const agenda=readFileSync(await file.path(),'ascii');
   for(const name of ['AFTER_DAY','PRIVATE_DAY'])assert.ok(agenda.includes(name));
   for(const name of ['BEFORE_DAY','ENGINEERING_DAY','OTHER_CLASS','UNSCHEDULED_DAY'])assert.ok(!agenda.includes(name),name);
-  await page.evaluate(()=>appTest.go('relatorios'));await page.locator('#report-course-filter').selectOption('ADS');await page.locator('#report-filter').selectOption('2A');await page.locator('#report-date-filter').fill('2026-10-18');
+  await page.evaluate(()=>appTest.go('relatorios'));await openOfficialReports(page);await page.locator('#report-course-filter').selectOption('ADS');await page.locator('#report-filter').selectOption('2A');await page.locator('#report-date-filter').fill('2026-10-18');
   assert.equal(await page.locator('[data-print-all]').isEnabled(),true,'unscheduled groups do not block a day-specific report');
   downloading=page.waitForEvent('download');await page.locator('[data-print-all]').click();file=await downloading;
   const report=readFileSync(await file.path(),'ascii');
@@ -437,6 +450,7 @@ test('coordinator analytics render responsive accessible charts with filtered ze
     }
     appTest.mount('coord');appTest.go('relatorios');
   });
+  await openOfficialReports(page,true);
   await page.locator('#report-course-filter').selectOption('ADS');await page.locator('#report-filter').selectOption('2A');await page.locator('#report-date-filter').fill('2026-10-18');
   const panel=page.locator('.analytics-panel');
   assert.equal(await panel.locator('svg[role="img"]').count(),3);
@@ -476,7 +490,7 @@ test('coordinator analytics render responsive accessible charts with filtered ze
 
 test('analytics empty state disables PDF and fully removes stale detail selection after filter changes', {skip}, async t=>{
   const{page,errors,cspErrors}=await openApp(t);
-  await page.evaluate(()=>{appTest.mount('coord');appTest.go('relatorios');});
+  await page.evaluate(()=>{appTest.mount('coord');appTest.go('relatorios');});await openOfficialReports(page,true);
   assert.equal(await page.locator('[data-print-analytics]').isDisabled(),true);
   assert.equal(await page.locator('.analytics-panel svg[role="img"]').count(),0);
   assert.ok((await page.locator('.analytics-panel').textContent()).includes('Nenhuma banca completa'));
@@ -636,7 +650,7 @@ test('Alberson grades as an assigned evaluator through direct desktop/mobile nav
   assert.equal(await assigned.locator('[data-my-grades="b1"]').count(),1);
   await assigned.locator('[data-my-grades="b1"]').click();assert.equal(await page.locator('#page-title').textContent(),'Minhas avaliações');
   await page.evaluate(()=>appTest.go('bancas'));assert.equal(await page.locator('[data-my-grades="b1"]').count(),1);assert.equal(await page.locator('[data-my-grades="b2"]').count(),0);
-  await page.evaluate(()=>appTest.go('relatorios'));assert.equal(await page.locator('[data-my-grades="b1"]').count(),1);assert.equal(await page.locator('[data-my-grades="b2"]').count(),0);
+  await page.evaluate(()=>appTest.go('relatorios'));await openOfficialReports(page);assert.equal(await page.locator('[data-my-grades="b1"]').count(),1);assert.equal(await page.locator('[data-my-grades="b2"]').count(),0);
   await page.setViewportSize({width:1440,height:900});await page.locator('#desktop-nav [data-route="sortear"]').click();await page.locator('#manual-group').selectOption('g3');
   assert.equal(await page.locator('#manual-members input[name="evaluator"][value="coord"]').count(),1,'coordinator remains selectable as a future evaluator');
   const after=await page.evaluate(()=>({others:{t1:firebaseMock.data.grades.b1.t1,t2:firebaseMock.data.grades.b1.t2},deliveries:firebaseMock.data.deliveries,boards:firebaseMock.data.boards}));
@@ -700,21 +714,74 @@ test('coordinator completes monograph notes inline and exports all students, inc
   assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
 });
 
+test('coordinators download complete reports through the compact hub and default mean without opening advanced settings', {skip}, async t=>{
+  const {page,errors,cspErrors}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-reports-simple-qa';mkdirSync(qa,{recursive:true});
+  await page.evaluate(()=>{appTest.mount('coord');appTest.go('relatorios');});
+  const before=await page.evaluate(()=>JSON.stringify(Object.fromEntries(['users','groups','boards','grades','deliveries','seals','timers'].map(key=>[key,firebaseMock.data[key]]))));
+  assert.equal(await page.locator('#report-center').isVisible(),true);
+  assert.equal(await page.locator('#report-official-options').evaluate(element=>element.open),false);
+  for(const width of [320,1440]){
+    await page.setViewportSize({width,height:1000});await page.evaluate(()=>scrollTo(0,0));
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`report hub overflow at ${width}px`);
+    await page.screenshot({path:join(qa,`reports-hub-${width}.png`),fullPage:true});
+  }
+  const download=async(selector,name)=>{const pending=page.waitForEvent('download');await page.locator(selector).click();const file=await pending;await file.saveAs(join(qa,name));return readFileSync(await file.path(),'utf8');};
+  const globalPdf=await download('#report-center [data-coordinator-export="pdf"]','reports-all-students.pdf');
+  assert.match(globalPdf,/^%PDF-1\.4/);assert.match(globalPdf,/Ana/);assert.match(globalPdf,/Bruno/);
+  assert.equal(await page.locator('#report-official-options').evaluate(element=>element.open),false,'a fast report does not open the official workflow');
+  await page.locator('#report-center [data-route="personalizados"]').click();
+  const ids=['weighted-filters-options','weighted-model-options','weighted-content-options','weighted-individual-options','weighted-charts-options','weighted-formula-options'];
+  for(const id of ids)assert.equal(await page.locator('#'+id).evaluate(element=>element.open),false,id+' begins collapsed');
+  assert.equal(await page.locator('#weighted-criterion-presentation').isVisible(),false);
+  assert.equal(await page.locator('.weighted-table:not(.weighted-evaluator-table) .weighted-final').first().textContent(),'7,80');
+  assert.equal(await page.locator('[data-weighted-export="pdf"]').isVisible(),true);
+  for(const width of [320,390,1440]){
+    await page.setViewportSize({width,height:1000});await page.evaluate(()=>scrollTo(0,0));
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`simplified report overflow at ${width}px`);
+    await page.screenshot({path:join(qa,`reports-simple-${width}.png`),fullPage:true});
+  }
+  const pdf=await download('[data-weighted-export="pdf"]','reports-default.pdf');
+  for(const value of ['%PDF-1.4','Ana','Bruno','60%','40%'])assert.ok(pdf.includes(value),value);
+  const csv=await download('[data-weighted-export="csv"]','reports-default.csv');assert.match(csv,/Ana/);assert.match(csv,/Bruno/);assert.match(csv,/7,8/);
+  assert.match(await download('[data-weighted-export="charts"]','reports-default-charts.pdf'),/^%PDF-1\.4/);
+  assert.equal(await page.locator('#weighted-model-options').evaluate(element=>element.open),false,'default exports need no advanced model setup');
+  await openDetails(page,'weighted-filters-options');await page.locator('#weighted-search').fill('Ana sem aplicar');
+  await page.evaluate(()=>firebaseMock.emit('groups'));
+  assert.equal(await page.locator('#weighted-search').inputValue(),'Ana sem aplicar','unsubmitted search survives live updates');
+  assert.equal(await page.locator('.weighted-table:not(.weighted-evaluator-table) tbody tr').count(),2,'typing search does not silently filter a report');
+  await page.locator('#weighted-search').fill('Ana');await page.locator('#weighted-filter-form button[type="submit"]').click();
+  assert.equal(await page.locator('.weighted-table:not(.weighted-evaluator-table) tbody tr').count(),1);
+  await openDetails(page,'weighted-content-options');await page.locator('#weighted-summary').uncheck();await page.locator('#weighted-charts').uncheck();
+  assert.equal(await page.locator('.weighted-table:not(.weighted-evaluator-table) tbody tr').count(),1,'PDF section choices leave the on-screen preview usable');
+  const selectedPdf=await download('[data-weighted-export="pdf"]','reports-selected-without-summary.pdf');assert.match(selectedPdf,/Ana/);assert.doesNotMatch(selectedPdf,/Bruno/);
+  const chartsWithoutPdfFlag=await download('[data-weighted-export="charts"]','reports-charts-independent.pdf');
+  for(const title of ['Resultados por aluno','Composi','Notas registradas por crit','Tempo de apresenta'])assert.ok(chartsWithoutPdfFlag.includes(title),title+' remains in the explicit charts export');
+  await openDetails(page,'weighted-individual-options','weighted-charts-options','weighted-formula-options');
+  await page.locator('.weighted-student > summary').first().click();
+  assert.equal(await page.locator('.weighted-evaluator-table').isVisible(),true);assert.equal(await page.locator('.weighted-chart-grid svg[role="img"]').count(),4);
+  assert.equal(await page.evaluate(()=>JSON.stringify(Object.fromEntries(['users','groups','boards','grades','deliveries','seals','timers'].map(key=>[key,firebaseMock.data[key]])))),before,'report simplification cannot change academic data');
+  assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
 test('coordinator configures custom weighted reports, preserves edits across chat and navigation, and exports saved notes', {skip}, async t=>{
   const{page,errors,cspErrors,createPeer,reload}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-chat-qa';mkdirSync(qa,{recursive:true});
   await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>{appTest.mount('coord');appTest.go('personalizados');});
   const before=await page.evaluate(()=>JSON.stringify({users:firebaseMock.data.users,groups:firebaseMock.data.groups,boards:firebaseMock.data.boards,grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,seals:firebaseMock.data.seals,timers:firebaseMock.data.timers}));
   const rows=page.locator('.weighted-table:not(.weighted-evaluator-table) tbody tr'),ana=rows.filter({hasText:'Ana'}),bruno=rows.filter({hasText:'Bruno'});
   assert.equal(await ana.locator('.weighted-final').textContent(),'7,80');
+  await openDetails(page,'weighted-model-options');
   await page.locator('#weighted-model-name').fill('MODELO_INTEGRACAO');await page.locator('#weighted-report-title-input').fill('RELATORIO_PERSONALIZADO');
   await page.locator('#weighted-board-weight').fill('75');await page.locator('#weighted-monograph-weight').fill('25');
   for(const[key,value]of [['presentation','50'],['practice','25'],['code','25'],['time','0']])await page.locator(`#weighted-criterion-${key}`).fill(value);
-  await page.locator('.weighted-evaluators > summary').click();await page.locator('[data-weighted-evaluator="t1"]').fill('3');await page.locator('[data-weighted-evaluator="t2"]').fill('1');await page.locator('#weighted-decimals').selectOption('3');
+  await openDetails(page,'weighted-evaluator-options');await page.locator('[data-weighted-evaluator="t1"]').fill('3');await page.locator('[data-weighted-evaluator="t2"]').fill('1');await page.locator('#weighted-decimals').selectOption('3');
   await page.locator('#chat-fab').click();const peer=await createPeer('t2');await peer.locator('#open-chat').click();await peer.locator('#chat-message').fill('Conversa sem perder o modelo em edição.');await peer.locator('#chat-message').press('Enter');await page.waitForFunction(()=>document.querySelectorAll('[data-chat-message]').length===1);
   assert.equal(await page.locator('#weighted-board-weight').inputValue(),'75');assert.equal(await page.locator('#weighted-model-name').inputValue(),'MODELO_INTEGRACAO');
   await page.evaluate(()=>firebaseMock.emit('groups'));assert.equal(await page.locator('#weighted-criterion-presentation').inputValue(),'50','an unrelated Firebase refresh preserves the unsaved model');
-  await page.locator('#desktop-nav [data-route="notas"]').click();await page.locator('#desktop-nav [data-route="personalizados"]').click();
+  await page.locator('#desktop-nav [data-route="notas"]').click();await page.locator('#desktop-nav [data-route="relatorios"]').click();await page.locator('#report-center [data-route="personalizados"]').press('Enter');
   assert.equal(await page.locator('#chat-widget').isVisible(),true);assert.equal(await page.locator('#weighted-board-weight').inputValue(),'75');assert.equal(await page.locator('#weighted-model-name').inputValue(),'MODELO_INTEGRACAO');await page.locator('[data-chat-minimize]').click();
+  for(const id of ['weighted-model-options','weighted-evaluator-options'])assert.equal(await page.locator('#'+id).evaluate(element=>element.open),true,'advanced settings remain open after navigation');
+  await page.locator('#weighted-model-name').focus();await page.locator('#weighted-model-name').evaluate(element=>element.setSelectionRange(2,6));await page.evaluate(()=>firebaseMock.emit('groups'));
+  assert.deepEqual(await page.locator('#weighted-model-name').evaluate(element=>({focused:document.activeElement===element,start:element.selectionStart,end:element.selectionEnd})),{focused:true,start:2,end:6},'live refresh preserves the focused model text and cursor');
   await page.locator('#weighted-model-form button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('.weighted-final')?.textContent==='8,156');
   assert.equal(await ana.locator('.weighted-final').textContent(),'8,156');assert.equal(await bruno.locator('.weighted-final').textContent(),'1,875');
   assert.ok(Math.abs(await page.evaluate(()=>appTest.coordinatorReportBoards()[0].students.find(student=>student.id==='s1').result.final)-7.8)<1e-12);
@@ -724,8 +791,10 @@ test('coordinator configures custom weighted reports, preserves edits across cha
   await page.locator('[data-weighted-reset]').click();await page.locator('#weighted-model-import').setInputFiles({name:'modelo.json',mimeType:'application/json',buffer:Buffer.from(modelJson)});await page.waitForFunction(()=>document.querySelector('#weighted-model-name').value==='MODELO_INTEGRACAO');
   assert.equal(await ana.locator('.weighted-final').textContent(),'8,156');await page.locator('#weighted-board-weight').fill('70');await page.locator('#weighted-model-form button[type="submit"]').click();await page.locator('#weighted-report-error').waitFor();assert.match(await page.locator('#weighted-report-error').textContent(),/100%/);
   await page.locator('#weighted-board-weight').fill('75');await page.locator('#weighted-model-form button[type="submit"]').click();await page.waitForFunction(()=>!document.querySelector('#weighted-report-error'));
+  await openDetails(page,'weighted-content-options');
   await page.locator('#weighted-report-notes').fill('OBSERVACAO_INTEGRACAO');for(const section of ['summary','details','charts'])await page.locator(`#weighted-${section}`).check();
   const fullDownloading=page.waitForEvent('download');await page.locator('[data-weighted-export="pdf"]').click();const fullFile=await fullDownloading;await fullFile.saveAs(join(qa,'weighted-full.pdf'));const pdf=readFileSync(await fullFile.path(),'utf8');assert.match(pdf,/^%PDF-1\.4/);assert.match(pdf,/RELATORIO_PERSONALIZADO/);assert.match(pdf,/MODELO_INTEGRACAO/);assert.match(pdf,/75%/);assert.match(pdf,/Ana/);assert.match(pdf,/Bruno/);assert.match(pdf,/OBSERVACAO_INTEGRACAO/);
+  await openDetails(page,'weighted-filters-options');
   await page.locator('#weighted-search').fill('Ana');await page.locator('#weighted-filter-form button[type="submit"]').click();assert.equal(await rows.count(),1);
   const csvDownloading=page.waitForEvent('download');await page.locator('[data-weighted-export="csv"]').click();const csvFile=await csvDownloading;await csvFile.saveAs(join(qa,'weighted-ana.csv'));const csv=readFileSync(await csvFile.path(),'utf8');assert.match(csv,/8,15625/);assert.match(csv,/8,156/);assert.doesNotMatch(csv,/Bruno/);
   const chartsDownloading=page.waitForEvent('download');await page.locator('[data-weighted-export="charts"]').click();const chartsFile=await chartsDownloading;await chartsFile.saveAs(join(qa,'weighted-charts.pdf'));assert.match(readFileSync(await chartsFile.path(),'utf8'),/^%PDF-1\.4/);
@@ -733,7 +802,7 @@ test('coordinator configures custom weighted reports, preserves edits across cha
   for(const width of [320,390,1440]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`custom report overflows at ${width}px`);await page.screenshot({path:join(qa,`weighted-report-${width}.png`),fullPage:true});}
   for(const path of ['users','groups','boards','grades','deliveries','seals','timers'])assert.ok((await page.evaluate(()=>firebaseMock.reads)).includes(path),path);
   assert.equal(await page.evaluate(()=>JSON.stringify({users:firebaseMock.data.users,groups:firebaseMock.data.groups,boards:firebaseMock.data.boards,grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,seals:firebaseMock.data.seals,timers:firebaseMock.data.timers})),before);
-  await reload();await page.evaluate(()=>{appTest.mount('coord');appTest.go('personalizados');});await page.locator('#weighted-model-select').selectOption(modelId);assert.equal(await page.locator('#weighted-board-weight').inputValue(),'75','saved coordinator models survive a reload');
+  await reload();await page.evaluate(()=>{appTest.mount('coord');appTest.go('personalizados');});await openDetails(page,'weighted-model-options');await page.locator('#weighted-model-select').selectOption(modelId);assert.equal(await page.locator('#weighted-board-weight').inputValue(),'75','saved coordinator models survive a reload');
   await page.evaluate(()=>{appTest.mount('t1');appTest.go('personalizados');});assert.equal(await page.locator('#weighted-model-form').count(),0);assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
 });
 
@@ -1059,7 +1128,7 @@ test('Wagner and every coordinator share access administration; administrator cr
   const sealedBefore=await page.evaluate(()=>JSON.stringify(Object.fromEntries(['groups','boards','grades','deliveries','seals','timers'].map(key=>[key,firebaseMock.data[key]]))));
   const exportPdf=async selector=>{const downloading=page.waitForEvent('download');await page.locator(selector).click();const file=await downloading;const content=readFileSync(await file.path(),'utf8');assert.match(content,/^%PDF-1\.4/);assert.match(content,/%%EOF\s*$/);assert.match(content,/Ana/);return content;};
   await page.evaluate(()=>appTest.go('bancas'));await exportPdf('[data-pdf-agenda]');
-  await page.evaluate(()=>appTest.go('relatorios'));await exportPdf('[data-print-one="b1"]');await exportPdf('[data-print-analytics]');
+  await page.evaluate(()=>appTest.go('relatorios'));await openOfficialReports(page);await exportPdf('[data-print-one="b1"]');await openOfficialReports(page,true);await exportPdf('[data-print-analytics]');
   await page.evaluate(()=>appTest.go('notas'));await exportPdf('[data-coordinator-export="pdf"]');await exportPdf('[data-coordinator-export="charts"]');
   await page.evaluate(()=>appTest.go('personalizados'));await exportPdf('[data-weighted-export="pdf"]');await exportPdf('[data-weighted-export="charts"]');
   assert.equal(await page.evaluate(()=>JSON.stringify(Object.fromEntries(['groups','boards','grades','deliveries','seals','timers'].map(key=>[key,firebaseMock.data[key]])))),sealedBefore);

@@ -246,3 +246,59 @@ test('synchronous rerender cannot capture the previous form over a selected, res
   assert.equal(h.controller.viewData().draft.name, 'Rascunho preservado');
   assert.equal(h.controller.viewData().draft.boardWeight, '70,5');
 });
+
+test('advanced panel choices preserve the compact default without changing calculations or an export in progress', async () => {
+  const wait = deferred(), h = harness({ refreshData: () => wait.promise });
+  assert.deepEqual(h.controller.viewData().uiOpen, {});
+  h.controller.setUiOpen('weighted-model-options', true); h.controller.setUiOpen('weighted-evaluator-options', true);
+  assert.equal(h.controller.viewData().uiOpen['weighted-model-options'], true);
+  const pending = h.controller.exportReport('pdf');
+  const beforeChanges = h.changes.length;
+  assert.equal(h.controller.handle({ type: 'toggle', target: { id: 'weighted-charts-options', open: true } }, {}), true);
+  assert.equal(h.changes.length, beforeChanges, 'opening a panel does not redraw a form or cancel an export');
+  h.controller.setUiOpen('weighted-model-options', false);
+  wait.resolve(); await pending;
+  assert.equal(h.downloads.length, 1); assert.equal(h.builds[0].options.model.boardWeight, 60);
+  assert.equal(h.controller.viewData().uiOpen['weighted-model-options'], false);
+  assert.equal(h.controller.viewData().uiOpen['weighted-charts-options'], true);
+  assert.equal(h.controller.handle({ type: 'toggle', target: { id: 'unrelated-details', open: true } }, {}), false);
+});
+
+test('panel capture and typed search survive data renders while an invalid hidden model opens for correction', () => {
+  const h = harness(); h.controller.viewData();
+  const panels = [{ id: 'weighted-filters-options', open: true }, { id: 'weighted-model-options', open: false }];
+  const search = { id: 'weighted-search', value: 'Árvore sem aplicar' };
+  const target = { querySelectorAll: () => panels, querySelector: selector => selector === '#weighted-search' ? search : null };
+  h.controller.handle({ type: 'input', target: search }, target); h.controller.capture(target);
+  let view = h.controller.viewData();
+  assert.equal(view.searchDraft, 'Árvore sem aplicar'); assert.equal(view.filters.search, '');
+  assert.equal(view.previewBoards.flatMap(board => board.students).length, 5);
+  assert.equal(view.uiOpen['weighted-filters-options'], true);
+  const invalid = formFor({ ...configured(), boardWeight: 1 });
+  h.controller.handle({ type: 'submit', target: invalid, preventDefault() {} }, target);
+  h.controller.capture(target); view = h.controller.viewData();
+  assert.match(view.error, /somar 100/); assert.equal(view.uiOpen['weighted-model-options'], true, 'validation exposes the settings that need correction');
+  assert.equal(view.draft.boardWeight, '1', 'the invalid draft remains editable');
+  h.controller.setUiOpen('weighted-model-options', false); assert.equal(h.controller.viewData().uiOpen['weighted-model-options'], false, 'a coordinator can explicitly close the panel after reading the error');
+});
+
+test('panel and unsubmitted search preferences are cleared on account or session changes', () => {
+  const h = harness(); h.controller.viewData();
+  h.controller.setUiOpen('weighted-content-options', true);
+  h.controller.handle({ type: 'input', target: { id: 'weighted-search', value: 'Ana' } }, {});
+  h.state.actor.uid = 'another-coordinator';
+  let view = h.controller.viewData(); assert.deepEqual(view.uiOpen, {}); assert.equal(view.searchDraft, '');
+  h.controller.setUiOpen('weighted-model-options', true); h.state.actor.revision++;
+  view = h.controller.viewData(); assert.deepEqual(view.uiOpen, {});
+  h.state.actor.role = 'teacher'; assert.throws(() => h.controller.setUiOpen('weighted-model-options', true), /coordenação/);
+});
+
+test('explicit chart export includes all charts when the complete-PDF chart section is disabled', async () => {
+  const h = harness();
+  h.controller.setReport({ includeSummary: false, includeDetails: false, includeCharts: false });
+  await h.controller.exportReport('charts');
+  assert.equal(h.downloads.length, 1); assert.equal(h.builds[0].options.chartsOnly, true);
+  assert.equal(h.builds[0].options.includeCharts, true); assert.equal(h.builds[0].options.charts.length, 4);
+  assert.equal(h.controller.viewData().report.includeCharts, false, 'the separate chart download does not overwrite the full-PDF preference');
+  await assert.rejects(h.controller.exportReport('pdf'), /pelo menos uma seção/);
+});

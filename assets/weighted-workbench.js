@@ -15,12 +15,14 @@
   const filterDefaults = () => ({ course: 'todas', className: 'todas', status: 'todas', board: 'todas', search: '', sort: 'name' });
   const reportDefaults = () => ({ includeSummary: true, includeDetails: true, includeCharts: true, notes: '' });
   const filtersById = { 'weighted-course': 'course', 'weighted-class': 'className', 'weighted-status': 'status', 'weighted-board': 'board', 'weighted-search': 'search', 'weighted-sort': 'sort' };
+  const panelIds = new Set(['weighted-filters-options', 'weighted-model-options', 'weighted-content-options', 'weighted-individual-options', 'weighted-charts-options', 'weighted-formula-options', 'weighted-evaluator-options']);
 
   function createController(options = {}) {
     const engine = options.engine || root.BancaWeightedModel, ui = options.ui || root.BancaWeightedReportUI;
     if (!engine || !ui) throw Error('Os relatórios personalizados não carregaram. Recarregue a página.');
     let owner = '', revision, models = [], selectedModelId = '', applied = engine.defaults(), draft = clone(applied);
     let filters = filterDefaults(), report = reportDefaults(), error = '', storageMessage = '', busy = false, sequence = 0, skipCapture = false;
+    let uiOpen = {}, forcedOpen = {}, searchDraft = '', focusSnapshot = null;
     const storage = () => options.storage === undefined ? root.localStorage : options.storage;
     const session = () => options.getSession?.() || {};
     function requireCoordinator() {
@@ -61,6 +63,7 @@
     function reset() {
       owner = ''; revision = undefined; models = []; selectedModelId = ''; applied = engine.defaults(); draft = clone(applied);
       filters = filterDefaults(); report = reportDefaults(); error = ''; storageMessage = ''; busy = false; skipCapture = false; sequence++;
+      uiOpen = {}; forcedOpen = {}; searchDraft = ''; focusSnapshot = null;
     }
     function changed() { skipCapture = true; options.onChange?.(); }
     function persist() {
@@ -98,11 +101,42 @@
       const notes = target?.querySelector?.('#weighted-report-notes');
       if (notes) report.notes = String(notes.value || '').slice(0, 2000);
     }
+    function captureUi(target) {
+      for (const panel of target?.querySelectorAll?.('details[id]') || []) if (panelIds.has(panel.id)) uiOpen[panel.id] = panel.open === true;
+      const active = (target?.ownerDocument || options.document || root.document)?.activeElement;
+      focusSnapshot = null;
+      if (!active || !target?.contains?.(active) || !active.closest?.('.weighted-report')) return;
+      if (active.tagName === 'SUMMARY' && panelIds.has(active.parentElement?.id)) focusSnapshot = { panel: active.parentElement.id };
+      else if (active.id?.startsWith('weighted-') || active.name?.startsWith('evaluator.')) {
+        focusSnapshot = { id: active.id, name: active.name, start: active.selectionStart, end: active.selectionEnd };
+      }
+    }
+    function restoreUi(target) {
+      if (!owner || session().uid !== owner || session().revision !== revision || session().role !== 'coordinator' || session().active === false || !focusSnapshot) return;
+      let field;
+      if (focusSnapshot.panel) field = Array.from(target?.querySelectorAll?.('details[id]') || []).find(panel => panel.id === focusSnapshot.panel)?.querySelector?.('summary');
+      else {
+        const candidates = Array.from(target?.querySelectorAll?.('input,select,textarea,button') || []);
+        field = focusSnapshot.name?.startsWith('evaluator.') ? candidates.find(input => input.name === focusSnapshot.name) : candidates.find(input => input.id === focusSnapshot.id);
+      }
+      if (!field || field.disabled) return;
+      field.focus?.({ preventScroll: true });
+      if (Number.isInteger(focusSnapshot.start) && Number.isInteger(focusSnapshot.end)) {
+        try { field.setSelectionRange?.(focusSnapshot.start, focusSnapshot.end); } catch { /* Campos numéricos não têm seleção de texto. */ }
+      }
+    }
+    function setUiOpen(id, open) {
+      sync();
+      if (!panelIds.has(id)) return;
+      uiOpen[id] = open === true; delete forcedOpen[id];
+    }
     function capture(target) {
-      if (skipCapture) { skipCapture = false; return; }
       if (!owner || session().uid !== owner || session().role !== 'coordinator' || session().active === false) return;
+      captureUi(target);
+      if (skipCapture) { skipCapture = false; return; }
       const form = target?.querySelector?.('#weighted-model-form'); if (form) readDraft(form);
       readReport(target);
+      const search = target?.querySelector?.('#weighted-search'); if (search) searchDraft = String(search.value || '').slice(0, 180);
     }
     function normalizedDraft() {
       const next = clone(draft);
@@ -158,6 +192,7 @@
       if (field === 'status' && !['todas', 'abertas', 'encerradas', 'pendentes', 'completas', 'sem-banca'].includes(value)) value = 'todas';
       if (field === 'sort' && !['name', 'grade-desc', 'grade-asc'].includes(value)) value = 'name';
       filters[field] = value.slice(0, field === 'search' ? 180 : 300);
+      if (field === 'search') searchDraft = filters.search;
       if (field === 'course') { filters.className = 'todas'; filters.board = 'todas'; }
       if (field === 'className') filters.board = 'todas';
       error = ''; sequence++; changed();
@@ -204,7 +239,7 @@
       sync();
       const boards = options.getBoards?.() || [], previewBoards = filtered(boards);
       return { model: clone(applied), draft: clone(draft), boards, users: options.getUsers?.() || {}, models: clone(models), selectedModelId,
-        filters: clone(filters), report: clone(report), previewBoards, summary: engine.summary(previewBoards), charts: engine.charts(previewBoards, applied),
+        filters: clone(filters), searchDraft, uiOpen: { ...uiOpen, ...forcedOpen }, report: clone(report), previewBoards, summary: engine.summary(previewBoards), charts: engine.charts(previewBoards, applied),
         error, storageMessage, busy, dirty: dirty(), scopeLabel: scopeLabel() };
     }
     function view() { return ui.render(viewData()); }
@@ -249,7 +284,7 @@
         if (kind === 'csv') blob = new (options.Blob || root.Blob)([engine.csv(boards, model)], { type: 'text/csv;charset=utf-8' });
         else {
           if (typeof options.buildPdf !== 'function') throw Error('O gerador de PDF não carregou. Recarregue a página.');
-          blob = options.buildPdf(boards, { ...sections, model, chartsOnly: kind === 'charts', charts: engine.charts(boards, model), scopeLabel: scopeLabel(chosen) });
+          blob = options.buildPdf(boards, { ...sections, ...(kind === 'charts' ? { includeCharts: true } : {}), model, chartsOnly: kind === 'charts', charts: engine.charts(boards, model), scopeLabel: scopeLabel(chosen) });
         }
         sameActor(actor); if (sequence !== token) throw Error('A configuração mudou. Confira a prévia e gere o arquivo novamente.');
         download(blob, `${kind === 'charts' ? 'graficos' : 'relatorio'}_personalizado_${stamp}.${kind === 'csv' ? 'csv' : 'pdf'}`);
@@ -264,12 +299,17 @@
     }
     function fail(err) {
       if (!owner || session().uid !== owner || session().revision !== revision || session().role !== 'coordinator' || session().active === false) return;
+      if (dirty()) forcedOpen['weighted-model-options'] = true;
+      if (/pelo menos uma seção/.test(err?.message || '')) forcedOpen['weighted-content-options'] = true;
       error = err?.message || 'Não foi possível concluir esta ação.'; changed();
     }
     function handle(event, target) {
       const element = event.target;
       if (!element) return false;
+      if (event.type === 'toggle' && panelIds.has(element.id)) { run(() => setUiOpen(element.id, element.open)); return true; }
       if (event.type === 'click') {
+        const summary = element.closest?.('summary');
+        if (summary && panelIds.has(summary.parentElement?.id)) { run(() => setUiOpen(summary.parentElement.id, !summary.parentElement.open)); return true; }
         const button = element.closest?.('button'); if (!button || button.disabled) return false;
         const data = button.dataset || {};
         const action = own(data, 'weightedSave') ? () => { capture(target); save(); }
@@ -285,6 +325,7 @@
         if (element.id === 'weighted-filter-form') { event.preventDefault?.(); run(() => { const input = target.querySelector('#weighted-search'); setFilter('search', input?.value || ''); }); return true; }
       }
       if (event.type === 'input') {
+        if (element.id === 'weighted-search') { run(() => { sync(); if (!busy) searchDraft = String(element.value || '').slice(0, 180); }); return true; }
         if (element.closest?.('#weighted-model-form')) { sync(); if (!busy) { readDraft(element.closest('#weighted-model-form')); sequence++; } return true; }
         if (element.id === 'weighted-report-notes') { run(() => setReport({ notes: element.value })); return true; }
       }
@@ -297,11 +338,11 @@
       return false;
     }
     function bind(target) {
-      for (const type of ['click', 'submit', 'change', 'input']) target.addEventListener(type, event => {
+      for (const type of ['click', 'submit', 'change', 'input', 'toggle']) target.addEventListener(type, event => {
         if (handle(event, target)) event.stopImmediatePropagation?.();
-      });
+      }, type === 'toggle');
     }
-    return Object.freeze({ view, viewData, capture, bind, handle, reset, apply, save, selectModel, deleteModel, resetModel,
+    return Object.freeze({ view, viewData, capture, restoreUi, setUiOpen, bind, handle, reset, apply, save, selectModel, deleteModel, resetModel,
       setDraft, setFilter, setReport, exportModel, importModel, exportReport, scopeLabel });
   }
   return Object.freeze({ createController });

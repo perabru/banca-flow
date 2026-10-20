@@ -32,14 +32,24 @@ Somente professores ativos que participam da banca podem controlar essa banca. O
 
 O encerramento pode ocorrer antes de todos os lançamentos. O relatório e o resultado oficial só ficam disponíveis com a banca encerrada e todas as notas completas, incluindo as entregas. Campos em edição devem ser salvos antes do encerramento. Rascunhos são preservados durante atualizações da tela e salvamentos pendentes; a troca de conta limpa os campos e qualquer prévia de compartilhamento da sessão anterior.
 
-## Modelos e relatórios personalizados
+## Relatórios e médias
 
-Alberson e todos os coordenadores ativos, inclusive novos coordenadores, têm acesso a **Modelos e relatórios**. No celular, a opção fica em **Mais**. O atalho também aparece no consolidado de **Todas as notas** e em **Relatórios**.
+A coordenação encontra as exportações em **Relatórios e médias**. No celular, abra **Mais → Relatórios e médias**.
 
-- Configure os percentuais da banca e da monografia, os quatro critérios individuais, o peso relativo de cada avaliador e de 0 a 4 casas decimais. Os percentuais das etapas somam 100%; os critérios também somam 100%. Os pesos relativos dos avaliadores são normalizados dentro de cada banca; professores sem peso configurado usam 1.
+- **Todos os alunos:** baixe diretamente o PDF completo, a planilha CSV ou o PDF dos gráficos. Estes arquivos abrangem todos os cursos e turmas, incluindo bancas abertas, encerradas, arquivadas e alunos sem banca. Notas ausentes continuam pendentes.
+- **Escolher alunos e pesos → Preparar relatório:** siga os três passos **Escolha os alunos → Confira a média → Baixe o arquivo**. Curso e turma ficam visíveis; os demais filtros estão em **Mais filtros**.
+- **Relatórios oficiais por banca:** abra a seção para acessar filtros de curso, turma e data, relatórios individuais, consolidado oficial, CSV de bancas concluídas, compartilhamento e gráficos oficiais. As exigências de conclusão e a fórmula de 60% / 40% permanecem as mesmas.
+
+Os ajustes avançados ficam recolhidos até serem necessários. As opções abertas, a busca em digitação e os campos do modelo são preservados durante atualizações da tela e navegação na mesma sessão. O fechamento das opções não muda os cálculos, filtros aplicados ou conteúdo escolhido para os arquivos.
+
+### Médias e relatórios personalizados
+
+Alberson e todos os coordenadores ativos, inclusive novos coordenadores, têm acesso à preparação personalizada em **Relatórios e médias → Preparar relatório**. O atalho também aparece no consolidado de **Todas as notas**.
+
+- Em **Ajustar média e modelos**, configure os percentuais da banca e da monografia, os quatro critérios individuais, o peso relativo de cada avaliador e de 0 a 4 casas decimais. Os percentuais das etapas somam 100%; os critérios também somam 100%. Os pesos relativos dos avaliadores são normalizados dentro de cada banca; professores sem peso configurado usam 1.
 - Clique em **Gerar prévia** para aplicar a configuração. O cálculo usa as notas salvas, mantém a precisão completa e arredonda somente a exibição. Zero é válido; dados exigidos que estejam ausentes permanecem pendentes. Peso zero desconsidera o componente no modelo.
-- Filtre por curso, turma, banca, situação e busca. Os filtros desta área definem os alunos dos arquivos personalizados. Escolha resumo, notas individuais e gráficos e acrescente observações da coordenação.
-- **Emitir relatório PDF** inclui o modelo, a fórmula, os pesos, as seções selecionadas e a identificação da emissão. **Exportar notas CSV** inclui cada aluno, avaliador, critério e resultado com precisão completa. **Exportar gráficos PDF** gera gráficos vetoriais acompanhados do contexto do modelo. Antes de exportar, o sistema relê o catálogo salvo e confere novamente a sessão e a permissão de coordenação.
+- Filtre por curso, turma, banca, situação e busca. Os filtros desta área definem os alunos dos arquivos personalizados. Em **Conteúdo do PDF**, escolha resumo, notas individuais e gráficos e acrescente observações da coordenação. A prévia dos resultados permanece disponível independentemente das seções escolhidas para o PDF. Notas individuais, gráficos e fórmula podem ser abertos separadamente para consulta.
+- **Baixar relatório PDF** inclui o modelo, a fórmula, os pesos, as seções selecionadas e a identificação da emissão. **Planilha CSV** inclui cada aluno, avaliador, critério e resultado com precisão completa. **Gráficos PDF** sempre gera os gráficos vetoriais da seleção, acompanhados do contexto do modelo, mesmo quando a seção de gráficos do relatório completo estiver desmarcada. Antes de exportar, o sistema relê o catálogo salvo e confere novamente a sessão e a permissão de coordenação.
 - **Salvar neste dispositivo** guarda até 20 modelos por conta e navegador. **Exportar modelo JSON** e **Importar modelo JSON** permitem levar a configuração a outro dispositivo. Esses arquivos e as preferências locais contêm a configuração, sem notas ou dados dos alunos.
 
 Os modelos calculam resultados personalizados de consulta. As notas registradas, o resultado oficial de banca 60% / monografia 40% e os relatórios oficiais existentes permanecem preservados. Bancas abertas continuam identificadas como provisórias nos arquivos. Esta área não acrescenta caminhos ao Firebase nem exige regras adicionais.

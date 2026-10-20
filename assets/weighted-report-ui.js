@@ -20,6 +20,7 @@
   const disabled = value => value ? ' disabled' : '';
   const selected = (value, expected) => String(value) === String(expected) ? ' selected' : '';
   const checked = value => value ? ' checked' : '';
+  const open = (options, id) => options.uiOpen?.[id] === true ? ' open' : '';
   const sortText = (a, b) => a.localeCompare(b, 'pt-BR', { sensitivity: 'base', numeric: true });
 
   function currentModel(options) {
@@ -63,18 +64,20 @@
     return `<div class="weighted-field"><label for="${id}">${label}</label><select id="${id}" name="${name}"${disabled(busy)}>${option('todas', all, current)}${values.map(([value, text]) => option(value, text, current)).join('')}</select></div>`;
   }
 
-  function filterControls(boards, filters, busy) {
+  function filterControls(boards, filters, busy, options) {
     const unique = key => [...new Set(boards.map(board => clean(board?.[key])).filter(Boolean))].sort(sortText).map(value => [value, value]);
     const boardValues = boards.map((board, index) => [String(board?.id ?? index), clean(board?.label) || (board?.unassigned ? 'Sem banca' : `Banca ${index + 1}`)]);
     const uniqueBoards = [...new Map(boardValues.map(entry => [entry[0], entry])).values()];
-    return `<form id="weighted-filter-form" class="weighted-filters" aria-label="Filtrar relatório personalizado">
-      ${filterSelect('weighted-course', 'course', 'Curso', unique('courseName'), filters.course, 'Todos os cursos', busy)}
-      ${filterSelect('weighted-class', 'className', 'Turma', unique('className'), filters.className, 'Todas as turmas', busy)}
-      ${filterSelect('weighted-status', 'status', 'Situação', [['abertas', 'Bancas abertas'], ['encerradas', 'Bancas encerradas'], ['pendentes', 'Resultados pendentes'], ['completas', 'Resultados completos'], ['sem-banca', 'Alunos sem banca']], filters.status, 'Todas as situações', busy)}
-      ${filterSelect('weighted-board', 'board', 'Banca', uniqueBoards, filters.board, 'Todas as bancas', busy)}
-      <div class="weighted-field weighted-search"><label for="weighted-search">Buscar aluno, projeto ou avaliador</label><input id="weighted-search" type="search" name="search" value="${esc(filters.search || '')}" placeholder="Digite um nome ou projeto" maxlength="200"${disabled(busy)}></div>
-      <div class="weighted-field"><label for="weighted-sort">Ordenar alunos em cada grupo</label><select id="weighted-sort" name="sort"${disabled(busy)}>${[['name', 'Nome do aluno'], ['grade-desc', 'Maior resultado'], ['grade-asc', 'Menor resultado']].map(([value, label]) => option(value, label, filters.sort || 'name')).join('')}</select></div>
-      <button type="submit" class="btn soft weighted-filter-submit"${disabled(busy)}>Aplicar filtros</button>
+    const extraCount = [filters.status !== 'todas', filters.board !== 'todas', !!filters.search, filters.sort !== 'name'].filter(Boolean).length;
+    return `<form id="weighted-filter-form" aria-label="Filtrar relatório personalizado">
+      <div class="weighted-two-fields weighted-primary-filters">${filterSelect('weighted-course', 'course', 'Curso', unique('courseName'), filters.course, 'Todos os cursos', busy)}${filterSelect('weighted-class', 'className', 'Turma', unique('className'), filters.className, 'Todas as turmas', busy)}</div>
+      <details id="weighted-filters-options" class="weighted-options"${open(options, 'weighted-filters-options')}><summary><span>Mais filtros${extraCount ? `<small>${extraCount} ${extraCount === 1 ? 'ativo' : 'ativos'}</small>` : ''}</span></summary><div class="weighted-options-body weighted-filters">
+        ${filterSelect('weighted-status', 'status', 'Situação', [['abertas', 'Bancas abertas'], ['encerradas', 'Bancas encerradas'], ['pendentes', 'Resultados pendentes'], ['completas', 'Resultados completos'], ['sem-banca', 'Alunos sem banca']], filters.status, 'Todas as situações', busy)}
+        ${filterSelect('weighted-board', 'board', 'Banca', uniqueBoards, filters.board, 'Todas as bancas', busy)}
+        <div class="weighted-field weighted-search"><label for="weighted-search">Buscar aluno, projeto ou avaliador</label><input id="weighted-search" type="search" name="search" value="${esc(options.searchDraft ?? filters.search ?? '')}" placeholder="Digite um nome ou projeto" maxlength="200"${disabled(busy)}></div>
+        <div class="weighted-field"><label for="weighted-sort">Ordenar alunos em cada grupo</label><select id="weighted-sort" name="sort"${disabled(busy)}>${[['name', 'Nome do aluno'], ['grade-desc', 'Maior resultado'], ['grade-asc', 'Menor resultado']].map(([value, label]) => option(value, label, filters.sort || 'name')).join('')}</select></div>
+        <button type="submit" class="btn soft weighted-filter-submit"${disabled(busy)}>Aplicar filtros</button>
+      </div></details>
     </form>`;
   }
 
@@ -119,9 +122,9 @@
   function studentTable(boards, model) {
     const rows = boards.flatMap((board, bi) => list(board?.students).map((student, si) => {
       const result = resultOf(student), status = statusOf(board, student);
-      return `<tr><th scope="row"><strong>${esc(clean(student?.name) || `Aluno(a) ${si + 1}`)}</strong><small>${esc([board?.className, board?.courseName].map(clean).filter(Boolean).join(' · ') || 'Turma não informada')}</small></th><td>${esc(clean(board?.label) || (board?.unassigned ? 'Sem banca' : `Banca ${bi + 1}`))}</td><td class="weighted-number">${formatGrade(result.banca, model)}</td><td class="weighted-number">${formatGrade(result.entrega, model)}</td><td class="weighted-number weighted-final">${formatGrade(result.final, model)}</td><td><span class="weighted-status${status === 'Pendente' || status === 'Sem banca' ? ' is-pending' : ''}">${esc(status)}</span></td></tr>`;
+      return `<tr><th scope="row"><strong>${esc(clean(student?.name) || `Aluno(a) ${si + 1}`)}</strong><small>${esc([board?.className, board?.courseName].map(clean).filter(Boolean).join(' · ') || 'Turma não informada')}</small></th><td class="weighted-number weighted-final">${formatGrade(result.final, model)}</td><td>${esc(clean(board?.label) || (board?.unassigned ? 'Sem banca' : `Banca ${bi + 1}`))}</td><td class="weighted-number">${formatGrade(result.banca, model)}</td><td class="weighted-number">${formatGrade(result.entrega, model)}</td><td><span class="weighted-status${status === 'Pendente' || status === 'Sem banca' ? ' is-pending' : ''}">${esc(status)}</span></td></tr>`;
     })).join('');
-    return `<div class="weighted-table-scroll" tabindex="0" role="region" aria-label="Resultados por aluno, tabela rolável"><table class="weighted-table"><caption>Resultados por aluno com este modelo</caption><thead><tr><th scope="col">Aluno</th><th scope="col">Banca</th><th scope="col">Média da banca</th><th scope="col">Monografia e entregas</th><th scope="col">Resultado</th><th scope="col">Situação</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+    return `<div class="weighted-table-scroll" tabindex="0" role="region" aria-label="Resultados por aluno, tabela rolável"><table class="weighted-table"><caption>Resultados por aluno com este modelo</caption><thead><tr><th scope="col">Aluno</th><th scope="col">Resultado</th><th scope="col">Banca</th><th scope="col">Média da banca</th><th scope="col">Monografia e entregas</th><th scope="col">Situação</th></tr></thead><tbody>${rows}</tbody></table></div>`;
   }
 
   function detailedRows(boards, model) {
@@ -153,39 +156,58 @@
     const filters = { course: 'todas', className: 'todas', status: 'todas', board: 'todas', search: '', sort: 'name', ...options.filters };
     const report = { includeSummary: true, includeDetails: true, includeCharts: true, notes: '', ...options.report };
     const summary = summaryOf(preview, options.summary), hasStudents = preview.some(board => list(board?.students).length > 0);
+    const contents = [report.includeSummary && 'Resumo', report.includeDetails && 'Notas individuais', report.includeCharts && 'Gráficos'].filter(Boolean);
     return `<section class="weighted-report" aria-labelledby="weighted-report-title"${busy ? ' aria-busy="true"' : ''}>
-      <div class="weighted-heading"><div><p class="weighted-eyebrow">COORDENAÇÃO</p><h2 id="weighted-report-title">Relatórios personalizados</h2><p>Use as notas salvas para calcular o resultado com este modelo. A fórmula é incluída nos arquivos.</p></div><span class="weighted-label">Modelo de cálculo</span></div>
+      <div class="weighted-heading"><div><p class="weighted-eyebrow">COORDENAÇÃO</p><h2 id="weighted-report-title">Médias e relatórios</h2><p>Selecione os alunos, confira a média e baixe o arquivo.</p></div><span class="weighted-label">Relatórios personalizados</span></div>
+      <p class="weighted-context">Use as notas salvas para calcular o resultado com este modelo. Os resultados oficiais permanecem preservados.</p>
       <div class="weighted-workspace">
-        <div class="weighted-model-panel">
-          <div class="weighted-section-title"><span class="weighted-step">01</span><div><h3>Defina o modelo</h3><p>Escolha a composição das notas e os pesos dos avaliadores.</p></div></div>
-          <div class="weighted-model-library"><div class="weighted-field"><label for="weighted-model-select">Modelos salvos neste dispositivo</label><select id="weighted-model-select"${disabled(busy)}>${option('', 'Modelo em edição', options.selectedModelId || '')}${models.map(saved => option(saved.id, saved.name || saved.model?.name || 'Modelo sem nome', options.selectedModelId)).join('')}</select></div><div class="weighted-library-actions"><button type="button" class="btn soft" data-weighted-new${disabled(busy)}>Novo</button><button type="button" class="btn soft" data-weighted-delete${disabled(busy || !options.selectedModelId)}>Excluir</button></div></div>
-          <form id="weighted-model-form" class="weighted-model-form">
-            <div class="weighted-field"><label for="weighted-model-name">Nome do modelo</label><input id="weighted-model-name" name="name" maxlength="80" value="${esc(model.name)}" placeholder="Ex.: Avaliação final 2026"${disabled(busy)} required></div>
-            <div class="weighted-field"><label for="weighted-report-title-input">Título do relatório</label><input id="weighted-report-title-input" name="title" maxlength="140" value="${esc(model.title)}"${disabled(busy)} required></div>
-            <fieldset class="weighted-fieldset"><legend>Composição do resultado (%)</legend><div class="weighted-two-fields">${weightField('weighted-board-weight', 'boardWeight', 'Peso da banca', model.boardWeight, '', busy)}${weightField('weighted-monograph-weight', 'monographWeight', 'Peso da monografia e entregas', model.monographWeight, '', busy)}</div></fieldset>
-            <fieldset class="weighted-fieldset"><legend>Critérios da avaliação (%)</legend><div class="weighted-two-fields">${CRITERIA.map(([key, label]) => weightField(`weighted-criterion-${key}`, `criteria.${key}`, label, model.criteriaWeights?.[key], '', busy)).join('')}</div></fieldset>
-            <p class="weighted-help">A composição do resultado e os quatro critérios devem somar 100% em cada conjunto. Peso 0 desconsidera o item neste modelo.</p>
-            <details class="weighted-evaluators"><summary>Pesos dos avaliadores <span>${people.length}</span></summary><p class="weighted-help">O peso padrão é 1. Coordenadores também participam como avaliadores. Alterações valem para todas as notas do professor nesta consulta.</p><div class="weighted-evaluator-fields">${people.length ? people.map((person, index) => weightField(`weighted-evaluator-${index}`, `evaluator.${person.uid}`, `${person.name}${person.inactive ? ' · cadastro inativo' : ''}`, own(model.evaluatorWeights, person.uid) ? model.evaluatorWeights[person.uid] : 1, ` data-weighted-evaluator="${esc(person.uid)}"`, busy)).join('') : '<p class="weighted-empty-inline">Nenhum avaliador cadastrado.</p>'}</div></details>
-            <div class="weighted-field weighted-decimals"><label for="weighted-decimals">Casas decimais nos arquivos</label><select id="weighted-decimals" name="decimals"${disabled(busy)}>${[0, 1, 2, 3, 4].map(value => option(value, `${value} ${value === 1 ? 'casa decimal' : 'casas decimais'}`, model.decimals)).join('')}</select><small>O cálculo mantém a precisão; o arredondamento ocorre apenas na exibição.</small></div>
-            <div class="weighted-model-actions"><button class="btn primary" type="submit"${disabled(busy)}>Gerar prévia</button><button class="btn soft" type="button" data-weighted-save${disabled(busy)}>Salvar neste dispositivo</button><button class="btn soft" type="button" data-weighted-reset${disabled(busy)}>Restaurar padrão</button></div>
-            ${options.dirty ? '<p class="weighted-dirty" role="status" aria-live="polite">Há alterações no modelo. Gere a prévia para aplicar os novos pesos.</p>' : ''}
-            <div class="weighted-portable"><button type="button" class="weighted-text-button" data-weighted-export-model${disabled(busy)}>Exportar modelo JSON</button><label class="weighted-file-label" for="weighted-model-import">Importar modelo JSON<input id="weighted-model-import" type="file" accept="application/json,.json"${disabled(busy)}></label></div>
-          </form>
-          <p class="weighted-storage" id="weighted-storage-status" role="status" aria-live="polite">${esc(options.storageMessage || 'Os modelos salvos ficam vinculados à sua conta neste navegador. Exporte o JSON para usar em outro dispositivo.')}</p>
-        </div>
-        <div class="weighted-preview-panel">
-          <div class="weighted-section-title"><span class="weighted-step">02</span><div><h3>Prepare o relatório</h3><p>Filtre a consulta e escolha o conteúdo dos arquivos.</p></div></div>
-          ${filterControls(boards, filters, busy)}
-          <fieldset class="weighted-content-options"><legend>Conteúdo do relatório</legend><label><input id="weighted-summary" type="checkbox" name="summary"${checked(report.includeSummary)}${disabled(busy)}> Resumo e resultados</label><label><input id="weighted-details" type="checkbox" name="details"${checked(report.includeDetails)}${disabled(busy)}> Notas individuais</label><label><input id="weighted-charts" type="checkbox" name="charts"${checked(report.includeCharts)}${disabled(busy)}> Gráficos</label></fieldset>
-          <div class="weighted-field weighted-notes"><label for="weighted-report-notes">Observações da coordenação <span>(opcional)</span></label><textarea id="weighted-report-notes" name="notes" rows="3" maxlength="2000" placeholder="Informações que devem acompanhar o relatório"${disabled(busy)}>${esc(report.notes)}</textarea></div>
+        <section class="weighted-flow-card" aria-labelledby="weighted-students-title">
+          <div class="weighted-section-title"><span class="weighted-step">1</span><div><h3 id="weighted-students-title">Escolha os alunos</h3><p>Use todos ou selecione uma turma.</p></div></div>
+          ${filterControls(boards, filters, busy, options)}
+          <p class="weighted-selection-count"><strong>${Number.isSafeInteger(summary.studentCount) ? summary.studentCount.toLocaleString('pt-BR') : 0}</strong> aluno(s) na seleção</p>
+        </section>
+        <section class="weighted-flow-card weighted-model-panel" aria-labelledby="weighted-average-title">
+          <div class="weighted-section-title"><span class="weighted-step">2</span><div><h3 id="weighted-average-title">Confira a média</h3><p>Os pesos abaixo estão aplicados na prévia.</p></div></div>
+          <div class="weighted-composition" aria-label="Composição do resultado aplicado"><div><span>Banca</span><strong>${esc(previewModel.boardWeight)}<small>%</small></strong></div><span aria-hidden="true">+</span><div><span>Monografia e entregas</span><strong>${esc(previewModel.monographWeight)}<small>%</small></strong></div></div>
+          <p class="weighted-current-model">Modelo: <strong>${esc(previewModel.name)}</strong></p>
+          <details id="weighted-model-options" class="weighted-options"${open(options, 'weighted-model-options')}><summary><span>Ajustar média e modelos</span></summary><div class="weighted-options-body">
+            <div class="weighted-model-library"><div class="weighted-field"><label for="weighted-model-select">Modelos salvos neste dispositivo</label><select id="weighted-model-select"${disabled(busy)}>${option('', 'Modelo em edição', options.selectedModelId || '')}${models.map(saved => option(saved.id, saved.name || saved.model?.name || 'Modelo sem nome', options.selectedModelId)).join('')}</select></div><div class="weighted-library-actions"><button type="button" class="btn soft" data-weighted-new${disabled(busy)}>Novo</button><button type="button" class="btn soft" data-weighted-delete${disabled(busy || !options.selectedModelId)}>Excluir</button></div></div>
+            <form id="weighted-model-form" class="weighted-model-form" novalidate>
+              <div class="weighted-field"><label for="weighted-model-name">Nome do modelo</label><input id="weighted-model-name" name="name" maxlength="80" value="${esc(model.name)}" placeholder="Ex.: Avaliação final 2026"${disabled(busy)} required></div>
+              <div class="weighted-field"><label for="weighted-report-title-input">Título do relatório</label><input id="weighted-report-title-input" name="title" maxlength="140" value="${esc(model.title)}"${disabled(busy)} required></div>
+              <fieldset class="weighted-fieldset"><legend>Composição do resultado (%)</legend><div class="weighted-two-fields">${weightField('weighted-board-weight', 'boardWeight', 'Peso da banca', model.boardWeight, '', busy)}${weightField('weighted-monograph-weight', 'monographWeight', 'Peso da monografia e entregas', model.monographWeight, '', busy)}</div></fieldset>
+              <fieldset class="weighted-fieldset"><legend>Critérios da avaliação (%)</legend><div class="weighted-two-fields">${CRITERIA.map(([key, label]) => weightField(`weighted-criterion-${key}`, `criteria.${key}`, label, model.criteriaWeights?.[key], '', busy)).join('')}</div></fieldset>
+              <p class="weighted-help">A composição do resultado e os quatro critérios devem somar 100% em cada conjunto. Peso 0 desconsidera o item neste modelo.</p>
+              <details id="weighted-evaluator-options" class="weighted-evaluators"${open(options, 'weighted-evaluator-options')}><summary>Pesos dos avaliadores <span>${people.length}</span></summary><p class="weighted-help">O peso padrão é 1. Coordenadores também participam como avaliadores. Alterações valem para todas as notas do professor nesta consulta.</p><div class="weighted-evaluator-fields">${people.length ? people.map((person, index) => weightField(`weighted-evaluator-${index}`, `evaluator.${person.uid}`, `${person.name}${person.inactive ? ' · cadastro inativo' : ''}`, own(model.evaluatorWeights, person.uid) ? model.evaluatorWeights[person.uid] : 1, ` data-weighted-evaluator="${esc(person.uid)}"`, busy)).join('') : '<p class="weighted-empty-inline">Nenhum avaliador cadastrado.</p>'}</div></details>
+              <div class="weighted-field weighted-decimals"><label for="weighted-decimals">Casas decimais nos arquivos</label><select id="weighted-decimals" name="decimals"${disabled(busy)}>${[0, 1, 2, 3, 4].map(value => option(value, `${value} ${value === 1 ? 'casa decimal' : 'casas decimais'}`, model.decimals)).join('')}</select><small>O cálculo mantém a precisão; o arredondamento ocorre apenas na exibição.</small></div>
+              <div class="weighted-model-actions"><button class="btn primary" type="submit"${disabled(busy)}>Gerar prévia</button><button class="btn soft" type="button" data-weighted-save${disabled(busy)}>Salvar neste dispositivo</button><button class="btn soft" type="button" data-weighted-reset${disabled(busy)}>Restaurar padrão</button></div>
+              <div class="weighted-portable"><button type="button" class="weighted-text-button" data-weighted-export-model${disabled(busy)}>Exportar modelo JSON</button><label class="weighted-file-label" for="weighted-model-import">Importar modelo JSON<input id="weighted-model-import" type="file" accept="application/json,.json"${disabled(busy)}></label></div>
+            </form>
+            <p class="weighted-storage" id="weighted-storage-status" role="status" aria-live="polite">${esc(options.storageMessage || 'Os modelos salvos ficam vinculados à sua conta neste navegador. Exporte o JSON para usar em outro dispositivo.')}</p>
+          </div></details>
+          ${options.dirty ? '<p class="weighted-dirty" role="status" aria-live="polite">Pesos alterados. Atualize a prévia antes de baixar.</p>' : ''}
+        </section>
+        <section class="weighted-flow-card weighted-download-panel" aria-labelledby="weighted-download-title">
+          <div class="weighted-section-title"><span class="weighted-step">3</span><div><h3 id="weighted-download-title">Baixe o arquivo</h3><p>O arquivo usa os alunos e a média da prévia.</p></div></div>
           ${options.error ? `<p id="weighted-report-error" class="weighted-error" role="alert">${esc(options.error)}</p>` : ''}
-          <div class="weighted-export-actions"><button type="button" class="btn primary" data-weighted-export="pdf"${disabled(busy || !hasStudents)}>Emitir relatório PDF</button><button type="button" class="btn soft" data-weighted-export="csv"${disabled(busy || !hasStudents)}>Exportar notas CSV</button><button type="button" class="btn soft" data-weighted-export="charts"${disabled(busy || !hasStudents)}>Exportar gráficos PDF</button></div>
-          <div class="weighted-formula"><strong>Fórmula do modelo aplicado · ${esc(previewModel.name)}</strong><p>${esc(formulaOf(options, previewModel))}</p></div>
-          <div class="weighted-preview-heading"><h3>Prévia da consulta</h3><span>Notas de 0 a 10</span></div>
-          ${options.scopeLabel ? `<p class="weighted-scope">${esc(options.scopeLabel)}</p>` : ''}
-          ${hasStudents ? `${summaryCards(summary, previewModel)}${report.includeSummary ? studentTable(preview, previewModel) : ''}${report.includeDetails ? `<h4 class="weighted-subheading">Notas individuais dos avaliadores</h4>${detailedRows(preview, previewModel)}` : ''}${report.includeCharts ? `<h4 class="weighted-subheading">Gráficos da consulta</h4>${renderCharts(options)}` : ''}${!report.includeSummary && !report.includeDetails && !report.includeCharts ? '<p class="weighted-empty-inline">Selecione ao menos um conteúdo para compor o relatório.</p>' : ''}` : '<div class="weighted-empty"><h4>Nenhum aluno nesta consulta</h4><p>Ajuste os filtros para visualizar as notas e emitir o relatório.</p></div>'}
-        </div>
+          <div class="weighted-export-actions"><button type="button" class="btn primary" data-weighted-export="pdf"${disabled(busy || !hasStudents)}>${busy ? 'Preparando arquivo…' : 'Baixar relatório PDF'}</button><button type="button" class="btn soft" data-weighted-export="csv"${disabled(busy || !hasStudents)}>Planilha CSV</button><button type="button" class="btn soft" data-weighted-export="charts"${disabled(busy || !hasStudents)}>Gráficos PDF</button></div>
+          <p class="weighted-file-contents">${contents.length ? esc(contents.join(' · ')) : 'Selecione o conteúdo do PDF abaixo.'}</p>
+          <details id="weighted-content-options" class="weighted-options"${open(options, 'weighted-content-options')}><summary><span>Conteúdo do PDF <small>Seções e observações</small></span></summary><div class="weighted-options-body">
+            <fieldset class="weighted-content-options"><legend>Incluir no relatório</legend><label><input id="weighted-summary" type="checkbox" name="summary"${checked(report.includeSummary)}${disabled(busy)}> Resumo e resultados</label><label><input id="weighted-details" type="checkbox" name="details"${checked(report.includeDetails)}${disabled(busy)}> Notas individuais</label><label><input id="weighted-charts" type="checkbox" name="charts"${checked(report.includeCharts)}${disabled(busy)}> Gráficos</label></fieldset>
+            <div class="weighted-field weighted-notes"><label for="weighted-report-notes">Observações da coordenação <span>(opcional)</span></label><textarea id="weighted-report-notes" name="notes" rows="3" maxlength="2000" placeholder="Informações que devem acompanhar o relatório"${disabled(busy)}>${esc(report.notes)}</textarea></div>
+          </div></details>
+        </section>
       </div>
+      <section class="weighted-preview-panel" aria-labelledby="weighted-preview-title">
+        <div class="weighted-preview-heading"><h3 id="weighted-preview-title">Prévia dos resultados</h3><span>Notas de 0 a 10</span></div>
+        ${options.scopeLabel ? `<p class="weighted-scope">${esc(options.scopeLabel)}</p>` : ''}
+        ${hasStudents ? `${summaryCards(summary, previewModel)}${studentTable(preview, previewModel)}
+          <div class="weighted-preview-options">
+            <details id="weighted-individual-options" class="weighted-options"${open(options, 'weighted-individual-options')}><summary><span>Notas individuais dos avaliadores</span></summary><div class="weighted-options-body">${detailedRows(preview, previewModel)}</div></details>
+            <details id="weighted-charts-options" class="weighted-options"${open(options, 'weighted-charts-options')}><summary><span>Gráficos da consulta</span></summary><div class="weighted-options-body">${renderCharts(options)}</div></details>
+          </div>` : '<div class="weighted-empty"><h4>Nenhum aluno nesta consulta</h4><p>Ajuste os filtros para visualizar as notas e emitir o relatório.</p></div>'}
+        <details id="weighted-formula-options" class="weighted-options"${open(options, 'weighted-formula-options')}><summary><span>Como a média é calculada</span></summary><div class="weighted-options-body weighted-formula"><strong>Fórmula do modelo aplicado · ${esc(previewModel.name)}</strong><p>${esc(formulaOf(options, previewModel))}</p></div></details>
+      </section>
     </section>`;
   }
 

@@ -50,7 +50,7 @@ Se a gravação falhar, apenas uma conta de autenticação que esta execução a
 
 A publicação no GitHub não publica regras de segurança no Firebase. Publique também a versão atual de `database.rules.json` com uma conta autorizada, para habilitar a gestão compartilhada de professores pelos coordenadores.
 
-Após concluir, entre no sistema com o login administrativo e confira **Professores**, **Bancas**, **Todas as notas**, **Relatórios** e **Modelos e relatórios**. Wagner deve sair e entrar novamente para carregar o novo papel, caso sua sessão ainda esteja aberta.
+Após concluir, entre no sistema com o login administrativo e confira **Professores**, **Bancas**, **Todas as notas** e **Relatórios e médias**. Use **Preparar relatório** para ajustar as médias e **Relatórios oficiais por banca** para as emissões oficiais. Wagner deve sair e entrar novamente para carregar o novo papel, caso sua sessão ainda esteja aberta.
 
 Os testes locais usam contas fictícias e não acessam o projeto real:
 
