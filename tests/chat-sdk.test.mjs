@@ -66,12 +66,20 @@ function session(t, env, uid) {
   const elements = new Map(), subscriptions = new Set(), timeouts = new Set();
   const snapshots = [], renders = [];
   const element = selector => {
-    if (!elements.has(selector)) elements.set(selector, {
-      textContent: '', innerHTML: '', value: '', dataset: {}, style: {},
-      classList: { add() {}, remove() {}, toggle() {} }, addEventListener() {},
-      setAttribute() {}, focus() {}, scrollIntoView() {}, remove() {}, querySelectorAll() { return []; },
-      showModal() { this.open = true; }, close() { this.open = false; }
-    });
+    if (!elements.has(selector)) {
+      const node = {
+        textContent: '', value: '', dataset: {}, style: {},
+        classList: { add() {}, remove() {}, toggle() {} }, addEventListener() {},
+        setAttribute() {}, focus() {}, scrollIntoView() {}, remove() {}, querySelectorAll() { return []; },
+        showModal() { this.open = true; }, close() { this.open = false; }
+      };
+      let markup = '';
+      Object.defineProperty(node, 'innerHTML', {
+        get() { return markup; },
+        set(value) { markup = String(value); if (selector === '#chat-widget-content') renders.push(markup); }
+      });
+      elements.set(selector, node);
+    }
     return elements.get(selector);
   };
   class FormDataAdapter {
@@ -110,11 +118,10 @@ function session(t, env, uid) {
   });
   vm.runInContext(chatSource, context, { filename: 'assets/board-chat.js' });
   vm.runInContext(source + `
-    render = () => { if (state.user) { syncChat(); globalThis.captureRender(chatView()); } };
+    render = () => { if (state.user) { renderChatWidget(); syncChat(); } };
     refreshTimerUi = () => {};
     globalThis.chatSdkTest = { state, openGeneralChat, sendChatMessage, retryChat, stopChat, onlineChatPeople, chatView };
   `, context, { filename: 'index.html.inline-module.js' });
-  context.captureRender = markup => renders.push(markup);
   const app = context.chatSdkTest;
   const data = fixture();
   Object.assign(app.state, clone(data), { user: { uid }, profile: clone(data.users[uid]), connected: true });
@@ -133,6 +140,8 @@ test('real SDK shares general chat and server timestamps between legacy and new 
   const before = await privileged(env);
   const first = session(t, env, 'legacy'), second = session(t, env, 'newcomer');
   first.app.openGeneralChat(); second.app.openGeneralChat();
+  assert.equal(first.app.state.route, 'inicio', 'opening the floating chat preserves the current page');
+  assert.equal(first.app.state.chatOpen, true);
   await until(() => !first.app.state.chatLoading && !second.app.state.chatLoading, 'initial room snapshots');
   await until(() => first.app.onlineChatPeople().length === 2 && second.app.onlineChatPeople().length === 2, 'both teachers online');
   await send(first.app, 'Podemos iniciar a conversa?');

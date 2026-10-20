@@ -14,6 +14,7 @@ const source = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1]
   .replace(/^import\s.+?;\s*$/gm, '');
 const clone = value => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
 const grade = (presentation = 8, practice = 8, code = 8, time = 8) => ({ presentation, practice, code, time });
+const customWeightedModel = () => ({version:1,name:'MODELO_INTEGRACAO',title:'RELATORIO_PERSONALIZADO',boardWeight:75,monographWeight:25,criteriaWeights:{presentation:50,practice:25,code:25,time:0},evaluatorWeights:{t1:3,t2:1},decimals:3});
 const fixture = () => ({
   users: {
     coord: { name: 'Alberson', email:'coord@example.test', role: 'coordinator', key: 'alberson', active: true },
@@ -40,7 +41,7 @@ function harness(uid = 't1') {
     if (!elements.has(selector)) elements.set(selector, {
       textContent: '', innerHTML: '', value: '', dataset: {}, style: {},
       classList: { add() {}, remove() {}, toggle() {} }, addEventListener() {},
-      setAttribute() {}, focus() {}, scrollIntoView() {}, remove() {}, querySelectorAll() { return []; },
+      setAttribute() {}, focus() {}, scrollIntoView() {}, remove() {}, querySelector(selector) { return element(selector); },querySelectorAll() { return []; },
       showModal() { this.open = true; }, close() { this.open = false; }
     });
     return elements.get(selector);
@@ -143,15 +144,16 @@ function harness(uid = 't1') {
       return { committed: true, snapshot: snapshot(read(path)) };
     }
   });
-  for(const asset of ['roster-import.js','analytics.js','analytics-pdf.js','coordinator-report.js','coordinator-report-pdf.js','board-chat.js','board-import.js','chat-notifications.js'].filter(asset=>require('node:fs').existsSync(join(__dirname,'..','assets',asset))))vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
+  for(const asset of ['roster-import.js','analytics.js','analytics-pdf.js','coordinator-report.js','coordinator-report-pdf.js','board-chat.js','board-import.js','chat-notifications.js','weighted-model.js','weighted-report-ui.js','weighted-report-pdf.js','weighted-workbench.js'].filter(asset=>require('node:fs').existsSync(join(__dirname,'..','assets',asset))))vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
   vm.runInContext(source + `
     render = () => {};
     refreshTimerUi = () => {};
     globalThis.testDownloads = [];
     downloadBlob = (blob, filename) => globalThis.testDownloads.push({blob,filename});
     globalThis.appTest = { state, CRITERIOS, notaValida, mediaAvaliador, situacao, resultadoAluno,
-      chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,
+      chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,isChatVisible:typeof isChatVisible==='function'?isChatVisible:null,toggleChatWidget:typeof toggleChatWidget==='function'?toggleChatWidget:null,closeChatWidget:typeof closeChatWidget==='function'?closeChatWidget:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,
       requestChatNotifications:typeof requestChatNotifications==='function'?requestChatNotifications:null,toggleChatMuted:typeof toggleChatMuted==='function'?toggleChatMuted:null,syncChatAlerts:typeof syncChatAlerts==='function'?syncChatAlerts:null,stopChatAlerts:typeof stopChatAlerts==='function'?stopChatAlerts:null,getChatAlertsState:typeof getChatAlertsState==='function'?getChatAlertsState:null,
+      weightedWorkbench:typeof weightedWorkbench!=='undefined'?weightedWorkbench:null,weightedReportsView:typeof weightedReportsView==='function'?weightedReportsView:null,buildWeightedReportPdf:typeof buildWeightedReportPdf==='function'?buildWeightedReportPdf:null,
       elapsedAt, formatElapsed, boardElapsed, timerRecord, controlTimer, closeBoard, reopenBoard,
       createBoardShareSnapshot, assertShareSnapshotCurrent, buildSharePdf, buildBoardShareText, whatsappTextUrl, boardShareFilename,
       assertBoardAccess, hasUnsavedDrafts, saveGrade, saveDelivery, reportHtml, refreshReportData,
@@ -1073,6 +1075,52 @@ test('coordinator monograph saving accepts zero only for an existing editable st
   const teacher=harness();await assert.rejects(teacher.app.saveDelivery(form),/restrito|coordena/i);assert.equal(teacher.calls.sets.length,0);
 });
 
+test('coordinator custom model weights criteria, evaluators and stages without changing official results or saved notes',()=>{
+  const h=harness('coord'),{app}=h,before=clone(h.data),workbench=app.weightedWorkbench;
+  workbench.setDraft(customWeightedModel());workbench.apply();
+  const preview=workbench.viewData(),students=preview.previewBoards[0].students,ana=students.find(student=>student.id==='s1'),bruno=students.find(student=>student.id==='s2');
+  assert.equal(ana.result.banca,7.875);assert.equal(ana.result.final,8.15625);assert.equal(bruno.result.final,1.875);
+  assert.match(app.weightedReportsView(),/8,156/);assert.match(app.weightedReportsView(),/1,875/);
+  const original=app.coordinatorReportBoards()[0].students.find(student=>student.id==='s1');assert.ok(Math.abs(original.result.final-7.8)<1e-12);
+  workbench.setDraft({...customWeightedModel(),decimals:0});workbench.apply();assert.equal(workbench.viewData().previewBoards[0].students.find(student=>student.id==='s1').result.final,8.15625,'display precision never rounds the calculation');
+  assert.deepEqual(h.data,before);assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
+});
+
+test('custom report models validate totals, save per coordinator and round-trip portable JSON',async()=>{
+  const h=harness('coord'),workbench=h.app.weightedWorkbench;
+  workbench.setDraft({...customWeightedModel(),boardWeight:70});assert.throws(()=>workbench.apply(),/100%/);
+  await assert.rejects(workbench.exportReport('csv'),/prévia|alteraç|modelo/i);assert.equal(h.downloads.length,0);
+  workbench.setDraft(customWeightedModel());workbench.apply();const saved=workbench.save();assert.equal(workbench.viewData().models.length,1);
+  workbench.exportModel();const portable=JSON.parse(await h.downloads[0].blob.text());assert.equal(portable.format,'bancaflow-weighted-model');assert.equal(portable.model.boardWeight,75);
+  workbench.resetModel();assert.equal(workbench.viewData().model.boardWeight,60);
+  await workbench.importModel({size:JSON.stringify(portable).length,text:async()=>JSON.stringify(portable)});assert.equal(workbench.viewData().model.name,'MODELO_INTEGRACAO');
+  await assert.rejects(workbench.importModel({size:4,text:async()=>'{bad'}),/JSON/i);assert.equal(workbench.viewData().model.boardWeight,75);
+  workbench.reset();h.app.state.user={uid:'coord2'};h.app.state.profile={name:'Outra coordenação',role:'coordinator',active:true};assert.equal(workbench.viewData().models.length,0);
+  workbench.reset();h.app.state.user={uid:'coord'};h.app.state.profile=clone(h.data.users.coord);assert.equal(workbench.viewData().models.length,1);workbench.selectModel(saved.id);assert.equal(workbench.viewData().model.criteriaWeights.presentation,50);
+  workbench.reset();h.app.state.user={uid:'t1'};h.app.state.profile=clone(h.data.users.t1);assert.throws(()=>workbench.viewData(),/coordena/i);await assert.rejects(workbench.exportReport('csv'),/coordena/i);assert.doesNotMatch(h.app.weightedReportsView(),/weighted-model-form/);
+});
+
+test('custom report exports refresh saved data and apply the selected model and student filter to PDF, CSV and charts',async()=>{
+  const h=harness('coord'),workbench=h.app.weightedWorkbench,before=clone(h.data);
+  workbench.setDraft(customWeightedModel());workbench.apply();workbench.setFilter('search','Ana');workbench.setReport({includeSummary:true,includeDetails:true,includeCharts:true,notes:'OBSERVACAO_INTEGRACAO'});
+  for(const kind of ['pdf','csv','charts']){
+    await workbench.exportReport(kind);const file=h.downloads.at(-1),content=await file.blob.text();
+    assert.match(file.filename,kind==='csv'?/personalizado_.*\.csv$/:/personalizado_.*\.pdf$/);
+    assert.match(content,/MODELO_INTEGRACAO/);assert.match(content,/Ana/);assert.doesNotMatch(content,/Bruno/);
+    if(kind==='csv'){assert.match(content,/8,15625/);assert.match(content,/8,156/);}
+    else{assert.match(content,/^%PDF-1\.4/);assert.match(content,/%%EOF\s*$/);assert.match(content,/75%/);}
+  }
+  for(const path of ['users','groups','boards','grades','deliveries','seals','timers'])assert.ok(h.calls.reads.includes(path),path);
+  assert.equal(h.downloads.length,3);assert.deepEqual(h.data,before);
+});
+
+test('custom exports reject offline, unsaved grades and a changed session before producing any file',async()=>{
+  const offline=harness('coord');offline.app.state.connected=false;await assert.rejects(offline.app.weightedWorkbench.exportReport('csv'),/conex|internet/i);assert.equal(offline.downloads.length,0);
+  const unsaved=harness('coord');unsaved.app.state.drafts.set('delivery/b1/s1',{delivery:'4'});await assert.rejects(unsaved.app.weightedWorkbench.exportReport('pdf'),/salv|rascunh/i);assert.equal(unsaved.downloads.length,0);
+  const stale=harness('coord');let release;stale.options.beforeRead=async path=>{if(path==='users')await new Promise(resolve=>release=resolve);};
+  const exporting=stale.app.weightedWorkbench.exportReport('csv');await new Promise(setImmediate);stale.app.state.user={uid:'t1'};stale.app.state.profile=clone(stale.data.users.t1);release();await assert.rejects(exporting,/sessão|coordena|acesso/i);assert.equal(stale.downloads.length,0);
+});
+
 test('chat rooms include the common room and only assigned banks, with coordinator access and inactive/session guards',()=>{
   const teacher=harness(),{app}=teacher;
   app.state.boards.b2={...clone(app.state.boards.b1),members:{t2:true},groupId:'g2'};
@@ -1099,13 +1147,28 @@ test('chat alert helpers observe only authorized rooms outside chat and retain s
   app.stopChatAlerts();app.state.profile.active=false;const before=h.calls.listens.length;app.syncChatAlerts();assert.equal(h.calls.listens.length,before,'inactive accounts cannot restart message alerts');
 });
 
+test('floating chat survives navigation and minimizing preserves its room, draft and new-message badge',async()=>{
+  const h=harness(),{app}=h;app.state.route='avaliar';app.state.selectedBoard='b1';app.state.drafts.set('grade/b1/s1',{presentation:'9,5'});
+  h.data.chatMessages={b1:{saved:{uid:'t2',name:'Professora Dois',text:'Mensagem já recebida',at:h.now()-5000}}};
+  app.syncChatAlerts();app.openChatRoom('b1');app.syncChat();await new Promise(setImmediate);
+  assert.equal(app.state.route,'avaliar');assert.equal(app.state.selectedBoard,'b1');assert.equal(app.state.chatOpen,true);assert.equal(app.isChatVisible(),true);
+  app.state.chatDrafts.set('b1','Pergunta ainda em edição');const reads=h.calls.listens.filter(path=>path==='chatMessages/b1').length;
+  app.state.route='bancas';app.syncChat();assert.equal(app.state.chatOpen,true);assert.equal(app.state.chatRoom,'b1');assert.equal(h.calls.listens.filter(path=>path==='chatMessages/b1').length,reads);
+  app.closeChatWidget();app.syncChat();assert.equal(app.state.chatOpen,false);assert.equal(app.isChatVisible(),false);assert.equal(app.state.chatRoom,'b1');assert.equal(app.state.chatDrafts.get('b1'),'Pergunta ainda em edição');
+  h.write('chatMessages/b1/new',{uid:'t2',name:'Professora Dois',text:'Chegou enquanto minimizado',at:h.now()});h.emit('chatMessages/b1');
+  assert.equal(app.getChatAlertsState().countByRoom.b1,1);
+  app.toggleChatWidget();app.syncChat();assert.equal(app.state.route,'bancas');assert.equal(app.isChatVisible(),true);assert.equal(app.state.chatDrafts.get('b1'),'Pergunta ainda em edição');assert.equal(Object.keys(app.state.chatMessages).length,2);assert.equal(app.getChatAlertsState().countByRoom.b1??0,0);
+  assert.equal(app.state.drafts.get('grade/b1/s1').presentation,'9,5');
+  app.resetAppData();assert.equal(app.state.chatOpen,false);assert.equal(app.state.chatDrafts.size,0);
+});
+
 test('legacy registered teacher without active flag, login key or bank membership immediately uses general chat and presence',async()=>{
   const h=harness('legacy'),{app}=h,profile={name:'Docente já cadastrado',role:'teacher'};
   h.data.users.legacy=clone(profile);app.state.users.legacy=clone(profile);app.state.profile=clone(profile);
   const before=clone({users:h.data.users,boards:h.data.boards,grades:h.data.grades,deliveries:h.data.deliveries});
   assert.deepEqual(Array.from(app.chatRooms(),room=>room.id),['geral']);
   app.state.chatRoom='b1';app.openGeneralChat();app.syncChat();
-  assert.equal(app.state.route,'chat');assert.equal(app.state.chatRoom,'geral');assert.equal(app.state.chatError,'');
+  assert.equal(app.state.route,'inicio');assert.equal(app.state.chatOpen,true);assert.equal(app.isChatVisible(),true);assert.equal(app.state.chatRoom,'geral');assert.equal(app.state.chatError,'');
   await app.startChatPresence();await new Promise(setImmediate);
   await app.sendChatMessage({dataset:{chatRoom:'geral'},values:{message:'Já consigo participar.'}});
   const message=h.calls.sets.find(([path])=>path.startsWith('chatMessages/geral/'));

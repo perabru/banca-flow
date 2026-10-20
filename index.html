@@ -9,8 +9,9 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="BancaFlow">
 <link rel="stylesheet" href="assets/analytics.css">
-<link rel="stylesheet" href="assets/board-chat.css?v=071b517f2274">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-z30Zpu7zLBSZDUkrk0VV0w75DscI+kAcn7SMKGnaiF4='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<link rel="stylesheet" href="assets/weighted-report.css?v=8a4f2f973cae">
+<link rel="stylesheet" href="assets/board-chat.css?v=abb21e37de44">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-4RLFPYhTHOb4dtiiMUZceQgFeN6Wy0/QyD/0hRdc55M='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>BancaFlow · Gestão de bancas | Univap</title><style>
 /* Mobile first. Cores institucionais Univap; recursos locais em assets/. */
@@ -622,10 +623,12 @@ button.avatar{width:44px;height:44px;padding:0}
 </section>
 <div id="app-view" class="app-shell hidden">
   <aside class="sidebar"><div class="logo"><span>TCC</span><div>BancaFlow<small>Bancas de TCC · Univap</small></div></div><p class="side-heading">SISTEMA DE AVALIAÇÃO</p><nav id="desktop-nav" aria-label="Navegação principal"></nav><div class="side-foot"><div class="avatar" id="side-avatar">P</div><div><strong id="side-name">Professor</strong><small id="side-role">Avaliador</small></div><button type="button" id="logout" class="icon-btn" title="Sair" aria-label="Sair"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M9 12h12m-4-4 4 4-4 4"/></svg></button></div></aside>
-  <div class="main-column"><header class="topbar"><div><p class="eyebrow" id="page-eyebrow">PAINEL</p><h1 id="page-title">Visão geral</h1></div><div class="top-right"><span class="live-dot"></span><span class="online-label">BancaFlow · Univap</span><button type="button" id="open-chat" class="icon-btn" aria-label="Abrir chat dos professores"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8 10h8M8 14h5"/></svg><span id="chat-unread-badge" class="bf-chat-top-badge" hidden aria-hidden="true"></span></button><button type="button" id="top-initials" class="avatar" aria-label="Abrir menu da conta" aria-haspopup="dialog" aria-controls="mobile-menu">P</button></div></header>
+  <div class="main-column"><header class="topbar"><div><p class="eyebrow" id="page-eyebrow">PAINEL</p><h1 id="page-title">Visão geral</h1></div><div class="top-right"><span class="live-dot"></span><span class="online-label">BancaFlow · Univap</span><button type="button" id="open-chat" class="icon-btn" aria-label="Abrir chat dos professores" aria-haspopup="dialog" aria-controls="chat-widget" aria-expanded="false"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8 10h8M8 14h5"/></svg><span id="chat-unread-badge" class="bf-chat-top-badge" hidden aria-hidden="true"></span></button><button type="button" id="top-initials" class="avatar" aria-label="Abrir menu da conta" aria-haspopup="dialog" aria-controls="mobile-menu">P</button></div></header>
     <aside id="chat-notification-banner" class="bf-chat-notification-banner" hidden role="status" aria-live="polite"></aside>
     <main id="view" tabindex="-1"></main><footer class="app-identity">BancaFlow · Professores da Univap · Coordenação: Alberson <a href="privacidade.html">Sobre e privacidade</a></footer>
   </div><nav id="mobile-nav" class="mobile-nav" aria-label="Navegação mobile"></nav>
+  <button type="button" id="chat-fab" class="bf-chat-fab" aria-label="Abrir chat dos professores" aria-haspopup="dialog" aria-controls="chat-widget" aria-expanded="false" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8 10h8M8 14h5"/></svg><span>Chat</span><span id="chat-fab-badge" class="bf-chat-fab-badge" hidden aria-hidden="true"></span></button>
+  <section id="chat-widget" class="bf-chat-widget" data-chat-widget="1" role="dialog" aria-modal="false" aria-label="Chat dos professores" tabindex="-1" hidden><header class="bf-chat-widget-bar"><div><strong>Chat dos professores</strong><small>Continue a conversa enquanto avalia.</small></div><div class="bf-chat-widget-controls"><button type="button" class="icon-btn" data-chat-minimize="1" aria-label="Minimizar chat" title="Minimizar chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 17h14"/></svg></button><button type="button" class="icon-btn" data-chat-close="1" aria-label="Fechar chat" title="Fechar chat"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button></div></header><div id="chat-widget-content" class="bf-chat-widget-content"></div></section>
 </div>
 <dialog id="mobile-menu" class="mobile-menu" aria-labelledby="mobile-menu-title"></dialog>
 <section id="print-root" aria-hidden="true"></section>
@@ -934,10 +937,14 @@ button.avatar{width:44px;height:44px;padding:0}
 }</script>
 <script src="assets/vendor/xlsx-0.20.3.full.min.js" defer></script>
 <script src="assets/roster-import.js" defer></script>
-<script src="assets/analytics.js" defer></script>
-<script src="assets/analytics-pdf.js" defer></script>
+<script src="assets/analytics.js?v=5b8f4de832f9" defer></script>
+<script src="assets/analytics-pdf.js?v=20031c644fba" defer></script>
 <script src="assets/coordinator-report.js" defer></script>
 <script src="assets/coordinator-report-pdf.js" defer></script>
+<script src="assets/weighted-model.js?v=5887802b715c" defer></script>
+<script src="assets/weighted-report-ui.js?v=41e5d11a2b6c" defer></script>
+<script src="assets/weighted-report-pdf.js?v=b67d56aa5325" defer></script>
+<script src="assets/weighted-workbench.js?v=a95448aaf808" defer></script>
 <script src="assets/board-chat.js?v=f599a8da8799" defer></script>
 <script src="assets/chat-notifications.js?v=1407d8562564" defer></script>
 <script src="assets/board-import.js" defer></script>
@@ -1042,12 +1049,23 @@ const ICON_PATHS={
 };
 const icon=name=>`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name==='minhasavaliacoes'?'avaliar':name]||ICON_PATHS.bancas}</svg>`;
 const ROSTER_PROTEGIDO = JSON.parse(document.getElementById('roster-criptografado').textContent);
-const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', analyticsBoard:'', reportCharts:true, notesFilters:{course:'todas',className:'todas',date:'',status:'todas',search:''}, notesSearchDraft:'', notesChartBoard:'', notesChartsOpen:false, coordinatorExportBusy:false, notesExpanded:new Set(), chatRoom:'geral', chatMessages:{}, chatPresence:{}, chatDrafts:new Map(), chatLoading:false, chatError:'', chatPresenceError:'', chatSendError:'', chatSendCode:'', chatPendingIds:new Set(), chatSending:false, chatHasMore:false, chatLoadingOlder:false, unsubs:[], teacherSubs:new Map() };
+const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', analyticsBoard:'', reportCharts:true, notesFilters:{course:'todas',className:'todas',date:'',status:'todas',search:''}, notesSearchDraft:'', notesChartBoard:'', notesChartsOpen:false, coordinatorExportBusy:false, notesExpanded:new Set(), chatOpen:false, chatRoom:'geral', chatMessages:{}, chatPresence:{}, chatDrafts:new Map(), chatLoading:false, chatError:'', chatPresenceError:'', chatSendError:'', chatSendCode:'', chatPendingIds:new Set(), chatSending:false, chatHasMore:false, chatLoadingOlder:false, unsubs:[], teacherSubs:new Map() };
 const isActiveTeacher = profile => !!profile && ['coordinator','teacher'].includes(profile.role) && profile.active !== false;
 const activeTeachers = () => Object.entries(state.users).filter(([,profile])=>isActiveTeacher(profile));
 const isCoord = () => state.profile?.role === 'coordinator' && state.profile.active !== false;
 const canManageTeachers = () => !!state.user && isCoord() && state.profile.key === 'alberson';
 const canManageGroups = () => !!state.user && isCoord();
+const weightedWorkbench = typeof BancaWeightedWorkbench==='undefined' ? null : BancaWeightedWorkbench.createController({
+ getSession:()=>({uid:state.user?.uid,role:state.profile?.role,active:state.profile?.active,revision:accessRevision}),
+ getBoards:()=>coordinatorReportBoards(),getUsers:()=>state.users,
+ refreshData:()=>refreshWeightedReportData(),assertSaved:assertWeightedGradesSaved,
+ buildPdf:(boards,options)=>buildWeightedReportPdf(boards,options),download:(blob,name)=>downloadBlob(blob,name),
+ onChange:()=>{if(state.user&&isCoord()&&state.route==='personalizados')render();},onNotice:message=>notice(message)
+});
+function weightedReportsView(){
+ if(!state.user||!isCoord())return empty('Acesso exclusivo da coordenação');
+ return weightedWorkbench?weightedWorkbench.view():empty('Recarregue a página para carregar os modelos e relatórios.');
+}
 const groupOf = board => state.groups[board?.groupId];
 const availableGroups = () => Object.values(state.groups).filter(g=>g.active!==false);
 const courseLabel = group => group?.courseName || 'Curso não informado';
@@ -1072,14 +1090,38 @@ const stats = (label,n,code)=>`<div class="stat"><div class="stat-label"><span>$
 
 let accessRevision=0;
 // Chat: salas e presença isoladas das avaliações e dos relatórios.
-const chatRuntime={epoch:0,room:'',messagesOff:null,presenceOff:null,connection:null,presenceStarting:false,retryTicket:null,retryAttempt:0,messageScope:'',liveMessages:{},history:{},pendingWrites:new Map(),watchTicket:null};
+const chatRuntime={epoch:0,room:'',messagesOff:null,presenceOff:null,connection:null,presenceStarting:false,retryTicket:null,retryAttempt:0,messageScope:'',liveMessages:{},history:{},pendingWrites:new Map(),watchTicket:null,surfaceMarkup:'',savedUi:null,returnFocus:null};
+function isChatVisible(){return !!state.user&&isActiveTeacher(state.profile)&&(state.chatOpen===true||state.route==='chat');}
+function renderChatWidget(previous=captureChatUi()||chatRuntime.savedUi){
+ const active=!!state.user&&isActiveTeacher(state.profile),widget=$('#chat-widget'),fab=$('#chat-fab'),content=$('#chat-widget-content');
+ const open=active&&state.chatOpen===true&&state.route!=='chat';
+ fab.hidden=!active||state.route==='chat';fab.setAttribute('aria-expanded',String(open));widget.hidden=!open;
+ $('#open-chat').setAttribute('aria-expanded',String(isChatVisible()));
+ for(const button of document.querySelectorAll('[data-route="chat"]'))button.setAttribute('aria-expanded',String(isChatVisible()));
+ if(!active){content.innerHTML='';chatRuntime.surfaceMarkup='';return;}
+ if(state.route==='chat'){if(chatRuntime.surfaceMarkup){content.innerHTML='';chatRuntime.surfaceMarkup='';}return;}
+ if(!open)return;
+ const markup=chatView();if(markup!==chatRuntime.surfaceMarkup){content.innerHTML=markup;chatRuntime.surfaceMarkup=markup;}
+ restoreChatUi(previous);
+}
+function renderChatSurface(){
+ if(state.route==='chat'){render();return;}
+ renderChatWidget();syncChat();syncChatAlerts();
+}
+function closeChatWidget(){
+ const saved=chatRuntime.savedUi,previous=captureChatUi();if(previous)chatRuntime.savedUi={...previous,focus:previous.focus||(saved?.room===previous.room&&saved.focus)};
+ state.chatOpen=false;renderChatWidget();syncChat();refreshChatAlertUi();
+ const target=chatRuntime.returnFocus;chatRuntime.returnFocus=null;
+ if(target&&target.isConnected!==false)target.focus?.({preventScroll:true});else $('#chat-fab').focus({preventScroll:true});
+}
+function toggleChatWidget(){if(state.chatOpen&&state.route!=='chat')closeChatWidget();else openChatRoom(chatRooms().some(room=>room.id===state.chatRoom)?state.chatRoom:'geral');}
 const chatAlertRuntime={client:null,session:'',subs:new Map(),uiKey:'',bannerTimer:null,repaintQueued:false,badgeCount:null};
 function ensureChatNotifier(){
  if(chatAlertRuntime.client||typeof BancaChatAlerts==='undefined')return chatAlertRuntime.client;
  const base=typeof location!=='undefined'?new URL('./',location.href).href:'';
  chatAlertRuntime.client=BancaChatAlerts.createNotifier({environment:globalThis,now:()=>Date.now()+state.serverOffset,
   serviceWorkerUrl:base?new URL('chat-sw.js',base).href:'chat-sw.js',iconUrl:base?new URL('assets/app-icon-192.png',base).href:'assets/app-icon-192.png',badgeUrl:base?new URL('assets/notification-badge.png',base).href:'assets/notification-badge.png',
-  isRoomVisible:room=>!document.hidden&&state.route==='chat'&&state.chatRoom===room,
+  isRoomVisible:room=>!document.hidden&&isChatVisible()&&state.chatRoom===room,
   canAccess:room=>chatRooms().some(item=>item.id===room),onBanner:showChatMessageBanner,onChange:refreshChatAlertUi});
  return chatAlertRuntime.client;
 }
@@ -1092,14 +1134,15 @@ function getChatAlertsState(){
 function dismissChatMessageBanner(){if(chatAlertRuntime.bannerTimer)clearTimeout(chatAlertRuntime.bannerTimer);chatAlertRuntime.bannerTimer=null;const banner=document.querySelector('#chat-notification-banner');if(banner){banner.hidden=true;banner.innerHTML='';}}
 function refreshChatAlertUi(){
  const alerts=chatAlertRuntime.client?.getState()||{unread:0,muted:false},count=state.user?alerts.unread||0:0;
- const badge=document.querySelector('#chat-unread-badge');if(badge){badge.hidden=!count;badge.textContent=count>99?'99+':String(count);}
+ for(const id of ['#chat-unread-badge','#chat-fab-badge']){const badge=document.querySelector(id);if(badge){badge.hidden=!count;badge.textContent=count>99?'99+':String(count);}}
  const opener=document.querySelector('#open-chat');opener?.setAttribute('aria-label',count?`Abrir chat dos professores: ${count} mensagens não lidas`:'Abrir chat dos professores');
+ const fab=document.querySelector('#chat-fab');fab?.setAttribute('aria-label',state.chatOpen&&state.route!=='chat'?'Minimizar chat dos professores':count?`Abrir chat dos professores: ${count} mensagens não lidas`:'Abrir chat dos professores');
  for(const node of document.querySelectorAll('[data-nav-chat-count]')){node.hidden=!count;node.textContent=count>99?'99+':String(count);}
  document.title=count?`(${count}) BancaFlow · Novas mensagens`:'BancaFlow · Gestão de bancas | Univap';
  if(chatAlertRuntime.badgeCount!==count){chatAlertRuntime.badgeCount=count;try{const result=count?navigator.setAppBadge?.(count):navigator.clearAppBadge?.();result?.catch?.(()=>{});}catch{}}
  if(alerts.muted||!state.user)dismissChatMessageBanner();
  const key=JSON.stringify(alerts);if(key===chatAlertRuntime.uiKey)return;chatAlertRuntime.uiKey=key;
- if(state.user&&state.route==='chat'&&chatAlertRuntime.session===state.user.uid&&!chatAlertRuntime.repaintQueued){chatAlertRuntime.repaintQueued=true;void Promise.resolve().then(()=>{chatAlertRuntime.repaintQueued=false;if(state.user&&state.route==='chat'&&chatAlertRuntime.session===state.user.uid)render();});}
+ if(state.user&&isChatVisible()&&chatAlertRuntime.session===state.user.uid&&!chatAlertRuntime.repaintQueued){chatAlertRuntime.repaintQueued=true;void Promise.resolve().then(()=>{chatAlertRuntime.repaintQueued=false;if(state.user&&isChatVisible()&&chatAlertRuntime.session===state.user.uid)renderChatSurface();});}
 }
 function showChatMessageBanner(item){
  if(!state.user||document.hidden||getChatAlertsState().muted||!chatRooms().some(room=>room.id===item.room))return;
@@ -1130,7 +1173,7 @@ function syncChatAlerts(){
    });
   };subscribe();
  }
- if(state.route==='chat'&&!document.hidden)client.markRead(state.chatRoom);
+ if(isChatVisible()&&!document.hidden)client.markRead(state.chatRoom);
  refreshChatAlertUi();
 }
 function stopChatAlerts(){
@@ -1141,13 +1184,13 @@ async function requestChatNotifications(){
  if(!state.user||!isActiveTeacher(state.profile))throw Error('Entre com uma conta de professor para ativar os avisos.');
  const client=ensureChatNotifier();if(!client)throw Error('Os avisos não carregaram. Atualize o site.');
  if(chatAlertRuntime.session!==state.user.uid){chatAlertRuntime.session=state.user.uid;client.setSession(state.user.uid);}
- await client.requestPermission();refreshChatAlertUi();if(state.user&&state.route==='chat')render();
+ await client.requestPermission();refreshChatAlertUi();if(state.user&&isChatVisible())renderChatSurface();
 }
 function toggleChatMuted(){
  if(!state.user||!isActiveTeacher(state.profile))throw Error('Entre com uma conta de professor para configurar os avisos.');
  const client=ensureChatNotifier();if(!client)throw Error('Os avisos não carregaram. Atualize o site.');
  if(chatAlertRuntime.session!==state.user.uid){chatAlertRuntime.session=state.user.uid;client.setSession(state.user.uid);}
- client.toggleMute();refreshChatAlertUi();if(state.route==='chat')render();
+ client.toggleMute();refreshChatAlertUi();if(isChatVisible())renderChatSurface();
 }
 function openNotifiedChat(room,accountId=''){
  if(!state.user||accountId&&accountId!==state.user.uid||!chatRooms().some(item=>item.id===room))return;
@@ -1169,8 +1212,8 @@ function watchChatLoad(epoch,uid,revision,room){
  clearChatWatch();const ticket={handle:null};chatRuntime.watchTicket=ticket;
  ticket.handle=setTimeout(()=>{
   if(chatRuntime.watchTicket!==ticket)return;chatRuntime.watchTicket=null;
-  if(epoch!==chatRuntime.epoch||uid!==state.user?.uid||revision!==accessRevision||state.route!=='chat'||state.chatRoom!==room||!state.chatLoading)return;
-  state.chatLoading=false;state.chatError='As mensagens ainda não foram recebidas. A conversa será atualizada automaticamente; você também pode usar Atualizar conversa.';scheduleChatReconnect();render();
+  if(epoch!==chatRuntime.epoch||uid!==state.user?.uid||revision!==accessRevision||!isChatVisible()||state.chatRoom!==room||!state.chatLoading)return;
+  state.chatLoading=false;state.chatError='As mensagens ainda não foram recebidas. A conversa será atualizada automaticamente; você também pode usar Atualizar conversa.';scheduleChatReconnect();renderChatSurface();
  },10000);
 }
 function scrollChatToLatest(){const list=document.querySelector('#chat-message-list');if(list)list.scrollTop=list.scrollHeight;}
@@ -1182,16 +1225,20 @@ function assertChatAccess(room){
  if(!chatRooms().some(item=>item.id===room))throw Error('Você não tem acesso a esta sala de conversa.');
 }
 function captureChatUi(){
+ if(!isChatVisible())return null;
+ if(state.route!=='chat'&&$('#chat-widget')?.hidden)return null;
  const input=document.querySelector('#chat-message'),panel=document.querySelector('[data-chat-panel]'),list=document.querySelector('#chat-message-list');
  if(!input||panel?.dataset.chatPanel!==state.chatRoom)return null;
  if(typeof input.value==='string')state.chatDrafts.set(state.chatRoom,input.value);
- return {room:state.chatRoom,focus:document.activeElement===input,start:input.selectionStart,end:input.selectionEnd,scrollTop:list?.scrollTop||0,nearBottom:!list||(list.scrollHeight-list.clientHeight-list.scrollTop<70)};
+ const previous={room:state.chatRoom,focus:document.activeElement===input,start:input.selectionStart,end:input.selectionEnd,scrollTop:list?.scrollTop||0,widgetScrollTop:$('#chat-widget-content')?.scrollTop||0,nearBottom:!list||(list.scrollHeight-list.clientHeight-list.scrollTop<70)};
+ chatRuntime.savedUi=previous;return previous;
 }
 function restoreChatUi(previous){
- if(state.route!=='chat')return;
+ if(!isChatVisible())return;
  const input=document.querySelector('#chat-message'),list=document.querySelector('#chat-message-list');
  if(previous?.room===state.chatRoom&&previous.focus){input?.focus({preventScroll:true});input?.setSelectionRange?.(previous.start,previous.end);}
  if(list)list.scrollTop=!previous||previous.room!==state.chatRoom||previous.nearBottom?list.scrollHeight:previous.scrollTop;
+ if(state.route!=='chat'&&previous?.room===state.chatRoom)$('#chat-widget-content').scrollTop=previous.widgetScrollTop||0;
 }
 function onlineChatPeople(){
  if(!state.connected)return [];
@@ -1211,9 +1258,12 @@ function chatView(){
  return (state.chatPresenceError?`<div class="notice"><p>${esc(state.chatPresenceError)}</p><button type="button" class="btn soft" data-chat-retry="1">Reconectar chat</button></div>`:'')+BancaChat.renderChat({rooms,alerts:getChatAlertsState(),roomId:room.id,title:room.id==='geral'?'Sala dos professores':`Chat da banca · ${groupOf(state.boards[room.id])?.name||room.label}`,roomDescription:room.description,messages:state.chatMessages,people:onlineChatPeople(),uid:state.user.uid,loading:state.chatLoading,connected:state.connected,error:state.chatError,sendError:state.chatSendError,canCopyAccessPolicy:isCoord()&&/permission.?denied/i.test(state.chatSendCode||''),draft:state.chatDrafts.get(room.id)||'',sending:state.chatSending,pendingIds:[...(state.chatPendingIds||[])],hasMore:state.chatHasMore,loadingOlder:state.chatLoadingOlder});
 }
 function openChatRoom(room='geral'){
- assertChatAccess(room);captureChatUi();
- if(state.chatRoom!==room){clearChatReconnect(true);clearChatWatch();state.chatRoom=room;state.chatMessages={};state.chatPendingIds=new Set();state.chatSendError='';state.chatSendCode='';state.chatLoading=true;state.chatError='';state.chatHasMore=false;state.chatLoadingOlder=false;}
- go('chat');
+ assertChatAccess(room);captureChatUi();closeMobileMenu();
+ if(document.querySelector('#chat-notification-banner [data-chat-notification-room]')?.dataset.chatNotificationRoom===room)dismissChatMessageBanner();
+ if(!state.chatOpen)chatRuntime.returnFocus=document.activeElement;
+ if(state.chatRoom!==room){clearChatReconnect(true);clearChatWatch();chatRuntime.savedUi=null;state.chatRoom=room;state.chatMessages={};state.chatPendingIds=new Set();state.chatSendError='';state.chatSendCode='';state.chatLoading=true;state.chatError='';state.chatHasMore=false;state.chatLoadingOlder=false;}
+ state.chatOpen=true;renderChatSurface();
+ if(state.route!=='chat'&&!chatRuntime.savedUi?.focus)$('#chat-widget').focus({preventScroll:true});
 }
 function openGeneralChat(){
  openChatRoom('geral');
@@ -1229,19 +1279,19 @@ function clearChatReconnect(reset=false){
  chatRuntime.retryTicket=null;if(reset)chatRuntime.retryAttempt=0;
 }
 function scheduleChatReconnect(){
- if(chatRuntime.retryTicket||state.route!=='chat'||!state.connected||!state.user||!isActiveTeacher(state.profile)||!(state.chatError||state.chatPresenceError))return;
+ if(chatRuntime.retryTicket||!isChatVisible()||!state.connected||!state.user||!isActiveTeacher(state.profile)||!(state.chatError||state.chatPresenceError))return;
  const ticket={uid:state.user.uid,revision:accessRevision,room:state.chatRoom,handle:null};
  const delay=Math.min(30000,2000*2**Math.min(chatRuntime.retryAttempt++,4));chatRuntime.retryTicket=ticket;
  ticket.handle=setTimeout(()=>{
   if(chatRuntime.retryTicket!==ticket)return;chatRuntime.retryTicket=null;
-  if(state.user?.uid!==ticket.uid||accessRevision!==ticket.revision||state.chatRoom!==ticket.room||state.route!=='chat'||!state.connected||!isActiveTeacher(state.profile)||!chatRooms().some(room=>room.id===ticket.room))return;
+  if(state.user?.uid!==ticket.uid||accessRevision!==ticket.revision||state.chatRoom!==ticket.room||!isChatVisible()||!state.connected||!isActiveTeacher(state.profile)||!chatRooms().some(room=>room.id===ticket.room))return;
   if(!(state.chatError||state.chatPresenceError)){if(!state.chatLoading)chatRuntime.retryAttempt=0;return;}
   retryChat({automatic:true,messages:!!state.chatError,presence:!!state.chatPresenceError});
  },delay);
 }
 function syncChat(){
  if(!state.user||!isActiveTeacher(state.profile))return;
- if(state.route!=='chat'){
+ if(!isChatVisible()){
   clearChatReconnect(true);clearChatWatch();
   if(chatRuntime.messagesOff){chatRuntime.messagesOff();chatRuntime.messagesOff=null;chatRuntime.room='';++chatRuntime.epoch;}
   return;
@@ -1251,8 +1301,8 @@ function syncChat(){
   chatRuntime.presenceOff=()=>{};
   chatRuntime.presenceOff=onValue(ref(db,'chatPresence'),snapshot=>{
    if(state.user?.uid!==uid||revision!==accessRevision)return;
-   state.chatPresence=snapshot.val()||{};state.chatPresenceError='';if(!state.chatError&&!state.chatLoading)clearChatReconnect(true);if(state.route==='chat')render();
-  },()=>{if(state.user?.uid===uid&&revision===accessRevision){state.chatPresence={};state.chatPresenceError='Não foi possível atualizar os professores online. A conexão será tentada novamente automaticamente.';scheduleChatReconnect();if(state.route==='chat')render();}});
+   state.chatPresence=snapshot.val()||{};state.chatPresenceError='';if(!state.chatError&&!state.chatLoading)clearChatReconnect(true);if(isChatVisible())renderChatSurface();
+  },()=>{if(state.user?.uid===uid&&revision===accessRevision){state.chatPresence={};state.chatPresenceError='Não foi possível atualizar os professores online. A conexão será tentada novamente automaticamente.';scheduleChatReconnect();if(isChatVisible())renderChatSurface();}});
  }
  if(state.connected)void startChatPresence();
  const room=state.chatRoom;assertChatAccess(room);
@@ -1275,10 +1325,10 @@ function syncChat(){
   chatRuntime.liveMessages=messages;rebuildChatMessages();state.chatLoading=false;state.chatError='';
   if(!state.chatPresenceError)clearChatReconnect(true);
   if(first){state.chatHasMore=count===100;first=false;}
-  if(state.route==='chat')render();
+  if(isChatVisible())renderChatSurface();
  },error=>{
   if(epoch!==chatRuntime.epoch||uid!==state.user?.uid||revision!==accessRevision)return;
-  clearChatWatch();++chatRuntime.epoch;chatRuntime.liveMessages={};chatRuntime.history={};state.chatMessages={};state.chatLoading=false;state.chatLoadingOlder=false;state.chatHasMore=false;state.chatError=chatAccessError(error);scheduleChatReconnect();if(state.route==='chat')render();
+  clearChatWatch();++chatRuntime.epoch;chatRuntime.liveMessages={};chatRuntime.history={};state.chatMessages={};state.chatLoading=false;state.chatLoadingOlder=false;state.chatHasMore=false;state.chatError=chatAccessError(error);scheduleChatReconnect();if(isChatVisible())renderChatSurface();
  });
 }
 function retryChat({automatic=false,messages=!!state.chatError||!state.chatPresenceError,presence=!!state.chatPresenceError||!state.chatError}={}){
@@ -1286,7 +1336,7 @@ function retryChat({automatic=false,messages=!!state.chatError||!state.chatPrese
  clearChatReconnect(!automatic);
  if(messages){clearChatWatch();chatRuntime.messagesOff?.();chatRuntime.messagesOff=null;chatRuntime.room='';}
  if(presence){chatRuntime.presenceOff?.();chatRuntime.presenceOff=null;}
- syncChat();render();
+ syncChat();renderChatSurface();
 }
 async function loadOlderChat(){
  const room=state.chatRoom;assertChatAccess(room);
@@ -1294,16 +1344,16 @@ async function loadOlderChat(){
  if(state.chatLoadingOlder||!state.chatHasMore)return;
  const oldest=BancaChat.sortedMessages(state.chatMessages)[0];if(!oldest||typeof oldest.at!=='number')return;
  const uid=state.user.uid,revision=accessRevision,epoch=chatRuntime.epoch;
- state.chatLoadingOlder=true;render();
+ state.chatLoadingOlder=true;renderChatSurface();
  try{
   const snapshot=await get(query(ref(db,`chatMessages/${room}`),orderByChild('at'),endBefore(oldest.at,oldest.id),limitToLast(100)));
   assertCurrentSession(uid,revision);assertChatAccess(room);
   if(state.chatRoom!==room||epoch!==chatRuntime.epoch)return;
   const previous=document.querySelector('#chat-message-list'),height=previous?.scrollHeight||0,top=previous?.scrollTop||0,messages=snapshot.val()||{};
   const confirmed=Object.fromEntries(Object.entries(state.chatMessages).filter(([id])=>!chatRuntime.pendingWrites.has(id)));
-  chatRuntime.history={...chatRuntime.history,...messages,...confirmed};rebuildChatMessages();state.chatHasMore=Object.keys(messages).length===100;state.chatLoadingOlder=false;render();
+  chatRuntime.history={...chatRuntime.history,...messages,...confirmed};rebuildChatMessages();state.chatHasMore=Object.keys(messages).length===100;state.chatLoadingOlder=false;renderChatSurface();
   const list=document.querySelector('#chat-message-list');if(list)list.scrollTop=top+(list.scrollHeight-height);
- }finally{if(state.user?.uid===uid&&accessRevision===revision&&state.chatRoom===room&&epoch===chatRuntime.epoch){state.chatLoadingOlder=false;render();}}
+ }finally{if(state.user?.uid===uid&&accessRevision===revision&&state.chatRoom===room&&epoch===chatRuntime.epoch){state.chatLoadingOlder=false;renderChatSurface();}}
 }
 async function sendChatMessage(form){
  const room=String(form.dataset.chatRoom||'');assertChatAccess(room);
@@ -1317,7 +1367,7 @@ async function sendChatMessage(form){
  const pending={uid,revision,room,message:{uid,name:state.profile.name,text,at:Date.now()+state.serverOffset}};
  if(id)chatRuntime.pendingWrites.set(id,pending);
  if(chatRuntime.messageScope!==room){chatRuntime.messageScope=room;chatRuntime.liveMessages={};chatRuntime.history={};}
- rebuildChatMessages();if(state.route==='chat'){render();scrollChatToLatest();}
+ rebuildChatMessages();if(isChatVisible()){renderChatSurface();scrollChatToLatest();}
  try{
   if(!id)throw Error('Não foi possível preparar a mensagem. Tente novamente.');
   const profile=(await get(ref(db,`users/${uid}`))).val();
@@ -1343,7 +1393,7 @@ async function sendChatMessage(form){
    }
   }
   throw error;
- }finally{if(state.user?.uid===uid&&accessRevision===revision){state.chatSending=false;if(state.route==='chat'){render();if(state.chatRoom===room&&!state.chatSendError)scrollChatToLatest();}}}
+ }finally{if(state.user?.uid===uid&&accessRevision===revision){state.chatSending=false;if(isChatVisible()){renderChatSurface();if(state.chatRoom===room&&!state.chatSendError)scrollChatToLatest();}}}
 }
 async function startChatPresence(){
  if(!state.user||!isActiveTeacher(state.profile)||!state.connected||chatRuntime.connection||chatRuntime.presenceStarting)return;
@@ -1372,6 +1422,7 @@ function stopChat(){
  clearChatReconnect(true);clearChatWatch();chatRuntime.pendingWrites.clear();chatRuntime.messageScope='';chatRuntime.liveMessages={};chatRuntime.history={};
  ++chatRuntime.epoch;chatRuntime.messagesOff?.();chatRuntime.messagesOff=null;chatRuntime.room='';chatRuntime.presenceOff?.();chatRuntime.presenceOff=null;
  void stopChatPresence();
+ state.chatOpen=false;chatRuntime.savedUi=null;chatRuntime.returnFocus=null;chatRuntime.surfaceMarkup='';$('#chat-widget').hidden=true;$('#chat-widget-content').innerHTML='';$('#chat-fab').hidden=true;
  state.chatRoom='geral';state.chatMessages={};state.chatPendingIds=new Set();state.chatSendError='';state.chatSendCode='';state.chatPresence={};state.chatDrafts.clear();state.chatLoading=false;state.chatError='';state.chatPresenceError='';state.chatSending=false;state.chatHasMore=false;state.chatLoadingOlder=false;
 }
 async function logoutAccount(){
@@ -1382,7 +1433,7 @@ setInterval(()=>{
  const current=chatRuntime.connection;
  if(current&&state.connected&&current.uid===state.user?.uid&&current.revision===accessRevision&&isActiveTeacher(state.profile))void set(current.entry,{name:state.profile.name,role:state.profile.role,at:serverTimestamp()}).catch(()=>{});
  else if(!current&&state.connected)void startChatPresence();
- if(state.route==='chat'&&state.user)render();
+ if(isChatVisible()&&state.user)renderChatSurface();
 },45000);
 
 function showLogin(){ closeMobileMenu();$('#login-view').classList.remove('hidden');$('#app-view').classList.add('hidden'); }
@@ -1397,6 +1448,7 @@ function showAccessProblem(message,user=auth.currentUser){
 }
 function resetAppData(){
  stopChat();
+ weightedWorkbench?.reset();
  closeMobileMenu();$('#mobile-menu').innerHTML='';
  if(typeof resetGroupAdmin==='function')resetGroupAdmin();
  if(typeof closeExcelImport==='function')closeExcelImport(true);
@@ -1426,6 +1478,22 @@ $('#toggle-password').addEventListener('click',()=>{
 });
 $('#logout').addEventListener('click',()=>logoutAccount().catch(fail));
 $('#open-chat').addEventListener('click',()=>handle(openGeneralChat));
+$('#chat-fab').addEventListener('click',()=>handle(toggleChatWidget));
+$('#chat-widget').addEventListener('click',e=>{
+ const button=e.target.closest('button');if(!button||button.disabled)return;
+ if(button.dataset.chatMinimize||button.dataset.chatClose)return closeChatWidget();
+ if(button.dataset.copyPolicy)return handle(copiarPoliticaDeAcesso);
+ if(button.dataset.chatNotify)return handle(requestChatNotifications);
+ if(button.dataset.chatMute)return handle(toggleChatMuted);
+ if(button.dataset.chatRefresh)return handle(()=>retryChat({messages:true,presence:!!state.chatPresenceError}));
+ if(button.dataset.chatLatest)return scrollChatToLatest();
+ if(button.dataset.chatOlder)return handle(loadOlderChat);
+ if(button.dataset.chatRetry)return handle(retryChat);
+});
+$('#chat-widget').addEventListener('change',e=>{if(e.target.id==='chat-room-select')handle(()=>openChatRoom(e.target.value));});
+$('#chat-widget').addEventListener('input',chatInputChanged);
+$('#chat-widget').addEventListener('keydown',e=>{if(e.key==='Escape'&&!e.isComposing){e.preventDefault();closeChatWidget();return;}chatKeydown(e);});
+$('#chat-widget').addEventListener('submit',e=>{if(e.target.id==='chat-form'){e.preventDefault();handle(()=>sendChatMessage(e.target));}});
 $('#chat-notification-banner').addEventListener('click',e=>{
  const button=e.target.closest('button');if(!button)return;
  if(button.dataset.chatNotificationRoom)return handle(()=>openNotifiedChat(button.dataset.chatNotificationRoom));
@@ -1484,25 +1552,26 @@ async function verificarAcesso(user){
  }catch(err){if(revision!==accessRevision)return;dataReadFailed(err,revision);}
 }
 onAuthStateChanged(auth,verificarAcesso);
-const navItems=()=>isCoord()? [['inicio','01','Visão geral'],['bancas','02','Bancas'],['minhasavaliacoes','09','Minhas avaliações'],['notas','08','Todas as notas'],['sortear','03','Sorteio'],['entregas','04','Monografia'],['relatorios','05','Relatórios'],['grupos','07','Grupos e cursos'],['professores','06','Professores'],['chat','10','Chat dos professores']] : [['inicio','01','Início'],['bancas','02','Minhas bancas'],['avaliar','03','Avaliar'],['chat','04','Chat']];
+const navItems=()=>isCoord()? [['inicio','01','Visão geral'],['bancas','02','Bancas'],['minhasavaliacoes','09','Minhas avaliações'],['notas','08','Todas as notas'],['sortear','03','Sorteio'],['entregas','04','Monografia'],['relatorios','05','Relatórios'],['personalizados','11','Modelos e relatórios'],['grupos','07','Grupos e cursos'],['professores','06','Professores'],['chat','10','Chat dos professores']] : [['inicio','01','Início'],['bancas','02','Minhas bancas'],['avaliar','03','Avaliar'],['chat','04','Chat']];
 function closeMobileMenu(){const menu=$('#mobile-menu');if(menu.open)menu.close();document.body.classList.remove('menu-open');}
 function openMobileMenu(){
  if(!state.user)return;const menu=$('#mobile-menu');if(menu.open)return;
- const extra=isCoord()?[['chat','Chat dos professores','Conversa geral e salas das bancas'],['professores','Equipe','Gerenciar professores avaliadores'],['sortear','Sorteio','Agendar e distribuir bancas'],['notas','Todas as notas','Consultar notas de todas as bancas'],['grupos','Grupos e cursos','Cadastrar grupos e importar planilhas'],['entregas','Monografia e entregas','Completar a nota individual dos 40%'],['relatorios','Relatórios','Concluir bancas e emitir os PDFs']]:[];
+ const extra=isCoord()?[['chat','Chat dos professores','Conversa geral e salas das bancas'],['professores','Equipe','Gerenciar professores avaliadores'],['sortear','Sorteio','Agendar e distribuir bancas'],['notas','Todas as notas','Consultar notas de todas as bancas'],['grupos','Grupos e cursos','Cadastrar grupos e importar planilhas'],['entregas','Monografia e entregas','Completar a nota individual dos 40%'],['relatorios','Relatórios','Concluir bancas e emitir os PDFs'],['personalizados','Modelos e relatórios','Configurar pesos e emitir relatórios personalizados']]:[];
  menu.innerHTML=`<div class="menu-content"><div class="menu-grip" aria-hidden="true"></div><div class="menu-header"><h2 id="mobile-menu-title">Sua conta e outras áreas</h2><button type="button" class="icon-btn" data-close-menu="1" aria-label="Fechar menu" autofocus>${icon('fechar')}</button></div><div class="menu-profile"><span class="avatar" aria-hidden="true">${esc(initials(state.profile.name))}</span><div><strong>${esc(state.profile.name)}</strong><small>${isCoord()?'Coordenação':'Professor avaliador'}</small><small>${esc(state.profile.email||state.user.email||'')}</small></div></div><nav class="menu-links" aria-label="Outras áreas">${extra.map(([route,label,description])=>`<button type="button" data-route="${route}" class="${state.route===route?'active':''}" ${state.route===route?'aria-current="page"':''}>${icon(route)}<span><b>${label}</b><small>${description}</small></span>${icon('seta')}</button>`).join('')}<button type="button" data-route="sair" class="menu-logout">${icon('sair')}<span><b>Sair da conta</b><small>Encerrar esta sessão no dispositivo</small></span></button></nav></div>`;
  menu.showModal();document.body.classList.add('menu-open');
 }
 function go(route,board=''){closeMobileMenu();if(board)state.selectedBoard=board;state.route=route;render();$('#view').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
-function render(){if(!state.user)return;const chatUi=captureChatUi();const notesFocus=state.route==='notas'&&document.activeElement?.id==='notes-search'?{start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null;captureDrafts();if(typeof captureGroupAdminDrafts==='function')captureGroupAdminDrafts();const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'))state.route='inicio';
- const pageTitles={inicio:'Visão geral',bancas:'Bancas de avaliação',sortear:'Sorteio de bancas',entregas:'Monografia e entregas',relatorios:'Relatórios finais',professores:'Professores',grupos:'Grupos e cursos',avaliar:'Avaliação individual',minhasavaliacoes:'Minhas avaliações',notas:'Todas as notas',chat:'Chat dos professores'};
+function render(){if(!state.user)return;const chatUi=captureChatUi()||chatRuntime.savedUi;const notesFocus=state.route==='notas'&&document.activeElement?.id==='notes-search'?{start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null;captureDrafts();weightedWorkbench?.capture($('#view'));if(typeof captureGroupAdminDrafts==='function')captureGroupAdminDrafts();const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'))state.route='inicio';
+ if(state.route==='chat'){$('#chat-widget-content').innerHTML='';chatRuntime.surfaceMarkup='';}
+ const pageTitles={inicio:'Visão geral',bancas:'Bancas de avaliação',sortear:'Sorteio de bancas',entregas:'Monografia e entregas',relatorios:'Relatórios finais',personalizados:'Modelos e relatórios',professores:'Professores',grupos:'Grupos e cursos',avaliar:'Avaliação individual',minhasavaliacoes:'Minhas avaliações',notas:'Todas as notas',chat:'Chat dos professores'};
  $('#page-title').textContent=pageTitles[state.route];$('#page-eyebrow').textContent=isCoord()?'COORDENAÇÃO • TCC 2026':'CORPO DOCENTE • TCC 2026';
  const active=route=>state.route===route||(route==='bancas'&&state.route==='avaliar'&&isCoord());
- const navButton=(route,label)=>`<button type="button" class="${active(route)?'active':''}" data-route="${route}" ${active(route)?'aria-current="page"':''}><span class="nav-ico">${icon(route)}</span><span>${label}${route==='chat'?'<span class="bf-chat-nav-badge" data-nav-chat-count hidden aria-hidden="true"></span>':''}</span></button>`;
+ const navButton=(route,label)=>`<button type="button" class="${active(route)?'active':''}" data-route="${route}" ${active(route)?'aria-current="page"':''} ${route==='chat'?`aria-haspopup="dialog" aria-controls="chat-widget" aria-expanded="${state.chatOpen===true}"`:''}><span class="nav-ico">${icon(route)}</span><span>${label}${route==='chat'?'<span class="bf-chat-nav-badge" data-nav-chat-count hidden aria-hidden="true"></span>':''}</span></button>`;
  $('#desktop-nav').innerHTML=routes.map(([route,,label])=>navButton(route,label)).join('');
  const primary=isCoord()?[['inicio','Início'],['bancas','Bancas'],['minhasavaliacoes','Avaliar'],['notas','Notas']]:[['inicio','Início'],['bancas','Bancas'],['avaliar','Avaliar'],['chat','Chat']];
- $('#mobile-nav').innerHTML=primary.map(([route,label])=>navButton(route,label)).join('')+(isCoord()?`<button type="button" data-open-menu="1" class="${['sortear','entregas','relatorios','grupos','professores','chat'].includes(state.route)?'active':''}" aria-label="Mais áreas e opções da conta" aria-haspopup="dialog" aria-controls="mobile-menu"><span class="nav-ico">${icon('mais')}</span><span>Mais</span></button>`:navButton('sair','Sair'));
- const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,professores:teachersView,grupos:groupsView,notas:allNotesView,minhasavaliacoes:myEvaluationsView,chat:chatView};$('#view').innerHTML=views[state.route]?.()||'';restoreDrafts();if(notesFocus){const field=$('#notes-search');field?.focus({preventScroll:true});field?.setSelectionRange(notesFocus.start,notesFocus.end);}
- restoreChatUi(chatUi);syncChat();syncChatAlerts();consumeChatNotificationLink();
+ $('#mobile-nav').innerHTML=primary.map(([route,label])=>navButton(route,label)).join('')+(isCoord()?`<button type="button" data-open-menu="1" class="${['sortear','entregas','relatorios','personalizados','grupos','professores','chat'].includes(state.route)?'active':''}" aria-label="Mais áreas e opções da conta" aria-haspopup="dialog" aria-controls="mobile-menu"><span class="nav-ico">${icon('mais')}</span><span>Mais</span></button>`:navButton('sair','Sair'));
+ const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,personalizados:weightedReportsView,professores:teachersView,grupos:groupsView,notas:allNotesView,minhasavaliacoes:myEvaluationsView,chat:chatView};$('#view').innerHTML=views[state.route]?.()||'';restoreDrafts();if(notesFocus){const field=$('#notes-search');field?.focus({preventScroll:true});field?.setSelectionRange(notesFocus.start,notesFocus.end);}
+ renderChatWidget(chatUi);restoreChatUi(chatUi);syncChat();syncChatAlerts();consumeChatNotificationLink();
 }
 function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,b])=>{const g=groupOf(b);return g&&isCoord()&&situacao(b,g,boardGrades(id),state.deliveries[id]).pronta;});
  const completed=isCoord()?ready.length:boards.filter(([id,b])=>{const g=groupOf(b);return g&&studentsOf(g).every(([sid])=>mediaAvaliador(state.grades[id]?.[state.user.uid]?.[sid])!==null);}).length;
@@ -1667,7 +1736,7 @@ function coordinatorReportPanel(){
  const boards=coordinatorReportBoards(),summary=BancaCoordinatorReport.summary(boards),display=value=>notaValida(value)?fmt(value):'<span class="notes-pending">Pendente</span>';
  const selected=boards.find(b=>b.id===state.notesChartBoard),chartBoards=selected?[selected]:boards;
  const details=selected?coordinatorDetailCharts(selected):BancaCoordinatorReport.charts(boards);
- return `<section class="coordinator-panel" aria-labelledby="coordinator-report-heading"><div class="section-heading"><div><p class="eyebrow">CONSOLIDADO GERAL</p><h3 id="coordinator-report-heading">Todos os alunos</h3><p>Arquivo completo com as notas salvas de todas as bancas, monografia e resultados calculados.</p></div></div><div class="coordinator-export-actions"><button type="button" class="btn primary" data-coordinator-export="pdf" ${!summary.studentCount?'disabled':''}>PDF completo ${icon('pdf')}</button><button type="button" class="btn soft" data-coordinator-export="csv" ${!summary.studentCount?'disabled':''}>Planilha de notas (CSV)</button><button type="button" class="btn soft" data-coordinator-export="charts" ${!summary.studentCount?'disabled':''}>PDF dos gráficos ${icon('pdf')}</button></div>
+ return `<section class="coordinator-panel" aria-labelledby="coordinator-report-heading"><div class="section-heading"><div><p class="eyebrow">CONSOLIDADO GERAL</p><h3 id="coordinator-report-heading">Todos os alunos</h3><p>Arquivo completo com as notas salvas de todas as bancas, monografia e resultados calculados.</p></div></div><div class="coordinator-export-actions"><button type="button" class="btn soft" data-route="personalizados">Configurar pesos e relatórios</button><button type="button" class="btn primary" data-coordinator-export="pdf" ${!summary.studentCount?'disabled':''}>PDF completo ${icon('pdf')}</button><button type="button" class="btn soft" data-coordinator-export="csv" ${!summary.studentCount?'disabled':''}>Planilha de notas (CSV)</button><button type="button" class="btn soft" data-coordinator-export="charts" ${!summary.studentCount?'disabled':''}>PDF dos gráficos ${icon('pdf')}</button></div>
  <p class="tiny coordinator-scope">Os três arquivos incluem todos os cursos, turmas e alunos, independentemente dos filtros abaixo. Incluem bancas abertas, grupos removidos e alunos sem banca. Resultados de bancas abertas são provisórios; notas ausentes permanecem pendentes.</p>
  <div class="coordinator-metrics"><div><span>Alunos cadastrados</span><strong>${summary.studentCount}</strong></div><div><span>Resultados encerrados</span><strong>${summary.officialCount}</strong></div><div><span>Resultados provisórios</span><strong>${summary.provisionalCount}</strong></div><div><span>Alunos com pendências</span><strong>${summary.pendingCount}</strong><small>${summary.unassignedCount} sem banca</small></div></div>
  <details class="coordinator-charts" data-coordinator-charts="1" ${state.notesChartsOpen?'open':''}><summary>Gráficos e resumo de todos os alunos ${icon('relatorios')}</summary><div class="coordinator-charts-body"><div class="field"><label for="notes-chart-board">Dados do gráfico na tela</label><select id="notes-chart-board">${opts([['','Todos os alunos'],...boards.map(b=>[b.id,`${b.label} · ${b.className}${b.unassigned?' · Sem banca':''}`])],selected?.id||'')}</select><small>A seleção altera apenas os gráficos na tela. Os arquivos sempre incluem todos os alunos.</small></div><div class="analytics-chart-grid">${details.map(chart=>BancaAnalytics.renderChart(chart)).join('')}</div>
@@ -2871,6 +2940,39 @@ class CoordinatorReportPdf extends EvaluationPdf {
   return SchedulePdf.prototype.finish.call(this);
  }
 }
+class WeightedReportPdf extends CoordinatorReportPdf {
+ newPage(){
+  this.pages.push([]);this.rect(0,0,this.width,6,'#b4223b');this.rect(0,6,this.width,80,'#173e6c');
+  this.text('UNIVERSIDADE DO VALE DO PARAÍBA',this.margin,20,10,true,'#ffffff');
+  this.text('Relatório personalizado',this.margin,42,21,true,'#ffffff');
+  this.text('Modelo de ponderação configurado pela coordenação',this.margin,69,9,false,'#ffffff');
+  const issued=this.wrap(`Emissão: ${this.issued} · Responsável: ${this.responsible}`,this.width-2*this.margin,9);
+  issued.forEach((line,i)=>this.text(line,this.margin,99+i*12,9,false,'#60738a'));this.y=108+issued.length*12;
+  if(this.activeBoardLabel)this.paragraph(`${this.activeBoardLabel} · continuação`,9,true,'#173e6c',8);
+  this.contentTop=this.y;
+ }
+ finish(){return SchedulePdf.prototype.finish.call(this);}
+}
+function assertWeightedGradesSaved(){
+ if(!state.user||!isCoord())throw Error('Os relatórios personalizados são exclusivos da coordenação.');
+ if(Object.keys(state.boards).some(bid=>hasUnsavedDrafts(bid)))throw Error('Salve as notas e a monografia em edição antes de gerar o arquivo.');
+}
+async function refreshWeightedReportData(){
+ assertWeightedGradesSaved();
+ if(!state.connected)throw Error('Conecte-se à internet para atualizar e exportar as notas.');
+ const uid=state.user.uid,revision=accessRevision,paths=['users','groups','boards','grades','deliveries','seals','timers'];
+ const snapshots=await Promise.all(paths.map(path=>get(ref(db,path))));assertCurrentSession(uid,revision);
+ const latest=Object.fromEntries(paths.map((path,index)=>[path,snapshots[index].val()||{}]));
+ if(!isActiveTeacher(latest.users[uid])||latest.users[uid].role!=='coordinator')throw Error('A conta não possui mais acesso de coordenação. Entre novamente.');
+ Object.assign(state,latest);state.profile=latest.users[uid];state.timerErrors={};assertWeightedGradesSaved();
+}
+function buildWeightedReportPdf(boards,options={}){
+ if(!state.user||!isCoord())throw Error('Os relatórios personalizados são exclusivos da coordenação.');
+ if(typeof BancaWeightedReportPdf==='undefined'||typeof BancaAnalyticsPdf==='undefined')throw Error('Recarregue a página para carregar o gerador de relatórios.');
+ const pdf=new WeightedReportPdf(false,new Date().toLocaleString('pt-BR'),state.profile.name||'Coordenação');
+ BancaWeightedReportPdf.append(pdf,boards,{...options,preparedBy:state.profile.name||'Coordenação'});
+ return pdf.finish();
+}
 function buildCoordinatorReportPdf({chartsOnly=false}={}){
  if(!state.user||!isCoord())throw Error('O consolidado de notas é exclusivo da coordenação.');
  if(typeof BancaCoordinatorReport==='undefined'||typeof BancaCoordinatorPdf==='undefined'||typeof BancaAnalyticsPdf==='undefined')throw Error('Recarregue a página para carregar os relatórios.');
@@ -3291,7 +3393,7 @@ async function refreshReportData(ids){
 }
 
 onValue(ref(db,'.info/serverTimeOffset'),snap=>{state.serverOffset=snap.val()||0;});
-onValue(ref(db,'.info/connected'),snap=>{state.connected=!!snap.val();if(state.connected&&state.user){void startChatPresence();if(state.route==='chat'&&isActiveTeacher(state.profile)&&(state.chatError||state.chatPresenceError))retryChat({automatic:true,messages:!!state.chatError,presence:!!state.chatPresenceError});}else if(!state.connected){clearChatReconnect();clearChatWatch();void stopChatPresence();if(typeof closeBoardImport==='function')closeBoardImport(true);}if(state.route==='chat'&&state.user)render();if(state.selectedBoard)refreshTimerUi(state.selectedBoard);});
+onValue(ref(db,'.info/connected'),snap=>{state.connected=!!snap.val();if(state.connected&&state.user){void startChatPresence();if(isChatVisible()&&isActiveTeacher(state.profile)&&(state.chatError||state.chatPresenceError))retryChat({automatic:true,messages:!!state.chatError,presence:!!state.chatPresenceError});}else if(!state.connected){clearChatReconnect();clearChatWatch();void stopChatPresence();if(typeof closeBoardImport==='function')closeBoardImport(true);}if(isChatVisible()&&state.user)renderChatSurface();if(state.selectedBoard)refreshTimerUi(state.selectedBoard);});
 setInterval(()=>{if(!document.hidden)updateTimerDisplays();},10);
 
 function assertCurrentSession(uid,revision){
@@ -3568,6 +3670,7 @@ async function openBoardShare(boardId, { studentId = '' } = {}) {
 }
 
 const handle = async cb=>{try{await cb();}catch(err){fail(err);}};
+weightedWorkbench?.bind($('#view'));
 for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('click',e=>{const el=e.target.closest('button');if(!el)return;if(el.dataset.openMenu!==undefined)return openMobileMenu();if(!el.dataset.route)return;if(el.dataset.route==='sair')logoutAccount().catch(fail);else if(el.dataset.route==='chat')handle(openGeneralChat);else go(el.dataset.route);});
 $('#view').addEventListener('click',e=>{
  const summary=e.target.closest('summary'),notesBoard=summary?.parentElement?.dataset.notesBoard;
@@ -3634,8 +3737,10 @@ $('#view').addEventListener('change',e=>{
  if(e.target.id==='report-charts')state.reportCharts=!!e.target.checked;
  if(e.target.id==='analytics-board-filter'){state.analyticsBoard=e.target.value;render();}
 });
-$('#view').addEventListener('input',e=>{if(e.target.id==='chat-message'){state.chatDrafts.set(state.chatRoom,e.target.value);const count=document.querySelector('#chat-character-count');if(count)count.textContent=`${e.target.value.length.toLocaleString('pt-BR')} / 2.000`;const send=document.querySelector('#chat-form button[type="submit"]');if(send)send.disabled=!e.target.value.trim()||!state.connected||state.chatSending||state.chatLoading||!!state.chatError;}if(e.target.id==='notes-search'&&isCoord())state.notesSearchDraft=String(e.target.value||'').slice(0,180);});
-$('#view').addEventListener('keydown',e=>{if(e.target.id==='chat-message'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();e.target.form?.requestSubmit();}});
+function chatInputChanged(e){if(e.target.id!=='chat-message')return;state.chatDrafts.set(state.chatRoom,e.target.value);captureChatUi();const count=document.querySelector('#chat-character-count');if(count)count.textContent=`${e.target.value.length.toLocaleString('pt-BR')} / 2.000`;const send=document.querySelector('#chat-form button[type="submit"]');if(send)send.disabled=!e.target.value.trim()||!state.connected||state.chatSending||state.chatLoading||!!state.chatError;}
+function chatKeydown(e){if(e.target.id==='chat-message'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();e.target.form?.requestSubmit();}}
+$('#view').addEventListener('input',e=>{chatInputChanged(e);if(e.target.id==='notes-search'&&isCoord())state.notesSearchDraft=String(e.target.value||'').slice(0,180);});
+$('#view').addEventListener('keydown',chatKeydown);
 $('#view').addEventListener('toggle',e=>{if(e.target.dataset?.coordinatorCharts&&isCoord())state.notesChartsOpen=e.target.open;const bid=e.target.dataset?.notesBoard;if(!bid||!isCoord())return;if(e.target.open)state.notesExpanded.add(bid);else state.notesExpanded.delete(bid);},true);
 $('#view').addEventListener('submit',e=>{e.preventDefault();const f=e.target;handle(async()=>{
  if(f.id==='chat-form')await sendChatMessage(f);

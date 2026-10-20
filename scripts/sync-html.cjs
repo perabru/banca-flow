@@ -8,6 +8,13 @@ const rules = fs.readFileSync(path.join(root, 'database.rules.json'), 'utf8').tr
 JSON.parse(rules);
 html = html.replace(/(<script type="application\/json" id="firebase-rules">)[\s\S]*?(<\/script>)/, (_,a,b)=>a+rules+b);
 for (const [asset, attribute, pattern] of [
+  ['assets/weighted-model.js', 'src', /src="assets\/weighted-model\.js(?:\?[^\"]*)?"/g],
+  ['assets/weighted-report-ui.js', 'src', /src="assets\/weighted-report-ui\.js(?:\?[^\"]*)?"/g],
+  ['assets/weighted-report-pdf.js', 'src', /src="assets\/weighted-report-pdf\.js(?:\?[^\"]*)?"/g],
+  ['assets/weighted-workbench.js', 'src', /src="assets\/weighted-workbench\.js(?:\?[^\"]*)?"/g],
+  ['assets/weighted-report.css', 'href', /href="assets\/weighted-report\.css(?:\?[^\"]*)?"/g],
+  ['assets/analytics.js', 'src', /src="assets\/analytics\.js(?:\?[^\"]*)?"/g],
+  ['assets/analytics-pdf.js', 'src', /src="assets\/analytics-pdf\.js(?:\?[^\"]*)?"/g],
   ['assets/board-chat.js', 'src', /src="assets\/board-chat\.js(?:\?[^\"]*)?"/g],
   ['assets/chat-notifications.js', 'src', /src="assets\/chat-notifications\.js(?:\?[^\"]*)?"/g],
   ['assets/board-chat.css', 'href', /href="assets\/board-chat\.css(?:\?[^\"]*)?"/g]

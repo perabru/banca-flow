@@ -14,7 +14,7 @@ const html = readFileSync(join(__dirname, '..', 'index.html'), 'utf8');
 const source = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^import\s.+?;\s*$/gm, '');
 const markup = html.replace(/<script type="module">[\s\S]*?<\/script>/, '');
 const XLSX=require('../assets/vendor/xlsx-0.20.3.full.min.js');
-const localAssetPaths=['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js','/assets/board-chat.js','/assets/board-chat.css','/assets/board-import.js','/assets/chat-notifications.js','/manifest.webmanifest','/chat-sw.js','/assets/app-icon-180.png','/assets/app-icon-192.png','/assets/app-icon-512.png','/assets/notification-badge.png'];
+const localAssetPaths=['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js','/assets/board-chat.js','/assets/board-chat.css','/assets/board-import.js','/assets/chat-notifications.js','/assets/weighted-model.js','/assets/weighted-report-ui.js','/assets/weighted-report.css','/assets/weighted-report-pdf.js','/assets/weighted-workbench.js','/manifest.webmanifest','/chat-sw.js','/assets/app-icon-180.png','/assets/app-icon-192.png','/assets/app-icon-512.png','/assets/notification-badge.png'];
 const assetContentType=path=>path.endsWith('.png')?'image/png':path.endsWith('.webmanifest')?'application/manifest+json':path.endsWith('.css')?'text/css':'text/javascript';
 const readLocalAsset=path=>readFileSync(join(__dirname,'..',path.slice(1)));
 const fixture = {
@@ -116,7 +116,7 @@ async function openApp(t,{timezoneId='UTC'}={}) {
   };
   await page.route('**/*',requestHandler);
   const bootstrap = adapter() + source + `
-    globalThis.appTest={state,go,render,resetAppData,createBoards,makeBoard,openBoardImport,closeBoardImport,confirmBoardImport,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,toggleChatMuted:typeof toggleChatMuted==='function'?toggleChatMuted:null,requestChatNotifications:typeof requestChatNotifications==='function'?requestChatNotifications:null,syncChatAlerts:typeof syncChatAlerts==='function'?syncChatAlerts:null,stopChatAlerts:typeof stopChatAlerts==='function'?stopChatAlerts:null,getChatAlertsState:typeof getChatAlertsState==='function'?getChatAlertsState:null,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
+    globalThis.appTest={state,go,render,resetAppData,createBoards,makeBoard,openBoardImport,closeBoardImport,confirmBoardImport,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,isChatVisible:typeof isChatVisible==='function'?isChatVisible:null,toggleChatWidget:typeof toggleChatWidget==='function'?toggleChatWidget:null,closeChatWidget:typeof closeChatWidget==='function'?closeChatWidget:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,toggleChatMuted:typeof toggleChatMuted==='function'?toggleChatMuted:null,requestChatNotifications:typeof requestChatNotifications==='function'?requestChatNotifications:null,syncChatAlerts:typeof syncChatAlerts==='function'?syncChatAlerts:null,stopChatAlerts:typeof stopChatAlerts==='function'?stopChatAlerts:null,getChatAlertsState:typeof getChatAlertsState==='function'?getChatAlertsState:null,weightedWorkbench:typeof weightedWorkbench!=='undefined'?weightedWorkbench:null,weightedReportsView:typeof weightedReportsView==='function'?weightedReportsView:null,buildWeightedReportPdf:typeof buildWeightedReportPdf==='function'?buildWeightedReportPdf:null,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
       mount(uid){clearListeners();resetAppData();mock.uid=uid;state.user={uid,email:uid+'@example.test'};state.profile=mock.clone(mock.data.users[uid]);for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])state[key]=mock.clone(mock.data[key]||{});state.connected=true;document.querySelector('#login-view').classList.add('hidden');document.querySelector('#app-view').classList.remove('hidden');if(isCoord())for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])listen(key,key);else syncTeacherSubs();syncTimerSubs();go('avaliar','b1');}
     };appTest.mount('t1');
   `;
@@ -700,11 +700,79 @@ test('coordinator completes monograph notes inline and exports all students, inc
   assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
 });
 
+test('coordinator configures custom weighted reports, preserves edits across chat and navigation, and exports saved notes', {skip}, async t=>{
+  const{page,errors,cspErrors,createPeer,reload}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-chat-qa';mkdirSync(qa,{recursive:true});
+  await page.setViewportSize({width:1440,height:1000});await page.evaluate(()=>{appTest.mount('coord');appTest.go('personalizados');});
+  const before=await page.evaluate(()=>JSON.stringify({users:firebaseMock.data.users,groups:firebaseMock.data.groups,boards:firebaseMock.data.boards,grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,seals:firebaseMock.data.seals,timers:firebaseMock.data.timers}));
+  const rows=page.locator('.weighted-table:not(.weighted-evaluator-table) tbody tr'),ana=rows.filter({hasText:'Ana'}),bruno=rows.filter({hasText:'Bruno'});
+  assert.equal(await ana.locator('.weighted-final').textContent(),'7,80');
+  await page.locator('#weighted-model-name').fill('MODELO_INTEGRACAO');await page.locator('#weighted-report-title-input').fill('RELATORIO_PERSONALIZADO');
+  await page.locator('#weighted-board-weight').fill('75');await page.locator('#weighted-monograph-weight').fill('25');
+  for(const[key,value]of [['presentation','50'],['practice','25'],['code','25'],['time','0']])await page.locator(`#weighted-criterion-${key}`).fill(value);
+  await page.locator('.weighted-evaluators > summary').click();await page.locator('[data-weighted-evaluator="t1"]').fill('3');await page.locator('[data-weighted-evaluator="t2"]').fill('1');await page.locator('#weighted-decimals').selectOption('3');
+  await page.locator('#chat-fab').click();const peer=await createPeer('t2');await peer.locator('#open-chat').click();await peer.locator('#chat-message').fill('Conversa sem perder o modelo em edição.');await peer.locator('#chat-message').press('Enter');await page.waitForFunction(()=>document.querySelectorAll('[data-chat-message]').length===1);
+  assert.equal(await page.locator('#weighted-board-weight').inputValue(),'75');assert.equal(await page.locator('#weighted-model-name').inputValue(),'MODELO_INTEGRACAO');
+  await page.evaluate(()=>firebaseMock.emit('groups'));assert.equal(await page.locator('#weighted-criterion-presentation').inputValue(),'50','an unrelated Firebase refresh preserves the unsaved model');
+  await page.locator('#desktop-nav [data-route="notas"]').click();await page.locator('#desktop-nav [data-route="personalizados"]').click();
+  assert.equal(await page.locator('#chat-widget').isVisible(),true);assert.equal(await page.locator('#weighted-board-weight').inputValue(),'75');assert.equal(await page.locator('#weighted-model-name').inputValue(),'MODELO_INTEGRACAO');await page.locator('[data-chat-minimize]').click();
+  await page.locator('#weighted-model-form button[type="submit"]').click();await page.waitForFunction(()=>document.querySelector('.weighted-final')?.textContent==='8,156');
+  assert.equal(await ana.locator('.weighted-final').textContent(),'8,156');assert.equal(await bruno.locator('.weighted-final').textContent(),'1,875');
+  assert.ok(Math.abs(await page.evaluate(()=>appTest.coordinatorReportBoards()[0].students.find(student=>student.id==='s1').result.final)-7.8)<1e-12);
+  await page.locator('[data-weighted-save]').click();await page.waitForFunction(()=>!!document.querySelector('#weighted-model-select').value);const modelId=await page.locator('#weighted-model-select').inputValue();
+  const modelDownloading=page.waitForEvent('download');await page.locator('[data-weighted-export-model]').click();const modelFile=await modelDownloading,modelJson=readFileSync(await modelFile.path(),'utf8');await modelFile.saveAs(join(qa,'weighted-model.json'));assert.equal(JSON.parse(modelJson).model.boardWeight,75);
+  await page.locator('[data-weighted-reset]').click();assert.equal(await page.locator('#weighted-board-weight').inputValue(),'60');await page.locator('#weighted-model-select').selectOption(modelId);assert.equal(await page.locator('#weighted-board-weight').inputValue(),'75','selecting a saved model replaces the previous form draft');
+  await page.locator('[data-weighted-reset]').click();await page.locator('#weighted-model-import').setInputFiles({name:'modelo.json',mimeType:'application/json',buffer:Buffer.from(modelJson)});await page.waitForFunction(()=>document.querySelector('#weighted-model-name').value==='MODELO_INTEGRACAO');
+  assert.equal(await ana.locator('.weighted-final').textContent(),'8,156');await page.locator('#weighted-board-weight').fill('70');await page.locator('#weighted-model-form button[type="submit"]').click();await page.locator('#weighted-report-error').waitFor();assert.match(await page.locator('#weighted-report-error').textContent(),/100%/);
+  await page.locator('#weighted-board-weight').fill('75');await page.locator('#weighted-model-form button[type="submit"]').click();await page.waitForFunction(()=>!document.querySelector('#weighted-report-error'));
+  await page.locator('#weighted-report-notes').fill('OBSERVACAO_INTEGRACAO');for(const section of ['summary','details','charts'])await page.locator(`#weighted-${section}`).check();
+  const fullDownloading=page.waitForEvent('download');await page.locator('[data-weighted-export="pdf"]').click();const fullFile=await fullDownloading;await fullFile.saveAs(join(qa,'weighted-full.pdf'));const pdf=readFileSync(await fullFile.path(),'utf8');assert.match(pdf,/^%PDF-1\.4/);assert.match(pdf,/RELATORIO_PERSONALIZADO/);assert.match(pdf,/MODELO_INTEGRACAO/);assert.match(pdf,/75%/);assert.match(pdf,/Ana/);assert.match(pdf,/Bruno/);assert.match(pdf,/OBSERVACAO_INTEGRACAO/);
+  await page.locator('#weighted-search').fill('Ana');await page.locator('#weighted-filter-form button[type="submit"]').click();assert.equal(await rows.count(),1);
+  const csvDownloading=page.waitForEvent('download');await page.locator('[data-weighted-export="csv"]').click();const csvFile=await csvDownloading;await csvFile.saveAs(join(qa,'weighted-ana.csv'));const csv=readFileSync(await csvFile.path(),'utf8');assert.match(csv,/8,15625/);assert.match(csv,/8,156/);assert.doesNotMatch(csv,/Bruno/);
+  const chartsDownloading=page.waitForEvent('download');await page.locator('[data-weighted-export="charts"]').click();const chartsFile=await chartsDownloading;await chartsFile.saveAs(join(qa,'weighted-charts.pdf'));assert.match(readFileSync(await chartsFile.path(),'utf8'),/^%PDF-1\.4/);
+  await page.locator('#weighted-search').fill('');await page.locator('#weighted-filter-form button[type="submit"]').click();
+  for(const width of [320,390,1440]){await page.setViewportSize({width,height:1000});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`custom report overflows at ${width}px`);await page.screenshot({path:join(qa,`weighted-report-${width}.png`),fullPage:true});}
+  for(const path of ['users','groups','boards','grades','deliveries','seals','timers'])assert.ok((await page.evaluate(()=>firebaseMock.reads)).includes(path),path);
+  assert.equal(await page.evaluate(()=>JSON.stringify({users:firebaseMock.data.users,groups:firebaseMock.data.groups,boards:firebaseMock.data.boards,grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,seals:firebaseMock.data.seals,timers:firebaseMock.data.timers})),before);
+  await reload();await page.evaluate(()=>{appTest.mount('coord');appTest.go('personalizados');});await page.locator('#weighted-model-select').selectOption(modelId);assert.equal(await page.locator('#weighted-board-weight').inputValue(),'75','saved coordinator models survive a reload');
+  await page.evaluate(()=>{appTest.mount('t1');appTest.go('personalizados');});assert.equal(await page.locator('#weighted-model-form').count(),0);assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('floating chat stays open across workspace tabs and minimizing preserves drafts, grading focus and unread messages', {skip}, async t=>{
+  const{page,errors,cspErrors,createPeer}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-chat-qa';mkdirSync(qa,{recursive:true});
+  const grade=page.locator('[data-grade-form="b1"][data-student="s1"] input[name="presentation"]');await grade.fill('9.25');
+  const before=await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,timers:firebaseMock.data.timers}));
+  await page.locator('#chat-fab').click();await page.locator('#chat-widget').waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>appTest.state.route),'avaliar');assert.equal(await page.locator('#chat-widget').getAttribute('aria-modal'),'false');assert.equal(await grade.inputValue(),'9.25');
+  await page.locator('#chat-room-select').selectOption('b1');await page.locator('#chat-message').fill('Pergunta que ainda não enviei.');
+  const peer=await createPeer('t2');await peer.evaluate(()=>appTest.openChatRoom('b1'));
+  const reads=await page.evaluate(()=>firebaseMock.listens.filter(path=>path==='chatMessages/b1').length);
+  await page.locator('#mobile-nav [data-route="bancas"]').click();assert.equal(await page.evaluate(()=>appTest.state.route),'bancas');assert.equal(await page.locator('#chat-widget').isVisible(),true);assert.equal(await page.locator('#chat-message').inputValue(),'Pergunta que ainda não enviei.');
+  await page.locator('#mobile-nav [data-route="avaliar"]').click();assert.equal(await grade.inputValue(),'9.25');
+  assert.equal(await page.evaluate(()=>firebaseMock.listens.filter(path=>path==='chatMessages/b1').length),reads,'workspace navigation keeps the live conversation subscription');
+  await grade.focus();await page.evaluate(()=>{globalThis.gradeNodeBeforeChat=document.querySelector('[data-grade-form="b1"][data-student="s1"] input[name="presentation"]');});
+  await peer.locator('#chat-message').fill('Recebida durante a avaliação.');await peer.locator('#chat-message').press('Enter');await page.waitForFunction(()=>document.querySelectorAll('[data-chat-message]').length===1);
+  assert.equal(await grade.inputValue(),'9.25');assert.equal(await grade.evaluate(el=>el===globalThis.gradeNodeBeforeChat&&document.activeElement===el),true,'a chat message updates the drawer without replacing or blurring the grading input');
+  assert.equal(await page.locator('#chat-message').inputValue(),'Pergunta que ainda não enviei.');
+  await page.locator('[data-chat-minimize]').click();assert.equal(await page.locator('#chat-widget').isVisible(),false);
+  await peer.locator('#chat-message').fill('Recebida enquanto minimizado.');await peer.locator('#chat-message').press('Enter');await page.locator('#chat-fab-badge').waitFor({state:'visible'});
+  await page.locator('#mobile-nav [data-route="bancas"]').click();await page.locator('#chat-fab').click();await page.locator('#chat-widget').waitFor({state:'visible'});
+  assert.equal(await page.evaluate(()=>appTest.state.route),'bancas');assert.equal(await page.locator('#chat-room-select').inputValue(),'b1');assert.equal(await page.locator('#chat-message').inputValue(),'Pergunta que ainda não enviei.');assert.equal(await page.locator('[data-chat-message]').count(),2);
+  await page.waitForFunction(()=>document.querySelector('#chat-fab-badge').hidden);
+  assert.equal(await page.locator('#chat-notification-banner').isVisible(),false,'reopening the notified room dismisses its already-read banner');
+  await page.locator('#chat-message').press('Enter');await peer.waitForFunction(()=>document.querySelectorAll('[data-chat-message]').length===3);
+  await page.locator('#chat-message').fill('Outro rascunho para continuar depois.');await page.locator('[data-chat-close]').click();assert.equal(await page.locator('#chat-widget').isVisible(),false);await page.locator('#chat-fab').click();
+  assert.equal(await page.locator('#chat-message').inputValue(),'Outro rascunho para continuar depois.');
+  for(const width of [320,390,1440]){await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);const box=await page.locator('#chat-widget').boundingBox();assert.ok(box.x>=0&&box.y>=0&&box.width<=width&&box.y+box.height<=920);await page.screenshot({path:join(qa,`chat-floating-${width}.png`),fullPage:true});}
+  await page.locator('#desktop-nav [data-route="inicio"]').click();assert.equal(await page.evaluate(()=>appTest.state.route),'inicio');assert.equal(await page.locator('#chat-widget').isVisible(),true);
+  assert.equal(await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,timers:firebaseMock.data.timers})),before);
+  await page.evaluate(()=>appTest.go('chat'));assert.equal(await page.locator('#chat-widget').isVisible(),false);assert.equal(await page.locator('#view [data-chat-panel]').count(),1,'the legacy full-page chat remains available without duplicate composers');assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
 test('two professors exchange live bank chat messages, preserve drafts, online presence and evaluation privacy', {skip}, async t=>{
   const{page,errors,cspErrors,createPeer}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-chat-qa';mkdirSync(qa,{recursive:true});
   const before=await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries}));
   await page.locator('[data-chat-board="b1"]').first().click();
-  await page.waitForFunction(()=>appTest.state.route==='chat'&&!appTest.state.chatLoading);
+  await page.waitForFunction(()=>appTest.isChatVisible()&&!appTest.state.chatLoading);
   assert.equal(await page.locator('#chat-room-select').inputValue(),'b1');
   const peer=await createPeer('t2');await peer.evaluate(()=>appTest.openChatRoom('b1'));
   await page.waitForFunction(()=>document.querySelectorAll('[data-chat-person]').length===2);
@@ -789,7 +857,7 @@ test('mobile chat alerts require a permission gesture and mute persists by accou
   assert.equal(await page.evaluate(()=>notificationMock.shown.length),0,'foreground messages use an in-page alert before permission is granted');
   assert.equal(await page.evaluate(()=>notificationMock.requests),0);
   assert.ok(await page.evaluate(()=>appTest.getChatAlertsState().unread)>0);
-  await page.locator('[data-chat-notification-room="geral"]').click();await page.waitForFunction(()=>appTest.state.route==='chat'&&appTest.state.chatRoom==='geral');
+  await page.locator('[data-chat-notification-room="geral"]').click();await page.waitForFunction(()=>appTest.isChatVisible()&&appTest.state.chatRoom==='geral');assert.equal(await page.evaluate(()=>appTest.state.route),'avaliar','opening a message alert preserves the current workspace');
   assert.equal(await page.locator('[data-chat-message]').count(),1);assert.equal(await page.evaluate(()=>appTest.getChatAlertsState().unread),0);
   await page.locator('[data-chat-notify]').click();await page.waitForFunction(()=>notificationMock.requests===1&&appTest.getChatAlertsState().enabled);
   assert.equal(await page.evaluate(()=>notificationMock.permission),'granted');
@@ -797,9 +865,9 @@ test('mobile chat alerts require a permission gesture and mute persists by accou
   await peer.locator('#chat-message').fill('Aviso com o aplicativo em segundo plano.');await peer.locator('#chat-message').press('Enter');
   await page.waitForFunction(()=>notificationMock.shown.length===1);
   assert.ok(await page.evaluate(()=>notificationMock.registrations.length)>0,'mobile notifications use a registered service worker');
-  await page.evaluate(()=>{notificationMock.setHidden(false);notificationMock.dispatchWorkerMessage({type:'bancaflow-open-chat',room:'geral',accountId:'t2'});});
-  assert.equal(await page.evaluate(()=>appTest.state.route),'inicio','a notification from another signed-in account cannot change the current conversation');
-  await page.evaluate(()=>notificationMock.dispatchWorkerMessage({type:'bancaflow-open-chat',...notificationMock.shown[0].options.data}));await page.waitForFunction(()=>appTest.state.route==='chat'&&appTest.state.chatRoom==='geral');
+  await page.evaluate(()=>{notificationMock.setHidden(false);appTest.closeChatWidget();notificationMock.dispatchWorkerMessage({type:'bancaflow-open-chat',room:'b1',accountId:'t2'});});
+  assert.equal(await page.evaluate(()=>appTest.state.chatOpen),false,'a notification from another signed-in account cannot open the current conversation');
+  await page.evaluate(()=>notificationMock.dispatchWorkerMessage({type:'bancaflow-open-chat',...notificationMock.shown[0].options.data}));await page.waitForFunction(()=>appTest.isChatVisible()&&appTest.state.chatRoom==='geral');
   await page.locator('[data-chat-mute]').click();assert.equal(await page.locator('[data-chat-mute]').getAttribute('aria-pressed'),'true');
   await page.evaluate(()=>{appTest.go('inicio');notificationMock.setHidden(true);});
   await peer.locator('#chat-message').fill('Mensagem recebida com avisos silenciados.');await peer.locator('#chat-message').press('Enter');
@@ -823,7 +891,7 @@ test('denied mobile notification permission leaves in-page chat alerts and messa
   await page.evaluate(()=>{notificationMock.requestResult='denied';});await page.locator('[data-chat-notify]').click();await page.waitForFunction(()=>notificationMock.requests===1);
   assert.equal(await page.evaluate(()=>appTest.getChatAlertsState().permission),'denied');assert.equal(await page.evaluate(()=>appTest.getChatAlertsState().enabled),false);
   assert.match(await page.locator('#chat-alerts-permission').textContent(),/permiss|navegador|configura/i);
-  const peer=await createPeer('t2');await peer.locator('#open-chat').click();await page.evaluate(()=>appTest.go('inicio'));
+  const peer=await createPeer('t2');await peer.locator('#open-chat').click();await page.evaluate(()=>{appTest.closeChatWidget();appTest.go('inicio');});
   await peer.locator('#chat-message').fill('A conversa funciona sem permissão de notificação.');await peer.locator('#chat-message').press('Enter');
   await page.locator('[data-chat-notification-room="geral"]').waitFor();assert.equal(await page.evaluate(()=>notificationMock.shown.length),0);
   await page.locator('[data-chat-notification-room="geral"]').click();

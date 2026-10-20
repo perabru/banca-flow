@@ -81,3 +81,28 @@ test('ordinary four-criterion charts stay intact with two or three evaluators',(
   assert.ok(!text.includes('CONTINUAÇÃO'));
  }
 });
+
+test('grade precision formats grouped PDF labels consistently from zero through four decimals',()=>{
+ for(const [decimals,expected,zero] of [[0,'8','0'],[1,'8,3','0,0'],[3,'8,318','0,000'],[4,'8,3175','0,0000']]){
+  const source=spec({decimals,rows:[{label:'Ana',values:[0,null,8.3175]}]}),before=JSON.stringify(source),pdf=new Pdf();
+  draw(pdf,[source]);
+  const values=pdf.pages.flat().filter(item=>item.type==='text'&&item.size===8.5).map(item=>item.value);
+  assert.deepEqual(values,[zero,'Não registrado',expected]);
+  assert.equal(JSON.stringify(source),before,'source values remain unrounded');
+ }
+});
+
+test('omitted or invalid precision keeps two decimals and matches SVG rounding',()=>{
+ for(const decimals of [undefined,null,'3',-1,5,2.5,NaN,Infinity]){
+  const pdf=new Pdf();draw(pdf,[spec({decimals,series:[{label:'Resultado'}],rows:[{label:'Ana',values:[1.005]}]})]);
+  assert.ok(textOf(pdf).includes('1,01'),'same locale rounding as the table and SVG');
+ }
+ const pdf=new Pdf();draw(pdf,[spec({unit:'duration',decimals:0,max:1800000,rows:[{label:'Banca',values:[0,123459,null]}]})]);
+ assert.ok(textOf(pdf).includes('02:03,45'),'duration keeps centiseconds');
+});
+
+test('stacked PDF charts apply display precision to components and their exact sum',()=>{
+ const pdf=new Pdf();draw(pdf,[spec({mode:'stacked',decimals:3,series:[{label:'Banca'},{label:'Entrega'}],rows:[{label:'Ana',values:[5.6174,2.7002]}]})]);
+ const values=pdf.pages.flat().filter(item=>item.type==='text'&&item.size===8.5).map(item=>item.value);
+ assert.deepEqual(values,['8,318','5,617','2,700']);
+});

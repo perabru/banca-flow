@@ -32,9 +32,23 @@ Somente professores ativos que participam da banca podem controlar essa banca. O
 
 O encerramento pode ocorrer antes de todos os lançamentos. O relatório e o resultado oficial só ficam disponíveis com a banca encerrada e todas as notas completas, incluindo as entregas. Campos em edição devem ser salvos antes do encerramento. Rascunhos são preservados durante atualizações da tela e salvamentos pendentes; a troca de conta limpa os campos e qualquer prévia de compartilhamento da sessão anterior.
 
+## Modelos e relatórios personalizados
+
+Alberson e todos os coordenadores ativos, inclusive novos coordenadores, têm acesso a **Modelos e relatórios**. No celular, a opção fica em **Mais**. O atalho também aparece no consolidado de **Todas as notas** e em **Relatórios**.
+
+- Configure os percentuais da banca e da monografia, os quatro critérios individuais, o peso relativo de cada avaliador e de 0 a 4 casas decimais. Os percentuais das etapas somam 100%; os critérios também somam 100%. Os pesos relativos dos avaliadores são normalizados dentro de cada banca; professores sem peso configurado usam 1.
+- Clique em **Gerar prévia** para aplicar a configuração. O cálculo usa as notas salvas, mantém a precisão completa e arredonda somente a exibição. Zero é válido; dados exigidos que estejam ausentes permanecem pendentes. Peso zero desconsidera o componente no modelo.
+- Filtre por curso, turma, banca, situação e busca. Os filtros desta área definem os alunos dos arquivos personalizados. Escolha resumo, notas individuais e gráficos e acrescente observações da coordenação.
+- **Emitir relatório PDF** inclui o modelo, a fórmula, os pesos, as seções selecionadas e a identificação da emissão. **Exportar notas CSV** inclui cada aluno, avaliador, critério e resultado com precisão completa. **Exportar gráficos PDF** gera gráficos vetoriais acompanhados do contexto do modelo. Antes de exportar, o sistema relê o catálogo salvo e confere novamente a sessão e a permissão de coordenação.
+- **Salvar neste dispositivo** guarda até 20 modelos por conta e navegador. **Exportar modelo JSON** e **Importar modelo JSON** permitem levar a configuração a outro dispositivo. Esses arquivos e as preferências locais contêm a configuração, sem notas ou dados dos alunos.
+
+Os modelos calculam resultados personalizados de consulta. As notas registradas, o resultado oficial de banca 60% / monografia 40% e os relatórios oficiais existentes permanecem preservados. Bancas abertas continuam identificadas como provisórias nos arquivos. Esta área não acrescenta caminhos ao Firebase nem exige regras adicionais.
+
 ## Chat dos professores e das bancas
 
 O chat integra a mesma aplicação de avaliações, com acesso pelas contas já cadastradas.
+
+O botão flutuante **Chat** fica disponível em todas as áreas e mostra o total de mensagens não lidas. A conversa abre em um painel sobre a página, sem trocar a área atual. O painel continua aberto ao navegar entre bancas, avaliações e relatórios; novas mensagens não recriam o formulário de notas. **Minimizar**, **Fechar** ou **Esc** recolhem o painel e conservam a sala e o rascunho. Ao reabrir a sala, seu contador é atualizado como lido.
 
 Todos os professores ativos e a coordenação podem abrir **Chat dos professores** no menu, pelo ícone de conversa no cabeçalho ou pelo botão **Abrir chat** na visão geral. Esses atalhos sempre abrem a sala geral, inclusive após uma mudança de banca. No celular, o professor também tem **Chat** na navegação inferior; para a coordenação, a opção fica em **Mais**. O botão **Chat da banca** abre diretamente a conversa daquela banca.
 

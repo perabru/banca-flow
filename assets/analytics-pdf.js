@@ -14,10 +14,11 @@
     const ticks = Math.floor(value / 10);
     return String(Math.floor(ticks / 6000)).padStart(2, '0') + ':' + String(Math.floor(ticks / 100) % 60).padStart(2, '0') + ',' + String(ticks % 100).padStart(2, '0');
   }
-  function grade(value) { return valid(value) ? value.toFixed(2).replace('.', ',') : 'Não registrado'; }
-  function format(value, unit) { return unit === 'duration' ? duration(value) : grade(value); }
+  function grade(value, decimals) { return valid(value) ? value.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals }) : 'Não registrado'; }
+  function format(value, unit, decimals) { return unit === 'duration' ? duration(value) : grade(value, decimals); }
   function normalize(spec) {
     const input = spec || {}, unit = input.unit === 'duration' ? 'duration' : 'grade';
+    const decimals = Number.isInteger(input.decimals) && input.decimals >= 0 && input.decimals <= 4 ? input.decimals : 2;
     const series = (Array.isArray(input.series) ? input.series : []).map((item, index) => ({
       label: String(item?.label || `Série ${index + 1}`), color: color(item?.color, index), key: String(index + 1).padStart(2, '0')
     }));
@@ -30,7 +31,7 @@
       const values = row.values.filter(valid);
       maximum = Math.max(maximum, mode === 'stacked' ? values.reduce((sum, value) => sum + value, 0) : Math.max(0, ...values));
     }
-    return { title: String(input.title || 'Análise das avaliações'), subtitle: String(input.subtitle || ''), unit, series, rows, mode,
+    return { title: String(input.title || 'Análise das avaliações'), subtitle: String(input.subtitle || ''), unit, series, rows, mode, decimals,
       max: unit === 'grade' ? 10 : Math.max(valid(input.max) ? input.max : 0, maximum, maximum ? 1 : 60000) };
   }
   function draw(pdf, specs) {
@@ -168,7 +169,7 @@
           const barTop = pdf.y + 4;
           pdf.rect(plotX, barTop, plotWidth, 10, '#E5EBF3');
           if (valid(value) && value > 0) pdf.rect(plotX, barTop, Math.min(plotWidth, plotWidth * value / spec.max), 10, spec.series[seriesIndex].color);
-          pdf.text(format(value, spec.unit), plotX + plotWidth + 9, pdf.y + 2, 8.5, valid(value), valid(value) ? INK : MUTED);
+          pdf.text(format(value, spec.unit, spec.decimals), plotX + plotWidth + 9, pdf.y + 2, 8.5, valid(value), valid(value) ? INK : MUTED);
           pdf.y += groupedLaneHeight;
         });
       }
@@ -191,12 +192,12 @@
         consumed += barWidth;
       });
       const complete = row.values.every(valid), sum = row.values.reduce((total, value) => total + (valid(value) ? value : 0), 0);
-      pdf.text(complete ? format(sum, spec.unit) : 'Parcial', plotX + plotWidth + 9, pdf.y + 3, 8.5, true, INK); pdf.y += 23;
+      pdf.text(complete ? format(sum, spec.unit, spec.decimals) : 'Parcial', plotX + plotWidth + 9, pdf.y + 3, 8.5, true, INK); pdf.y += 23;
       row.values.forEach((value, seriesIndex) => {
         currentSeries = seriesIndex; reserve(15); laneBackground(background, 15);
         pdf.rect(left + 13, pdf.y + 4, 5, 5, spec.series[seriesIndex].color);
         pdf.text(`Série ${spec.series[seriesIndex].key}`, left + 25, pdf.y + 1, 8, false, MUTED);
-        pdf.text(format(value, spec.unit), plotX + plotWidth + 9, pdf.y + 1, 8.5, valid(value), valid(value) ? INK : MUTED); pdf.y += 15;
+        pdf.text(format(value, spec.unit, spec.decimals), plotX + plotWidth + 9, pdf.y + 1, 8.5, valid(value), valid(value) ? INK : MUTED); pdf.y += 15;
       });
     }
   }

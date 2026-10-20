@@ -136,3 +136,34 @@ test('empty charts render an explanatory state and browser UMD has the same API'
   assert.equal(typeof sandbox.BancaAnalytics.summary, 'function');
   assert.equal(sandbox.BancaAnalytics.summary([]).meanFinal, null);
 });
+
+test('grade chart precision is shared by SVG labels and its table without rounding source values', () => {
+  const source = { unit: 'grade', series: [{ label: 'Resultado' }], rows: [{ label: 'Ana', values: [8.3175] }, { label: 'Zero', values: [0] }, { label: 'Pendente', values: [null] }] };
+  const before = JSON.stringify(source);
+  for (const [decimals, expected, zero] of [[0, '8', '0'], [1, '8,3', '0,0'], [3, '8,318', '0,000'], [4, '8,3175', '0,0000']]) {
+    const html = analytics.renderChart({ ...source, decimals });
+    assert.ok(html.includes(`font-weight="650">${expected}</text>`), 'SVG data label');
+    assert.ok(html.includes(`<td>${expected}</td>`), 'table data cell');
+    assert.ok(html.includes(`<td>${zero}</td>`), 'zero follows the selected precision');
+    assert.ok(html.includes('width="192.966"'), 'bar uses the raw 8.3175 value');
+    assert.ok(html.includes('<td>Não disponível</td>'));
+  }
+  assert.equal(JSON.stringify(source), before);
+});
+
+test('grade precision defaults to two for omitted or invalid settings and duration stays at centiseconds', () => {
+  const source = { series: [{ label: 'Resultado' }], rows: [{ label: 'Ana', values: [1.005] }] };
+  for (const decimals of [undefined, null, '3', -1, 5, 2.5, NaN, Infinity]) {
+    const html = analytics.renderChart({ ...source, decimals });
+    assert.ok(html.includes('font-weight="650">1,01</text>'));
+    assert.ok(html.includes('<td>1,01</td>'));
+  }
+  const html = analytics.renderChart({ ...source, unit: 'duration', decimals: 0, rows: [{ label: 'Banca', values: [123459] }] });
+  assert.ok(html.includes('<td>02:03,45</td>'));
+});
+
+test('stacked chart formats every component and the unrounded total at the selected precision', () => {
+  const html = analytics.renderChart({ unit: 'grade', mode: 'stacked', decimals: 3, series: [{ label: 'Banca' }, { label: 'Entrega' }], rows: [{ label: 'Ana', values: [5.6174, 2.7002] }] });
+  for (const value of ['5,617', '2,700', '8,318']) assert.ok(html.includes(`<td>${value}</td>`), value);
+  assert.ok(html.includes('font-weight="700">8,318</text>'));
+});

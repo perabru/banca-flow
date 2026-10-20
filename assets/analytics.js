@@ -24,7 +24,7 @@
     const known = values.filter(value => value !== null);
     return known.length ? known.reduce((sum, value) => sum + value, 0) / known.length : null;
   };
-  const fmtGrade = value => value === null ? 'Não disponível' : value.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmtGrade = (value, decimals) => value === null ? 'Não disponível' : value.toLocaleString('pt-BR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 
   function formatDuration(value) {
     if (number(value) === null) return 'Não registrado';
@@ -153,6 +153,7 @@
   function renderChart(spec) {
     if (!spec || typeof spec !== 'object') return '';
     const unit = spec.unit === 'duration' ? 'duration' : 'grade';
+    const decimals = Number.isInteger(spec.decimals) && spec.decimals >= 0 && spec.decimals <= 4 ? spec.decimals : 2;
     const mode = spec.mode === 'stacked' ? 'stacked' : 'grouped';
     const parse = unit === 'duration' ? number : grade;
     const series = list(spec.series).map((item, index) => ({
@@ -172,7 +173,7 @@
       const uid = `ba-${id}-${sequence}-${chunkIndex}`;
       const suffix = chunks.length > 1 ? ` · Parte ${chunkIndex + 1} de ${chunks.length}` : '';
       const figureTitle = title + suffix;
-      const format = unit === 'duration' ? formatDuration : fmtGrade;
+      const format = unit === 'duration' ? formatDuration : value => fmtGrade(value, decimals);
       const legend = series.map(item => `<li><svg aria-hidden="true" focusable="false" width="14" height="14" viewBox="0 0 14 14"><rect x="1" y="1" width="12" height="12" rx="3" fill="${item.color}"/></svg><span>${esc(item.label)}</span></li>`).join('');
       let body = '<p class="ba-chart-empty">Sem dados disponíveis para este gráfico.</p>';
       if (rows.length) {

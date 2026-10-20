@@ -67,7 +67,7 @@ Para usar um pacote Chromium de servidor, `BANCAFLOW_CHROMIUM_MODULE` pode apont
 As suítes da aplicação, importação, gráficos e navegador podem rodar juntas:
 
 ```bash
-BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/app.test.cjs tests/import.test.cjs tests/board-import.test.cjs tests/analytics.test.cjs tests/analytics-pdf.test.cjs tests/coordinator-report.test.cjs tests/coordinator-report-pdf.test.cjs tests/chat-ui.test.cjs tests/chat-notifications.test.cjs tests/chat-worker.test.cjs tests/browser.test.cjs
+BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/*.cjs
 ```
 
 ## Chat dos professores
@@ -93,6 +93,8 @@ Outro cenário cadastra uma professora pelo formulário do Alberson e abre sua p
 
 O fluxo de entrega usa duas abas e adia a confirmação da gravação. Ele confere que o colega não recebe uma mensagem apenas local, que a recusa remove o item do remetente e mantém o erro, e que uma nova tentativa confirmada aparece uma única vez nas duas telas. Também exercita **Atualizar conversa**, **Últimas mensagens** e a preservação de outro rascunho enquanto a confirmação chega. Capturas usam os nomes `chat-rejected-send` e `chat-delivery-confirmed`.
 
+O chat flutuante é aberto pelo botão fixo sem sair da avaliação. O cenário navega entre **Bancas**, **Avaliar** e **Início** com a conversa aberta, mantém a assinatura das mensagens e preserva a nota ainda não salva. Uma mensagem recebida atualiza a conversa sem substituir o campo de nota nem tirar seu foco. Minimizar e fechar conservam a sala e o rascunho; uma mensagem recebida enquanto minimizado atualiza o contador e aparece ao reabrir. O teste também confere o tamanho da janela em 320, 390 e 1440 px e a compatibilidade da tela completa, com um único formulário de conversa. Capturas usam o nome `chat-floating`.
+
 A interface é conferida em 320, 390, 768 e 1440 px. Capturas do chat ficam em `BANCAFLOW_SCREENSHOT_DIR` ou `/tmp/bancaflow-chat-qa`. Outro cenário percorre o histórico e confere que uma falha de leitura do chat não bloqueia a avaliação da banca. A abertura do HTML sem alterações também valida os novos arquivos locais e os imports do SDK sob a política CSP.
 
 Os testes modificam apenas dados fictícios locais. Não publicam o site, não atualizam regras no projeto real e não enviam mensagens para professores reais.
@@ -106,6 +108,20 @@ O botão **Silenciar** é exercitado sem bloquear o recebimento das mensagens. A
 O HTML de produção também carrega o manifesto, o script do Service Worker e as imagens locais com seus tipos de conteúdo corretos. O teste confere escopo e endereço inicial relativos, modo de exibição instalado, ícones locais, decodificação real dos PNGs e tamanhos de 180, 192 e 512 px.
 
 As verificações usam notificações simuladas e abas visíveis ou em segundo plano. Elas não enviam notificações reais a celulares nem validam recebimento com o aplicativo completamente fechado; esse fluxo depende de um serviço de push conectado ao projeto.
+
+## Relatórios personalizados da coordenação
+
+Os cálculos, controles, preferências locais e PDF possuem suítes próprias:
+
+```bash
+node --test tests/weighted-model.test.cjs tests/weighted-report-ui.test.cjs tests/weighted-workbench.test.cjs tests/weighted-report-pdf.test.cjs
+```
+
+A integração da aplicação usa um modelo com banca de 75%, monografia de 25%, critérios de 50% / 25% / 25% / 0% e pesos relativos dos avaliadores de 3 e 1. O resultado da primeira aluna fica exatamente em 8,15625, exibido como 8,156 com três casas, enquanto seu resultado oficial permanece 7,80. Alterar a precisão muda apenas a exibição. Os testes conferem totais de 100%, notas zero, dados pendentes, conservação das notas salvas e dos cálculos oficiais, modelos separados por conta e importação/exportação JSON.
+
+O navegador preenche os controles reais e mantém o modelo em edição durante mensagens do chat flutuante, snapshots do Firebase e navegação entre áreas. Confere gerar prévia, salvar, restaurar o padrão, selecionar um modelo salvo, importar JSON e apresentar erro para pesos inválidos. Os arquivos são emitidos depois da leitura atualizada dos sete conjuntos de dados; falta de conexão, notas ainda não salvas ou troca de sessão impedem a exportação. A seleção de uma aluna é respeitada no CSV e nos gráficos, com a precisão completa preservada.
+
+O cenário salva `weighted-full.pdf`, com título personalizado, fórmula, observações, notas individuais e gráficos, além de `weighted-model.json`, `weighted-ana.csv` e `weighted-charts.pdf`. Capturas da área completa em 320, 390 e 1440 px usam o nome `weighted-report`. Os arquivos de QA ficam no diretório configurado, sem alterações nas avaliações ou nos relatórios oficiais.
 
 ## Coordenadores, bancas por Excel e alerta de tempo
 
