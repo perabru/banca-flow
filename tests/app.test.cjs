@@ -66,7 +66,7 @@ function harness(uid = 't1') {
     let value=read(pathOf(target));if(typeof target==='string'||!target?.constraints)return value;
     const child=target.constraints.find(c=>c.kind==='order')?.key;
     let rows=Object.entries(value||{}).sort(([ak,a],[bk,b])=>{const av=child?a?.[child]:ak,bv=child?b?.[child]:bk;return av===bv?(ak<bk?-1:ak>bk?1:0):av<bv?-1:1;});
-    for(const c of target.constraints){if(c.kind==='before')rows=rows.filter(([key,item])=>{const v=child?item?.[child]:key;return v<c.value||(v===c.value&&c.key!==undefined&&key<c.key);});if(c.kind==='last')rows=rows.slice(-c.count);}
+    for(const c of target.constraints){if(c.kind==='before')rows=rows.filter(([key,item])=>{const v=child?item?.[child]:key;return v<c.value||(v===c.value&&c.key!==undefined&&key<c.key);});if(c.kind==='start')rows=rows.filter(([key,item])=>{const v=child?item?.[child]:key;return v>c.value||(v===c.value&&(c.key===undefined||key>=c.key));});if(c.kind==='last')rows=rows.slice(-c.count);}
     return Object.fromEntries(rows);
   };
   const listeners=new Map(),listenerErrors=new Map();
@@ -109,7 +109,7 @@ function harness(uid = 't1') {
     deleteUser: async user => {calls.authDeletes.push(user.uid);if(options.authDeleteError)throw options.authDeleteError;},
     deleteApp: async app => {calls.appDeletes.push(app.name);}, signOut:async()=>{},
     onAuthStateChanged: () => () => {}, onValue: (target,callback,error) => {calls.listens.push(pathOf(target));listeners.set(target,callback);listenerErrors.set(target,error);if(pathOf(target).startsWith('chat')){if(options.chatReadError){listeners.delete(target);listenerErrors.delete(target);error?.(Object.assign(Error('Permission denied'),{code:'PERMISSION_DENIED'}));}else if(!options.deferChatMessages||!pathOf(target).startsWith('chatMessages/'))callback(snapshot(queryValue(target)));}return()=>{listeners.delete(target);listenerErrors.delete(target);};},
-    query:(target,...constraints)=>({path:pathOf(target),constraints}),orderByChild:key=>({kind:'order',key}),limitToLast:count=>({kind:'last',count}),endBefore:(value,key)=>({kind:'before',value,key}),
+    query:(target,...constraints)=>({path:pathOf(target),constraints}),orderByChild:key=>({kind:'order',key}),limitToLast:count=>({kind:'last',count}),endBefore:(value,key)=>({kind:'before',value,key}),startAt:(value,key)=>({kind:'start',value,key}),
     onDisconnect: target => ({remove:async()=>{calls.disconnects.push({kind:'remove',path:pathOf(target)});if(options.disconnectError)throw options.disconnectError;},cancel:async()=>calls.disconnects.push({kind:'cancel',path:pathOf(target)})}),
     remove: async target => {const path=pathOf(target);calls.removals.push(path);write(path,null);emit(path);},
     ref: (_db, path = '') => path,
@@ -136,11 +136,13 @@ function harness(uid = 't1') {
     },
     runTransaction: async (path, updater, config) => {
       calls.transactions.push({ path, config });
+      await options.beforeTransaction?.(path,updater);
       if (options.transactionError) throw options.transactionError;
       let candidate;
       for (const value of options.transactionRetries || [clone(read(path) ?? null)]) candidate = updater(value);
       if (candidate === undefined) return { committed: false, snapshot: snapshot(read(path) ?? null) };
       write(path, candidate);
+      if(path.startsWith('chatMessages/')&&!options.suppressChatMessageEmits)emit(path);
       return { committed: true, snapshot: snapshot(read(path)) };
     }
   });
@@ -152,6 +154,7 @@ function harness(uid = 't1') {
     downloadBlob = (blob, filename) => globalThis.testDownloads.push({blob,filename});
     globalThis.appTest = { state, CRITERIOS, notaValida, mediaAvaliador, situacao, resultadoAluno,
       chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,isChatVisible:typeof isChatVisible==='function'?isChatVisible:null,toggleChatWidget:typeof toggleChatWidget==='function'?toggleChatWidget:null,closeChatWidget:typeof closeChatWidget==='function'?closeChatWidget:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,
+      beginChatEdit:typeof beginChatEdit==='function'?beginChatEdit:null,beginChatDelete:typeof beginChatDelete==='function'?beginChatDelete:null,cancelChatMutation:typeof cancelChatMutation==='function'?cancelChatMutation:null,submitChatEdit:typeof submitChatEdit==='function'?submitChatEdit:null,confirmChatDelete:typeof confirmChatDelete==='function'?confirmChatDelete:null,
       requestChatNotifications:typeof requestChatNotifications==='function'?requestChatNotifications:null,toggleChatMuted:typeof toggleChatMuted==='function'?toggleChatMuted:null,syncChatAlerts:typeof syncChatAlerts==='function'?syncChatAlerts:null,stopChatAlerts:typeof stopChatAlerts==='function'?stopChatAlerts:null,getChatAlertsState:typeof getChatAlertsState==='function'?getChatAlertsState:null,
       weightedWorkbench:typeof weightedWorkbench!=='undefined'?weightedWorkbench:null,weightedReportsView:typeof weightedReportsView==='function'?weightedReportsView:null,buildWeightedReportPdf:typeof buildWeightedReportPdf==='function'?buildWeightedReportPdf:null,
       elapsedAt, formatElapsed, boardElapsed, timerRecord, controlTimer, closeBoard, reopenBoard,
@@ -1285,6 +1288,127 @@ test('acknowledged chat send remains visible when its live snapshot is delayed a
   const disabled=harness();disabled.data.users.t1.active=false;
   await assert.rejects(disabled.app.sendChatMessage({dataset:{chatRoom:'geral'},values:{message:'Não gravar.'}}),/acesso|ativo|sessão|removido/i);
   assert.equal(disabled.calls.sets.filter(([path])=>path.startsWith('chatMessages/')).length,0);
+});
+
+function chatMutationFixture(uid='t1',message={}){
+  const h=harness(uid),saved={uid:'t1',name:'Professor Um',text:'Texto original da conversa',at:h.now()-100000,...message};
+  for(const api of ['beginChatEdit','beginChatDelete','cancelChatMutation','submitChatEdit','confirmChatDelete'])assert.equal(typeof h.app[api],'function',api+' must be implemented');
+  h.data.chatMessages={geral:{saved:clone(saved),other:{uid:'t2',name:'Professora Dois',text:'Mensagem do colega',at:h.now()-90000}}};
+  h.app.openGeneralChat();h.app.syncChat();return {...h,saved};
+}
+const chatEditForm=(text,id='saved',room='geral')=>({dataset:{chatRoom:room,chatId:id},values:{message:text}});
+
+test('a professor edits a confirmed legacy message atomically while preserving author, original time and every assessment',async()=>{
+  const h=chatMutationFixture(),{app}=h,before=clone({grades:h.data.grades,deliveries:h.data.deliveries,boards:h.data.boards});
+  app.beginChatEdit('saved');assert.equal(app.state.chatMutation.kind,'edit');assert.equal(app.state.chatMutation.text,h.saved.text);
+  h.data.users.t1.name='Professor renomeado';
+  await app.submitChatEdit(chatEditForm('  Texto corrigido\r\nCom informação adicional.  '));
+  const saved=h.read('chatMessages/geral/saved');
+  assert.deepEqual(saved,{...h.saved,text:'Texto corrigido\nCom informação adicional.',editedAt:h.now(),revision:1});
+  assert.equal(app.state.chatMutation,null);assert.equal(app.state.chatMessages.saved.text,saved.text);
+  assert.equal(h.calls.transactions.length,1);assert.equal(h.calls.transactions[0].path,'chatMessages/geral/saved');assert.equal(h.calls.transactions[0].config.applyLocally,false);
+  assert.equal(h.calls.sets.filter(([path])=>path.startsWith('chatMessages/')).length,0,'editing never creates or resends a message');
+  assert.deepEqual({grades:h.data.grades,deliveries:h.data.deliveries,boards:h.data.boards},before);
+});
+
+test('confirmed deletion leaves an ordered tombstone, keeps edit metadata and prevents resurrection',async()=>{
+  const h=chatMutationFixture('t1',{text:'Texto já corrigido',editedAt:1_799_999_999_000,revision:3}),{app}=h;
+  app.beginChatDelete('saved');assert.equal(app.state.chatMutation.kind,'delete');assert.equal(h.read('chatMessages/geral/saved').text,h.saved.text,'opening the confirmation does not delete');
+  await app.confirmChatDelete('saved');
+  assert.deepEqual(h.read('chatMessages/geral/saved'),{...h.saved,text:'',deletedAt:h.now(),revision:4});
+  assert.equal(app.state.chatMutation,null);assert.match(app.chatView(),/Mensagem apagada/);assert.doesNotMatch(app.chatView(),/Texto já corrigido/);
+  assert.throws(()=>app.beginChatEdit('saved'));assert.throws(()=>app.beginChatDelete('saved'));
+  assert.equal(h.calls.transactions.length,1);assert.equal(h.calls.transactions[0].config.applyLocally,false);
+});
+
+test('chat editing and deletion are limited to the author and exclude missing, pending or already deleted messages',()=>{
+  for(const uid of ['t1','coord']){
+    const h=chatMutationFixture(uid),{app}=h;
+    for(const action of [app.beginChatEdit,app.beginChatDelete]){
+      assert.throws(()=>action('other'));assert.throws(()=>action('missing'));
+      if(uid==='coord')assert.throws(()=>action('saved'),'coordinator privileges never edit another author');
+      else {app.state.chatPendingIds.add('saved');assert.throws(()=>action('saved'));app.state.chatPendingIds.delete('saved');}
+    }
+    assert.equal(h.calls.transactions.length,0);
+  }
+  const deleted=chatMutationFixture('t1',{text:'',deletedAt:1_799_999_999_000,revision:1});
+  assert.throws(()=>deleted.app.beginChatEdit('saved'));assert.throws(()=>deleted.app.beginChatDelete('saved'));
+});
+
+test('cancelling either chat action leaves the original message and independent composer draft intact',()=>{
+  const h=chatMutationFixture(),{app}=h;
+  for(const begin of [app.beginChatEdit,app.beginChatDelete]){
+    begin('saved');app.state.chatDrafts.set('geral','Próxima mensagem em composição');app.cancelChatMutation();
+    assert.equal(app.state.chatMutation,null);assert.deepEqual(h.read('chatMessages/geral/saved'),h.saved);
+    assert.equal(app.state.chatDrafts.get('geral'),'Próxima mensagem em composição');
+  }
+  assert.equal(h.calls.transactions.length,0);
+});
+
+test('blank, oversized, offline, loading and stale-room edits never reach a chat transaction',async()=>{
+  for(const text of ['', ' \n\t ', 'x'.repeat(2001)]){
+    const h=chatMutationFixture();h.app.beginChatEdit('saved');await assert.rejects(h.app.submitChatEdit(chatEditForm(text)));assert.equal(h.calls.transactions.length,0);assert.deepEqual(h.read('chatMessages/geral/saved'),h.saved);
+  }
+  for(const change of [h=>h.app.state.connected=false,h=>h.app.state.chatLoading=true,h=>h.app.state.chatError='Sem acesso',h=>h.app.state.profile.active=false]){
+    const h=chatMutationFixture();h.app.beginChatEdit('saved');change(h);await assert.rejects(h.app.submitChatEdit(chatEditForm('Correção')));assert.equal(h.calls.transactions.length,0);
+  }
+  const h=chatMutationFixture();h.app.beginChatEdit('saved');await assert.rejects(h.app.submitChatEdit(chatEditForm('Correção','saved','b1')));assert.equal(h.calls.transactions.length,0);
+});
+
+test('a denied chat update retains the editor text and reports failure without replacing the confirmed message',async()=>{
+  const h=chatMutationFixture(),{app}=h;app.beginChatEdit('saved');h.options.transactionError=Object.assign(Error('Permission denied'),{code:'PERMISSION_DENIED'});
+  await assert.rejects(app.submitChatEdit(chatEditForm('Correção ainda não salva')),/Permission denied/);
+  assert.deepEqual(h.read('chatMessages/geral/saved'),h.saved);assert.equal(app.state.chatMessages.saved.text,h.saved.text);
+  assert.equal(app.state.chatMutation.text,'Correção ainda não salva');assert.equal(app.state.chatMutation.busy,false);assert.ok(app.state.chatMutation.error);assert.match(app.chatView(),/Correção ainda não salva/);
+  h.options.transactionError=null;await app.submitChatEdit(chatEditForm(app.state.chatMutation.text));assert.equal(h.read('chatMessages/geral/saved').text,'Correção ainda não salva');assert.equal(app.state.chatMutation,null);
+});
+
+test('a denied chat deletion keeps the confirmation and original message available for retry',async()=>{
+  const h=chatMutationFixture(),{app}=h;app.beginChatDelete('saved');h.options.transactionError=Object.assign(Error('Permission denied'),{code:'PERMISSION_DENIED'});
+  await assert.rejects(app.confirmChatDelete('saved'),/Permission denied/);
+  assert.deepEqual(h.read('chatMessages/geral/saved'),h.saved);assert.equal(app.state.chatMutation.kind,'delete');assert.equal(app.state.chatMutation.busy,false);assert.ok(app.state.chatMutation.error);
+  h.options.transactionError=null;await app.confirmChatDelete('saved');assert.equal(h.read('chatMessages/geral/saved').text,'');assert.equal(app.state.chatMutation,null);
+});
+
+test('concurrent chat edits and deletions never overwrite a message changed since the action opened',async()=>{
+  for(const kind of ['edit','delete']){
+    const h=chatMutationFixture(),{app}=h;(kind==='edit'?app.beginChatEdit:app.beginChatDelete)('saved');
+    const newer={...h.saved,text:'Atualizada em outro navegador',editedAt:h.now(),revision:1};h.write('chatMessages/geral/saved',newer);h.emit('chatMessages/geral');
+    await assert.rejects(kind==='edit'?app.submitChatEdit(chatEditForm('Edição desatualizada')):app.confirmChatDelete('saved'));
+    assert.deepEqual(h.read('chatMessages/geral/saved'),newer);assert.equal(app.state.chatMutation.busy,false);assert.ok(app.state.chatMutation.error);
+  }
+});
+
+test('a Firebase transaction retry detects a newer revision even when the replacement text is identical',async()=>{
+  const h=chatMutationFixture(),{app}=h;app.beginChatEdit('saved');
+  const newer={...h.saved,editedAt:h.now(),revision:1};
+  h.options.beforeTransaction=async path=>{if(path==='chatMessages/geral/saved'){h.write(path,newer);h.options.transactionRetries=[clone(h.saved),clone(newer)];}};
+  await assert.rejects(app.submitChatEdit(chatEditForm('Não substituir outra revisão')));
+  assert.deepEqual(h.read('chatMessages/geral/saved'),newer);assert.equal(h.calls.transactions.length,1);assert.ok(app.state.chatMutation.error);
+});
+
+test('a fresh disabled profile stops a previously opened chat edit before any transaction',async()=>{
+  const h=chatMutationFixture(),{app}=h;app.beginChatEdit('saved');h.data.users.t1.active=false;
+  await assert.rejects(app.submitChatEdit(chatEditForm('Cadastro desabilitado')));assert.deepEqual(h.read('chatMessages/geral/saved'),h.saved);assert.equal(h.calls.transactions.length,0);
+});
+
+test('a pending chat mutation blocks duplicate submits and stale session completion cannot restore its editor',async()=>{
+  const h=chatMutationFixture(),{app}=h;app.beginChatEdit('saved');let release;
+  h.options.beforeTransaction=async path=>{if(path.startsWith('chatMessages/'))await new Promise(resolve=>release=resolve);};
+  const editing=app.submitChatEdit(chatEditForm('Correção pendente'));await new Promise(setImmediate);assert.equal(app.state.chatMutation.busy,true);
+  await app.submitChatEdit(chatEditForm('Correção duplicada'));assert.equal(h.calls.transactions.length,1);
+  app.resetAppData();app.state.user=null;app.state.profile=null;release();await assert.rejects(editing);
+  assert.equal(app.state.chatMutation,null);assert.equal(Object.keys(app.state.chatMessages).length,0);assert.equal(app.state.chatOpen,false);
+});
+
+test('loaded older chat messages receive edits and deletion tombstones without losing the current page',async()=>{
+  const h=harness(),{app}=h;
+  h.data.chatMessages={geral:Object.fromEntries(Array.from({length:130},(_,i)=>['m'+String(i).padStart(3,'0'),{uid:'t2',name:'Professora Dois',text:'Histórico '+i,at:h.now()-200000+i}]))};
+  app.openGeneralChat();app.syncChat();await app.loadOlderChat();assert.equal(Object.keys(app.state.chatMessages).length,130);
+  const original=clone(h.read('chatMessages/geral/m000'));h.write('chatMessages/geral/m000',{...original,text:'Histórico corrigido',editedAt:h.now(),revision:1});h.emit('chatMessages/geral/m000');
+  assert.equal(app.state.chatMessages.m000.text,'Histórico corrigido');assert.equal(Object.keys(app.state.chatMessages).length,130);
+  h.write('chatMessages/geral/m000',{...original,text:'',editedAt:h.now(),deletedAt:h.now(),revision:2});h.emit('chatMessages/geral/m000');
+  assert.equal(app.state.chatMessages.m000.text,'');assert.equal(app.state.chatMessages.m000.deletedAt,h.now());assert.equal(Object.keys(app.state.chatMessages).length,130);
 });
 
 test('authoritative live chat snapshots remove rolled-back records while retaining older history pages',async()=>{

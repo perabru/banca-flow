@@ -396,22 +396,113 @@ test('messages enforce canonical author, bounded nonblank text, recent timestamp
   const invalid=[
     {uid:'teacher2'}, {name:'Another person'}, {text:''}, {text:' \n\t\r'}, {text:'\u00a0\u2000\u3000'}, {text:'x'.repeat(2001)},
     {text:10}, {at:Date.now()-120000}, {at:Date.now()+120000}, {at:'today'}, {at:Date.now()+.5},
-    {extra:'rejected'}, {uid:null}, {name:null}, {text:null}, {at:null}
+    {extra:'rejected'}, {uid:null}, {name:null}, {text:null}, {at:null},
+    {revision:1}, {editedAt:Date.now()}, {deletedAt:Date.now()}
   ];
   for(const[index,change]of invalid.entries()) await assertFails(set(ref(db('teacher1'),`chatMessages/b1/invalid-${index}`),chatMessage('teacher1',change)));
   await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/max-length'),chatMessage('teacher1',{text:'x'.repeat(2000)})));
   await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/unicode'),chatMessage('teacher1',{text:'🙂 Avaliação: 0,00\nTudo certo.'})));
 });
 
-test('saved messages cannot be edited, deleted or replaced by their author or a coordinator', async () => {
-  const saved=chatMessage();await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/fixed'),saved));
+const editedMessage = (saved, extra={}) => ({...saved,text:'Mensagem corrigida.',editedAt:Date.now(),revision:(saved.revision||0)+1,...extra});
+const deletedMessage = (saved, extra={}) => ({...saved,text:'',deletedAt:Date.now(),revision:(saved.revision||0)+1,...extra});
+
+test('authors edit legacy and current messages, preserving original author and ordering after profile rename', async () => {
+  const saved=chatMessage('teacher1',{at:Date.now()-86400000});
+  await bypass('chatMessages/b1/old',saved);
+  await assertSucceeds(update(ref(db('coord'),'users/teacher1'),{name:'Professor com nome atualizado'}));
+  const first=editedMessage(saved);
+  await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/old'),first));
+  const second=editedMessage(first,{text:'Segunda correção.'});
+  await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/old'),second));
+  assert.deepEqual(await readPrivileged('chatMessages/b1/old'),second);
+  assert.equal(second.name,saved.name);
+  assert.equal(second.at,saved.at);
+  assert.equal(second.revision,2);
+  const coordMessage=chatMessage('coord');
+  await assertSucceeds(set(ref(db('coord'),'chatMessages/geral/own'),coordMessage));
+  await assertSucceeds(set(ref(db('coord'),'chatMessages/geral/own'),editedMessage(coordMessage)));
+});
+
+test('authors delete messages as irreversible tombstones, preserving identity, edit stamp and ordering', async () => {
+  const saved=chatMessage();await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/deleted'),saved));
+  const edited=editedMessage(saved);
+  await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/deleted'),edited));
+  const tombstone=deletedMessage(edited);
+  await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/deleted'),tombstone));
+  assert.deepEqual(await readPrivileged('chatMessages/b1/deleted'),tombstone);
   for(const uid of ['teacher1','teacher2','coord']) {
-    await assertFails(update(ref(db(uid),'chatMessages/b1/fixed'),{text:'Changed'}));
-    await assertFails(remove(ref(db(uid),'chatMessages/b1/fixed')));
-    await assertFails(set(ref(db(uid),'chatMessages/b1/fixed'),chatMessage(uid)));
+    await assertFails(remove(ref(db(uid),'chatMessages/b1/deleted')));
+    await assertFails(set(ref(db(uid),'chatMessages/b1/deleted'),editedMessage(tombstone,{deletedAt:null})));
+    await assertFails(set(ref(db(uid),'chatMessages/b1/deleted'),deletedMessage(tombstone)));
+    await assertFails(set(ref(db(uid),'chatMessages/b1/deleted'),saved));
   }
+  await bypass('chatMessages/b1/legacy',chatMessage('teacher1',{at:1}));
+  const legacy=await readPrivileged('chatMessages/b1/legacy');
+  await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/legacy'),deletedMessage(legacy)));
+  assert.equal((await readPrivileged('chatMessages/b1/legacy')).editedAt,undefined);
+});
+
+test('only active authors with room access may mutate; coordinator cannot edit another professor', async () => {
+  const saved=chatMessage();await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/fixed'),saved));
+  for(const uid of ['teacher2','coord','outsider','disabled',null]) {
+    await assertFails(set(ref(db(uid),'chatMessages/b1/fixed'),editedMessage(saved)));
+    await assertFails(set(ref(db(uid),'chatMessages/b1/fixed'),deletedMessage(saved)));
+    await assertFails(remove(ref(db(uid),'chatMessages/b1/fixed')));
+  }
+  await assertFails(remove(ref(db('teacher1'),'chatMessages/b1/fixed')));
   await assertFails(set(ref(db('teacher1'),'chatMessages/b1'),{replacement:chatMessage()}));
+  await bypass('users/teacher1/active',false);
+  await assertFails(set(ref(db('teacher1'),'chatMessages/b1/fixed'),editedMessage(saved)));
+  await assertFails(set(ref(db('teacher1'),'chatMessages/b1/fixed'),deletedMessage(saved)));
+  await bypass('users/teacher1/active',true);
+  await bypass('boards/b1/members/teacher1',null);
+  await assertFails(set(ref(db('teacher1'),'chatMessages/b1/fixed'),editedMessage(saved)));
+  await assertFails(set(ref(db('teacher1'),'chatMessages/b1/fixed'),deletedMessage(saved)));
   assert.deepEqual(await readPrivileged('chatMessages/b1/fixed'),saved);
+});
+
+test('mutation revisions prevent stale overwrites; edits cannot spoof metadata or weaken validation', async () => {
+  const saved=chatMessage('teacher1',{at:Date.now()-1000});await bypass('chatMessages/geral/fixed',saved);
+  const invalid=[
+    {uid:'teacher2'},{name:'Outro nome'},{at:saved.at+1},{uid:null},{name:null},{at:null},
+    {revision:null},{revision:0},{revision:2},{revision:1.5},{revision:'1'},
+    {editedAt:null},{editedAt:'agora'},{editedAt:1},{editedAt:Date.now()+120000},{editedAt:Date.now()+.5},
+    {text:''},{text:' \n\t\r'},{text:'\u00a0\u2000\u3000'},{text:'x'.repeat(2001)},{text:0},
+    {extra:true},{deletedAt:Date.now()}
+  ];
+  for(const change of invalid)await assertFails(set(ref(db('teacher1'),'chatMessages/geral/fixed'),editedMessage(saved,change)));
+  await assertFails(update(ref(db('teacher1'),'chatMessages/geral/fixed'),{text:'Correção sem metadados'}));
+  const first=editedMessage(saved);
+  await assertSucceeds(set(ref(db('teacher1'),'chatMessages/geral/fixed'),first));
+  await assertFails(set(ref(db('teacher1'),'chatMessages/geral/fixed'),editedMessage(saved)));
+  await assertFails(set(ref(db('teacher1'),'chatMessages/geral/fixed'),deletedMessage(saved)));
+  await assertFails(set(ref(db('teacher1'),'chatMessages/geral/fixed'),editedMessage(first,{editedAt:first.editedAt-1})));
+  await assertSucceeds(set(ref(db('teacher1'),'chatMessages/geral/fixed'),editedMessage(first,{text:'0'})));
+});
+
+test('deletions require a fresh tombstone and cannot replace text, edit stamps or immutable metadata', async () => {
+  const saved=editedMessage(chatMessage('teacher1',{at:Date.now()-10000}),{editedAt:Date.now()-5000});
+  await bypass('chatMessages/b1/fixed',saved);
+  const invalid=[
+    {text:'Texto mantido'},{text:null},{deletedAt:null},{deletedAt:'agora'},{deletedAt:Date.now()-120000},
+    {deletedAt:Date.now()+120000},{deletedAt:Date.now()+.5},{deletedAt:saved.editedAt-1},
+    {revision:null},{revision:1},{revision:3},{revision:2.5},
+    {uid:'teacher2'},{name:'Renomeado'},{at:saved.at+1},{editedAt:null},{editedAt:Date.now()},{extra:true}
+  ];
+  for(const change of invalid)await assertFails(set(ref(db('teacher1'),'chatMessages/b1/fixed'),deletedMessage(saved,change)));
+  await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/fixed'),deletedMessage(saved)));
+});
+
+test('closing and archiving a bank keep own-message actions, while general-room legacy profiles need no key', async () => {
+  const saved=chatMessage();await bypass('chatMessages/b1/fixed',saved);
+  await bypass('seals/b1',seal());await bypass('groups/g1/active',false);
+  const corrected=editedMessage(saved);await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/fixed'),corrected));
+  await assertSucceeds(set(ref(db('teacher1'),'chatMessages/b1/fixed'),deletedMessage(corrected)));
+  await bypass('users/teacher1/key',null);await bypass('users/teacher1/active',null);
+  const general=chatMessage('teacher1',{at:1});await bypass('chatMessages/geral/legacy',general);
+  const edited=editedMessage(general);await assertSucceeds(set(ref(db('teacher1'),'chatMessages/geral/legacy'),edited));
+  await assertSucceeds(set(ref(db('teacher1'),'chatMessages/geral/legacy'),deletedMessage(edited)));
 });
 
 test('presence is visible to active professors and isolated per owner and browser connection', async () => {

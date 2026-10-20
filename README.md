@@ -14,7 +14,7 @@ Aplicação estática em HTML, CSS e JavaScript, conectada ao projeto Firebase e
 
 O arquivo `firebase.json` também permite publicar somente as regras com `firebase deploy --only database --project avaliadortcc`, após autenticar uma conta autorizada.
 
-Publicar arquivos no GitHub não publica as regras no Firebase. A política atualizada é necessária para o cronômetro compartilhado, o encerramento/reabertura pelos avaliadores, a edição de contatos e a gestão de grupos e cursos. Se você publicou uma versão anterior das regras, publique novamente o arquivo desta versão. As regras preservam a privacidade e os demais caminhos originais; não existe acesso público ao banco nem cadastro público de coordenadores.
+Publicar arquivos no GitHub não publica as regras no Firebase. A política atualizada é necessária para o cronômetro compartilhado, o encerramento/reabertura pelos avaliadores, a edição de contatos, a gestão de grupos e cursos e a edição/exclusão de mensagens próprias no chat. Se você publicou uma versão anterior das regras, publique novamente o arquivo desta versão. As regras preservam a privacidade e os demais caminhos originais; não existe acesso público ao banco nem cadastro público de coordenadores.
 
 ## Permissões e bancas
 
@@ -67,6 +67,8 @@ Todos os professores ativos e a coordenação podem abrir **Chat dos professores
 - As mensagens mostram nome, data e horário, aceitam até 2.000 caracteres e ficam salvas no histórico. Não há envio automático nem edição de mensagens antigas.
 - O envio aparece como **Enviando…** até o servidor confirmar a gravação. **Enviada** confirma que a mensagem foi salva na sala. O cadastro do autor é conferido antes da gravação para usar o nome atual e verificar o acesso.
 - Se o servidor recusar a mensagem, ela é retirada da conversa do remetente, o texto permanece no campo e o erro fica visível junto ao formulário. Um novo envio depende da ação do professor. Em caso de bloqueio de permissão, a coordenação pode usar **Copiar regras de acesso** no próprio aviso e publicar a política atualizada no Firebase.
+- Cada professor pode **Editar** ou **Apagar** suas próprias mensagens confirmadas. A edição aparece com a indicação **editada**; apagar exige confirmação e remove o texto para todos, deixando **Mensagem apagada** no histórico. As alterações também chegam às páginas antigas já carregadas. Outros professores e coordenadores não alteram mensagens alheias. Alterações simultâneas são bloqueadas para evitar sobrescrever uma versão mais recente.
+- Edições e exclusões só são confirmadas depois da gravação no servidor. Se a alteração falhar, o texto em edição permanece disponível. Elas não geram novos avisos; apagar remove a mensagem do contador de não lidas e recolhe a notificação correspondente.
 - **Enter** envia e **Shift + Enter** insere uma nova linha. No celular, o botão **Enviar** também está disponível.
 - Os rascunhos de cada sala permanecem durante a navegação e as atualizações da conversa. Sair da conta limpa os rascunhos e os dados da sessão.
 - A lista **Professores online** considera as conexões ativas. Cada aba ou dispositivo tem sua própria presença; fechar uma aba não desconecta as demais. A conexão é removida ao sair ou desconectar e registros sem atualização recente deixam de aparecer.
@@ -76,7 +78,7 @@ Todos os professores ativos e a coordenação podem abrir **Chat dos professores
 - Se uma leitura for recusada ou interrompida, o chat refaz a conexão automaticamente, com intervalo crescente de 2 a 30 segundos enquanto a sala estiver aberta. Depois da publicação das regras no Firebase, a conversa pode se recuperar sem recarregar a página. A reconexão conserva os rascunhos e não envia mensagens automaticamente. Trocar de conta ou sair da área de chat cancela as tentativas pendentes.
 - O indicador mostra **Chat conectado** apenas quando as mensagens carregaram. Falhas de autorização aparecem como **Chat indisponível**, com uma orientação para a coordenação conferir as regras do Firebase.
 
-Os caminhos novos são `chatMessages/SALA/MENSAGEM` e `chatPresence/UID/CONEXAO`. A sala geral usa `geral`; as salas de banca usam o identificador da banca. As regras validam o autor pela conta autenticada, bloqueiam professores desativados e impedem alterações e exclusões do histórico. As notas, monografias e relatórios não são incluídos nas mensagens nem alterados pelo chat.
+Os caminhos novos são `chatMessages/SALA/MENSAGEM` e `chatPresence/UID/CONEXAO`. A sala geral usa `geral`; as salas de banca usam o identificador da banca. As regras validam o autor pela conta autenticada, bloqueiam professores desativados e permitem editar ou apagar apenas mensagens do próprio autor. O horário e a identidade original são preservados; mensagens apagadas não podem ser restauradas pelo chat. As notas, monografias e relatórios não são incluídos nas mensagens nem alterados pelo chat.
 
 Para ativar a comunicação entre dispositivos, aplique a versão atualizada de `database.rules.json`. Os HTMLs precisam ser publicados com `assets/board-chat.js` e `assets/board-chat.css`. Publicar no GitHub não atualiza as regras do Firebase. Os testes usam somente contas fictícias e um Firebase em memória ou o emulador local.
 

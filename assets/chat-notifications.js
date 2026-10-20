@@ -10,6 +10,7 @@
   const RECENT_MS = 120000, FUTURE_MS = 60000, CLAIM_LIMIT = 256;
   const line = (value, max) => String(value == null ? '' : value).replace(/[\u0000-\u001f\u007f]/g, ' ').replace(/\s+/g, ' ').trim().slice(0, max);
   const permissionValue = value => ['default', 'granted', 'denied'].includes(value) ? value : 'unsupported';
+  const messageVersion = message => message && typeof message === 'object' ? JSON.stringify([message.uid, message.name, message.text, message.at, message.revision, message.editedAt, message.deletedAt]) : '';
 
   function createNotifier(options = {}) {
     const env = options.environment || globalThis;
@@ -128,14 +129,14 @@
     }
     function showSystem(payload, account, version, roomState) {
       void prepareServiceWorker().then(async worker => {
-        if (!worker || !current(account, version) || rooms.get(payload.room) !== roomState || !roomState.unread.has(payload.id) || !allowed(payload.room) || !hidden() || preferences.muted || !getState().enabled) return;
+        if (!worker || !current(account, version) || rooms.get(payload.room) !== roomState || !roomState.unread.has(payload.id) || roomState.versions.get(payload.id) !== payload.messageVersion || !allowed(payload.room) || !hidden() || preferences.muted || !getState().enabled) return;
         try {
           await worker.showNotification(payload.title, {
             body: line(payload.name + ': ' + payload.text, 240), tag: 'bancaflow:' + encodeURIComponent(account) + ':' + encodeURIComponent(payload.room) + ':' + sessionToken(version),
             ...(options.iconUrl ? { icon: options.iconUrl } : {}), ...(options.badgeUrl ? { badge: options.badgeUrl } : {}),
             data: { accountId: account, room: payload.room, url: notificationUrl(payload.room), sessionId: sessionToken(version), messageId: payload.id }
           });
-          if (!current(account, version) || preferences.muted || rooms.get(payload.room) !== roomState || !roomState.unread.has(payload.id) || !allowed(payload.room)) closeNotifications(account, payload.room, sessionToken(version), payload.id);
+          if (!current(account, version) || preferences.muted || rooms.get(payload.room) !== roomState || !roomState.unread.has(payload.id) || roomState.versions.get(payload.id) !== payload.messageVersion || !allowed(payload.room)) closeNotifications(account, payload.room, sessionToken(version), payload.id);
         } catch {
           if (current(account, version)) { status = 'O navegador não exibiu a notificação. Os avisos na página continuam disponíveis.'; emit(); }
         }
@@ -151,7 +152,7 @@
     }
     function deliver(payload, account, version, roomState) {
       const notify = () => {
-        if (!current(account, version) || rooms.get(payload.room) !== roomState || !roomState.unread.has(payload.id) || !allowed(payload.room) || preferences.muted) return;
+        if (!current(account, version) || rooms.get(payload.room) !== roomState || !roomState.unread.has(payload.id) || roomState.versions.get(payload.id) !== payload.messageVersion || !allowed(payload.room) || preferences.muted) return;
         if (visible(payload.room)) { markRead(payload.room); return; }
         if (hidden() && !getState().enabled) return;
         if (!claimDelivery(account, payload.room, payload.id)) return;
@@ -170,21 +171,28 @@
       const rows = input && typeof input === 'object' ? Object.entries(input) : [];
       let roomState = rooms.get(room);
       if (!roomState) {
-        roomState = { seen: new Set(rows.map(([id]) => id)), unread: new Set() };
+        roomState = { seen: new Set(rows.map(([id]) => id)), versions: new Map(rows.map(([id, message]) => [id, messageVersion(message)])), unread: new Set() };
         rooms.set(room, roomState); emit(); return;
       }
-      const messages = []; let latest = null, latestAt = -Infinity;
+      const messages = []; let latest = null, latestAt = -Infinity, unreadChanged = false;
       for (const [id, message] of rows) {
-        if (roomState.seen.has(id)) continue;
+        const fingerprint = messageVersion(message), known = roomState.seen.has(id), changed = known && roomState.versions.get(id) !== fingerprint;
+        roomState.versions.set(id, fingerprint);
+        if (message?.deletedAt !== undefined && roomState.unread.delete(id)) unreadChanged = true;
+        if (changed) {
+          closeNotifications(uid, room, undefined, id);
+          call(options.onMessageChanged, { room, id, deleted: message?.deletedAt !== undefined });
+        }
+        if (known) continue;
         roomState.seen.add(id);
-        if (!message || typeof message !== 'object' || typeof message.uid !== 'string' || !message.uid || message.uid === uid || typeof message.text !== 'string' || !message.text.trim() || typeof message.at !== 'number' || !Number.isFinite(message.at) || message.at < now() - RECENT_MS || message.at > now() + FUTURE_MS) continue;
-        const payload = { room, id, name: line(message.name, 120) || 'Professor', text: message.text.slice(0, 2000), title: room === 'geral' ? 'Nova mensagem na sala dos professores' : 'Nova mensagem na conversa da banca' };
+        if (!message || typeof message !== 'object' || message.deletedAt !== undefined || message.editedAt !== undefined || message.revision !== undefined || typeof message.uid !== 'string' || !message.uid || message.uid === uid || typeof message.text !== 'string' || !message.text.trim() || typeof message.at !== 'number' || !Number.isFinite(message.at) || message.at < now() - RECENT_MS || message.at > now() + FUTURE_MS) continue;
+        const payload = { room, id, messageVersion: fingerprint, name: line(message.name, 120) || 'Professor', text: message.text.slice(0, 2000), title: room === 'geral' ? 'Nova mensagem na sala dos professores' : 'Nova mensagem na conversa da banca' };
         messages.push(payload);
         if (message.at > latestAt || (message.at === latestAt && (!latest || id > latest.id))) { latestAt = message.at; latest = payload; }
       }
-      if (visible(room)) { markRead(room); return; }
+      if (visible(room)) { markRead(room); if (unreadChanged) emit(); return; }
       for (const payload of messages) roomState.unread.add(payload.id);
-      if (messages.length) emit();
+      if (messages.length || unreadChanged) emit();
       const account = uid, version = revision;
       // Uma atualização pode trazer várias mensagens após uma breve desconexão.
       if (latest) deliver(latest, account, version, roomState);

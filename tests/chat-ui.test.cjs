@@ -206,6 +206,106 @@ test('only pending own messages show sending and confirmed own messages show sen
   assert.doesNotMatch(html, /Mensagem lida|Visualizada/);
 });
 
+test('edit and delete actions belong only to confirmed own messages', () => {
+  const html = chat.renderChat(fixture({ pendingIds: ['pending'], messages: {
+    own: { uid: 't1', name: 'Bruno', text: 'Mensagem enviada', at: 1 },
+    other: { uid: 't2', name: 'Professora', text: 'Outra mensagem', at: 2 },
+    pending: { uid: 't1', name: 'Bruno', text: 'Ainda enviando', at: 3 },
+    removed: { uid: 't1', name: 'Bruno', text: '', at: 4, deletedAt: 5, revision: 1 }
+  } }));
+  const article = id => html.match(new RegExp(`<article[^>]*data-chat-message="${id}"[\\s\\S]*?<\\/article>`))[0];
+  assert.match(article('own'), /type="button" data-chat-edit="own" aria-label="Editar sua mensagem"/);
+  assert.match(article('own'), /type="button" data-chat-delete="own" aria-label="Apagar sua mensagem para todos"/);
+  for (const id of ['other', 'pending', 'removed']) assert.doesNotMatch(article(id), /data-chat-edit=|data-chat-delete=|data-chat-delete-confirm=/);
+  assert.doesNotMatch(article('own').match(/<button[^>]*data-chat-edit[^>]*>/)[0], /disabled/);
+  for (const extra of [{ connected: false }, { loading: true }, { error: 'Falha na conversa.' }, { mutation: { room: 'geral', id: 'other', kind: 'edit', busy: true } }]) {
+    const state = chat.renderChat(fixture({ ...extra, messages: { own: { uid: 't1', name: 'Bruno', text: 'Confirmada', at: 1 } } }));
+    for (const control of ['edit', 'delete']) assert.match(state.match(new RegExp(`<button[^>]*data-chat-${control}="own"[^>]*>`))[0], /disabled/);
+  }
+});
+
+test('editing renders an escaped inline form without changing the new-message draft', () => {
+  const attack = '</textarea><img src=x onerror=run()>';
+  const html = chat.renderChat(fixture({ draft: 'Nova mensagem não enviada', messages: { own: { uid: 't1', name: 'Bruno', text: 'Texto atual', at: 1 } }, mutation: { room: 'geral', id: 'own', kind: 'edit', text: attack, busy: false, error: 'Falha <temporária>' } }));
+  assert.match(html, /id="chat-edit-form"[^>]*data-chat-room="geral" data-chat-id="own"/);
+  assert.match(html, /<label for="chat-edit-message">Editar sua mensagem<\/label>/);
+  assert.match(html, /id="chat-edit-message" name="message"[^>]*maxlength="2000"[^>]*aria-describedby="chat-edit-help chat-mutation-error"/);
+  assert.match(html, /&lt;\/textarea&gt;&lt;img src=x onerror=run\(\)&gt;/);
+  assert.doesNotMatch(html, /<img|<script/);
+  assert.match(html, /id="chat-mutation-error"[^>]*role="alert"/);
+  assert.match(html, /Falha &lt;temporária&gt;/);
+  assert.match(html, /A alteração ficará visível para todos nesta sala\./);
+  assert.match(html, /data-chat-mutation-cancel="1"/);
+  assert.match(html, /id="chat-message"[^>]*>Nova mensagem não enviada<\/textarea>/);
+  assert.doesNotMatch(html, /data-chat-edit="own"|data-chat-delete="own"/);
+  assert.doesNotMatch(html.match(/<form id="chat-edit-form"[\s\S]*?<button type="submit"[^>]*>/)[0], /disabled/);
+});
+
+test('edit actions keep draft text available and prevent empty, offline and repeated saves', () => {
+  const base = fixture({ messages: { own: { uid: 't1', text: 'Original', at: 1 } }, mutation: { room: 'geral', id: 'own', kind: 'edit', text: 'Alteração', busy: false } });
+  for (const extra of [{ connected: false }, { loading: true }, { error: 'Não conectado' }, { mutation: { ...base.mutation, text: ' \n ' } }, { mutation: { ...base.mutation, text: 'a'.repeat(2001) } }, { mutation: { ...base.mutation, busy: true } }]) {
+    const html = chat.renderChat({ ...base, ...extra });
+    assert.match(html.match(/<form id="chat-edit-form"[\s\S]*?<button type="submit"[^>]*>/)[0], /disabled/);
+    const textarea = html.match(/<textarea id="chat-edit-message"[^>]*>/)[0];
+    assert.equal(/disabled/.test(textarea), extra.mutation?.busy === true);
+    const cancel = html.match(/<button[^>]*data-chat-mutation-cancel="1"[^>]*>/)[0];
+    assert.equal(/disabled/.test(cancel), extra.mutation?.busy === true);
+    if (extra.mutation?.busy) assert.match(html, /Salvando alteração…/);
+  }
+});
+
+test('deletion requires a separate confirmation and preserves other conversation controls', () => {
+  const base = fixture({ messages: { own: { uid: 't1', text: 'Texto a apagar', at: 1 } }, mutation: { room: 'geral', id: 'own', kind: 'delete', busy: false } });
+  const html = chat.renderChat(base);
+  assert.match(html, /Apagar esta mensagem\?/);
+  assert.match(html, /O texto será removido para todos os participantes desta sala\./);
+  assert.match(html, /<button type="button"[^>]*data-chat-delete-confirm="own"/);
+  assert.match(html, /data-chat-mutation-cancel="1"/);
+  assert.match(html, /Texto a apagar/);
+  assert.match(html, /id="chat-form"/);
+  assert.doesNotMatch(html, /id="chat-edit-form"|data-chat-edit="own"|data-chat-delete="own"/);
+  for (const extra of [{ connected: false }, { loading: true }, { error: 'Erro na conversa' }, { mutation: { ...base.mutation, busy: true } }]) {
+    const waiting = chat.renderChat({ ...base, ...extra });
+    assert.match(waiting.match(/<button[^>]*data-chat-delete-confirm="own"[^>]*>/)[0], /disabled/);
+    if (extra.mutation?.busy) assert.match(waiting, /Apagando mensagem…/);
+  }
+});
+
+test('deleted messages retain stable chronology and never expose their previous text or edit actions', () => {
+  const rows = {
+    removed: { uid: 't1', name: 'Bruno', text: 'Texto antigo que deve ficar oculto', at: 1, deletedAt: 10, editedAt: 5 },
+    legacy: { uid: 't2', name: 'Professora', at: 2, deletedAt: 11 },
+    edited: { uid: 't2', name: 'Professora', text: 'Texto corrigido', at: 3, editedAt: 9 }
+  };
+  assert.deepEqual(chat.sortedMessages(rows).map(row => row.id), ['removed', 'legacy', 'edited']);
+  const html = chat.renderChat(fixture({ messages: rows, mutation: { room: 'geral', id: 'removed', kind: 'edit', text: 'Não pode editar' } }));
+  assert.equal((html.match(/Mensagem apagada/g) || []).length, 2);
+  assert.doesNotMatch(html, /Texto antigo|Não pode editar|data-chat-edit=|data-chat-delete=|id="chat-edit-form"/);
+  assert.match(html, /Texto corrigido/);
+  assert.equal((html.match(/>editada<\/span>/g) || []).length, 1);
+  assert.match(html, /aria-relevant="additions text"/);
+  const removedArticle = html.match(/<article[^>]*data-chat-message="removed"[\s\S]*?<\/article>/)[0];
+  assert.doesNotMatch(removedArticle, /data-chat-delivery=|editada/);
+});
+
+test('inline mutation cannot target another author, room, pending message or unknown message', () => {
+  const base = fixture({ messages: { own: { uid: 't1', text: 'Minha mensagem', at: 1 }, other: { uid: 't2', text: 'Outra mensagem', at: 2 } } });
+  for (const mutation of [
+    { room: 'geral', id: 'other', kind: 'edit' },
+    { room: 'b1', id: 'own', kind: 'delete' },
+    { room: 'geral', id: 'missing', kind: 'edit' },
+    { room: 'geral', id: 'own', kind: '<script>' }
+  ]) assert.doesNotMatch(chat.renderChat({ ...base, mutation }), /id="chat-edit-form"|data-chat-delete-confirm=/);
+  assert.doesNotMatch(chat.renderChat({ ...base, pendingIds: ['own'], mutation: { room: 'geral', id: 'own', kind: 'delete' } }), /data-chat-delete-confirm=/);
+});
+
+test('mutation errors offer rules only with an explicit permission capability', () => {
+  const base = fixture({ messages: { own: { uid: 't1', text: 'Mensagem', at: 1 } }, mutation: { room: 'geral', id: 'own', kind: 'edit', text: 'Nova mensagem', error: 'Acesso negado' } });
+  assert.match(chat.renderChat({ ...base, canCopyAccessPolicy: true }), /data-copy-policy="1"/);
+  for (const capability of [false, undefined, 'true']) assert.doesNotMatch(chat.renderChat({ ...base, canCopyAccessPolicy: capability }), /data-copy-policy=/);
+  assert.doesNotMatch(chat.renderChat({ ...base, mutation: { ...base.mutation, error: '' }, canCopyAccessPolicy: true }), /data-copy-policy=/);
+});
+
 test('empty error and loading states never suggest the room has no previous conversation', () => {
   for (const extra of [{ error: 'Falha na leitura.' }, { error: 'Falha na leitura.', loading: true }]) {
     const html = chat.renderChat(fixture(extra));

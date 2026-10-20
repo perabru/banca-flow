@@ -105,7 +105,7 @@ function session(t, env, uid) {
     ref: (_database, path = '') => sdk.ref(database, path),
     get: sdk.get, set: sdk.set, update: sdk.update, remove: sdk.remove,
     push: sdk.push, serverTimestamp: sdk.serverTimestamp, query: sdk.query,
-    orderByChild: sdk.orderByChild, limitToLast: sdk.limitToLast, endBefore: sdk.endBefore,
+    orderByChild: sdk.orderByChild, limitToLast: sdk.limitToLast, endBefore: sdk.endBefore, startAt: sdk.startAt,
     onDisconnect: sdk.onDisconnect, runTransaction: sdk.runTransaction,
     onValue(target, callback, error) {
       const off = sdk.onValue(target, snapshot => {
@@ -120,7 +120,8 @@ function session(t, env, uid) {
   vm.runInContext(source + `
     render = () => { if (state.user) { renderChatWidget(); syncChat(); } };
     refreshTimerUi = () => {};
-    globalThis.chatSdkTest = { state, openGeneralChat, sendChatMessage, retryChat, stopChat, onlineChatPeople, chatView };
+    globalThis.chatSdkTest = { state, openGeneralChat, sendChatMessage, retryChat, stopChat, onlineChatPeople, chatView,
+      beginChatEdit, beginChatDelete, cancelChatMutation, submitChatEdit, confirmChatDelete, loadOlderChat };
   `, context, { filename: 'index.html.inline-module.js' });
   const app = context.chatSdkTest;
   const data = fixture();
@@ -134,6 +135,119 @@ function session(t, env, uid) {
 }
 const send = (app, text) => app.sendChatMessage({ dataset: { chatRoom: 'geral' }, values: { message: text } });
 const messages = app => Object.values(app.state.chatMessages);
+const edit = (app, id, text) => app.submitChatEdit({ dataset: { chatRoom: 'geral', chatId: id }, values: { message: text } });
+
+test('real SDK edits and deletes the author’s message on both sessions while retaining its original identity and academic data', { timeout: 25000 }, async t => {
+  const { env } = await environment(t, 'mutations');
+  const before = await privileged(env);
+  const first = session(t, env, 'legacy'), second = session(t, env, 'newcomer');
+  first.app.openGeneralChat(); second.app.openGeneralChat();
+  await until(() => !first.app.state.chatLoading && !second.app.state.chatLoading, 'readable common room');
+  await send(first.app, 'Versão inicial da mensagem.');
+  await until(() => messages(second.app).length === 1, 'message before editing');
+  const [id, original] = Object.entries(await privileged(env, 'chatMessages/geral'))[0];
+  assert.throws(() => second.app.beginChatEdit(id), /própri|autor|suas|sua mensagem|permiss|outr/i);
+  assert.throws(() => second.app.beginChatDelete(id), /própri|autor|suas|sua mensagem|permiss|outr/i);
+  first.app.beginChatEdit(id);
+  await edit(first.app, id, 'Versão corrigida, visível para todos.');
+  await until(() => second.app.state.chatMessages[id]?.text === 'Versão corrigida, visível para todos.', 'edited message on the other session');
+  const changed = await privileged(env, `chatMessages/geral/${id}`);
+  assert.equal(changed.uid, original.uid);
+  assert.equal(changed.name, original.name);
+  assert.equal(changed.at, original.at);
+  assert.equal(changed.revision, 1);
+  assert.equal(typeof changed.editedAt, 'number');
+  await until(() => first.app.state.chatMessages[id]?.editedAt === changed.editedAt, 'canonical server timestamp retained by the sender');
+  assert.equal(first.app.state.chatMutation, null);
+  assert.match(second.app.chatView(), /editada/i);
+  first.app.beginChatDelete(id);
+  await first.app.confirmChatDelete(id);
+  await until(() => first.app.state.chatMessages[id]?.deletedAt > 0 && second.app.state.chatMessages[id]?.deletedAt > 0, 'deleted message on both sessions');
+  const removed = await privileged(env, `chatMessages/geral/${id}`);
+  assert.deepEqual(removed, { ...changed, text: '', deletedAt: removed.deletedAt, revision: 2 });
+  assert.equal(typeof removed.deletedAt, 'number');
+  assert.match(second.app.chatView(), /Mensagem apagada/);
+  assert.doesNotMatch(second.app.chatView(), /Versão corrigida, visível para todos\./);
+  assert.equal(first.app.state.chatMutation, null);
+  const after = await privileged(env);
+  for (const root of ['users', 'groups', 'boards', 'grades', 'deliveries', 'timers']) assert.deepEqual(after[root], before[root], root);
+});
+
+test('real SDK denied edits and deletions preserve confirmed text and the editor until a permitted retry succeeds', { timeout: 25000 }, async t => {
+  const denied = clone(rules);
+  denied.rules.chatMessages.$room.$mid['.write'] = `(${denied.rules.chatMessages.$room.$mid['.write']}) && !data.exists()`;
+  const { env, configuration } = await environment(t, 'mutation-denial', denied);
+  const first = session(t, env, 'legacy'), second = session(t, env, 'newcomer');
+  first.app.openGeneralChat(); second.app.openGeneralChat();
+  await until(() => !first.app.state.chatLoading && !second.app.state.chatLoading, 'readable common room');
+  await send(first.app, 'Texto confirmado antes da alteração.');
+  await until(() => messages(second.app).length === 1, 'original text on both sessions');
+  const id = Object.keys(first.app.state.chatMessages)[0];
+  const original = await privileged(env, `chatMessages/geral/${id}`);
+  first.app.beginChatEdit(id);
+  await assert.rejects(edit(first.app, id, 'Texto que precisa ser autorizado.'), error => /permission.?denied/i.test(`${error.code} ${error.message}`));
+  assert.deepEqual(await privileged(env, `chatMessages/geral/${id}`), original);
+  assert.equal(first.app.state.chatMessages[id].text, original.text);
+  assert.equal(second.app.state.chatMessages[id].text, original.text);
+  assert.equal(first.app.state.chatMutation.text, 'Texto que precisa ser autorizado.');
+  assert.ok(first.app.state.chatMutation.error);
+  assert.equal(first.app.state.chatMutation.busy, false);
+  assert.equal(first.snapshots.some(snapshot => snapshot.data?.[id]?.text === 'Texto que precisa ser autorizado.'), false, 'applyLocally:false never displays an unconfirmed mutation');
+  first.app.cancelChatMutation();
+  first.app.beginChatDelete(id);
+  await assert.rejects(first.app.confirmChatDelete(id), error => /permission.?denied/i.test(`${error.code} ${error.message}`));
+  assert.deepEqual(await privileged(env, `chatMessages/geral/${id}`), original);
+  assert.equal(first.app.state.chatMutation.kind, 'delete');
+  assert.ok(first.app.state.chatMutation.error);
+  const allowedEnvironment = await initializeTestEnvironment({ ...configuration, database: { ...configuration.database, rules: JSON.stringify(rules) } });
+  t.after(() => allowedEnvironment.cleanup());
+  await first.app.confirmChatDelete(id);
+  await until(() => second.app.state.chatMessages[id]?.deletedAt > 0, 'permitted deletion reaches the other session');
+  assert.equal((await privileged(env, `chatMessages/geral/${id}`)).revision, 1, 'failed attempts do not consume revisions');
+  assert.equal(first.app.state.chatMutation, null);
+});
+
+test('real SDK keeps previously loaded history synchronized when old messages are edited and deleted', { timeout: 25000 }, async t => {
+  const { env } = await environment(t, 'old-mutations');
+  const base = Date.now() - 300000;
+  const seeded = Object.fromEntries(Array.from({ length: 105 }, (_, index) => [`old-${String(index).padStart(3, '0')}`, {
+    uid: 'legacy', name: fixture().users.legacy.name, text: `Mensagem histórica ${index}`, at: base + index * 1000
+  }]));
+  await env.withSecurityRulesDisabled(ctx => sdk.set(sdk.ref(ctx.database(), 'chatMessages/geral'), seeded));
+  const first = session(t, env, 'legacy'), second = session(t, env, 'newcomer');
+  first.app.openGeneralChat(); second.app.openGeneralChat();
+  await until(() => !first.app.state.chatLoading && !second.app.state.chatLoading, 'latest historical messages');
+  assert.equal(messages(first.app).length, 100);
+  await first.app.loadOlderChat(); await second.app.loadOlderChat();
+  await until(() => messages(first.app).length === 105 && messages(second.app).length === 105 && !first.app.state.chatLoading && !second.app.state.chatLoading, 'older page on both sessions');
+  first.app.beginChatEdit('old-000');
+  await edit(first.app, 'old-000', 'Correção em mensagem anterior às últimas cem.');
+  await until(() => second.app.state.chatMessages['old-000']?.revision === 1, 'history edit on other session');
+  assert.equal(second.app.state.chatMessages['old-000'].text, 'Correção em mensagem anterior às últimas cem.');
+  first.app.beginChatDelete('old-000');
+  await first.app.confirmChatDelete('old-000');
+  await until(() => second.app.state.chatMessages['old-000']?.deletedAt > 0, 'history deletion on other session');
+  assert.equal(second.app.state.chatMessages['old-000'].at, seeded['old-000'].at);
+  assert.equal(messages(second.app).length, 105, 'tombstone keeps history pagination stable');
+});
+
+test('real SDK rejects a stale editor instead of silently overwriting another session’s correction', { timeout: 25000 }, async t => {
+  const { env } = await environment(t, 'conflict');
+  const first = session(t, env, 'legacy'), second = session(t, env, 'legacy');
+  first.app.openGeneralChat(); second.app.openGeneralChat();
+  await until(() => !first.app.state.chatLoading && !second.app.state.chatLoading, 'same author in two sessions');
+  await send(first.app, 'Original nas duas sessões.');
+  await until(() => messages(second.app).length === 1, 'same message in both sessions');
+  const id = Object.keys(first.app.state.chatMessages)[0];
+  first.app.beginChatEdit(id); second.app.beginChatEdit(id);
+  await edit(first.app, id, 'Correção confirmada na primeira sessão.');
+  await assert.rejects(edit(second.app, id, 'Tentativa baseada na versão antiga.'), /alterad|atualiz|outra|mudou|reabr|conflito/i);
+  const saved = await privileged(env, `chatMessages/geral/${id}`);
+  assert.equal(saved.text, 'Correção confirmada na primeira sessão.');
+  assert.equal(saved.revision, 1);
+  assert.equal(second.app.state.chatMutation.text, 'Tentativa baseada na versão antiga.');
+  assert.ok(second.app.state.chatMutation.error);
+});
 
 test('real SDK shares general chat and server timestamps between legacy and new teachers without banks', { timeout: 25000 }, async t => {
   const { env } = await environment(t, 'valid');

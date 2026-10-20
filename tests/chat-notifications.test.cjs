@@ -9,7 +9,7 @@ const flush = () => new Promise(resolve => setImmediate(resolve));
 function harness(settings = {}) {
   let time = 1800000000000;
   const values = settings.values || new Map(), events = new Map(), documentEvents = new Map();
-  const calls = { banners: [], changes: [], shows: [], closes: [], registers: [], permissions: 0, vibrations: [], tones: 0, resumes: 0, audioClosed: 0 };
+  const calls = { banners: [], changes: [], changedMessages: [], shows: [], closes: [], registers: [], permissions: 0, vibrations: [], tones: 0, resumes: 0, audioClosed: 0 };
   const openNotifications = [];
   const worker = {
     active: {},
@@ -48,7 +48,7 @@ function harness(settings = {}) {
   };
   if (settings.unsupported) delete env.Notification;
   const access = new Set(['geral', 'b1', 'b2']), visible = new Set();
-  const api = createNotifier({ environment: env, now: settings.now, onChange: state => calls.changes.push(state), onBanner: payload => calls.banners.push(payload), canAccess: room => access.has(room), isRoomVisible: room => visible.has(room), serviceWorkerUrl: './chat-sw.js', iconUrl: './assets/icon.png', badgeUrl: './assets/badge.png' });
+  const api = createNotifier({ environment: env, now: settings.now, onChange: state => calls.changes.push(state), onBanner: payload => calls.banners.push(payload), onMessageChanged: payload => calls.changedMessages.push(payload), canAccess: room => access.has(room), isRoomVisible: room => visible.has(room), serviceWorkerUrl: './chat-sw.js', iconUrl: './assets/icon.png', badgeUrl: './assets/badge.png' });
   const message = (text = 'Mensagem nova', extra = {}) => ({ uid: 'other', name: 'Professora Dois', text, at: time, ...extra });
   return { api, env, calls, values, worker, openNotifications, access, visible, settings, events, documentEvents, message, advance(ms) { time += ms; }, emitStorage(key, newValue) { events.get('storage')?.({ key, newValue }); } };
 }
@@ -240,4 +240,73 @@ test('registration/show failures are contained and keep normal in-page notificat
   const bad = harness({ hidden: true, showError: Error('Notifications blocked by platform') }); bad.api.setSession('t1'); await bad.api.requestPermission();
   bad.api.receive('geral', {}); bad.api.receive('geral', { a: bad.message() }); await flush(); assert.match(bad.api.getState().status, /navegador não exibiu/i);
   bad.api.dispose(); await flush();
+});
+
+test('editing a seen message never adds unread or a new alert, while a tombstone removes only its unread count', async () => {
+  const h = harness({ hidden: true }); h.api.setSession('t1'); await h.api.requestPermission(); h.api.receive('geral', {});
+  const original = h.message('Texto original'), other = h.message('Outra mensagem');
+  h.api.receive('geral', { a: original, b: other }); await flush();
+  assert.equal(h.api.getState().unread, 2); assert.equal(h.calls.shows.length, 1);
+  const edited = { ...original, text: 'Texto corrigido', editedAt: h.env.Date.now(), revision: 1 };
+  h.api.receive('geral', { a: edited, b: other }); await flush();
+  assert.equal(h.api.getState().unread, 2); assert.equal(h.calls.shows.length, 1);
+  assert.deepEqual(h.calls.changedMessages, [{ room: 'geral', id: 'a', deleted: false }]);
+  const deleted = { ...edited, text: '', deletedAt: h.env.Date.now(), revision: 2 };
+  h.api.receive('geral', { a: deleted, b: other }); await flush();
+  assert.equal(h.api.getState().unread, 1); assert.deepEqual(h.api.getState().countByRoom, { geral: 1 });
+  assert.equal(h.calls.shows.length, 1); assert.deepEqual(h.calls.changedMessages.at(-1), { room: 'geral', id: 'a', deleted: true });
+  assert.equal(h.calls.changes.at(-1).unread, 1, 'badge listeners receive the reduced unread count');
+  h.api.receive('geral', { a: deleted, b: other }); assert.equal(h.calls.changedMessages.length, 2, 'repeated snapshots are quiet');
+});
+
+test('edited or deleted records first observed after a baseline do not become new messages', () => {
+  const h = harness(); h.api.setSession('t1'); h.api.receive('geral', {});
+  h.api.receive('geral', {
+    edited: h.message('Correção', { editedAt: h.env.Date.now(), revision: 1 }),
+    deleted: h.message('', { deletedAt: h.env.Date.now(), revision: 1 }),
+    revised: h.message('Revisão', { revision: 1 })
+  });
+  assert.equal(h.api.getState().unread, 0); assert.equal(h.calls.banners.length, 0);
+});
+
+test('edited or deleted messages invalidate queued foreground delivery without emitting a replacement', async () => {
+  for (const kind of ['edit', 'delete']) {
+    const h = harness(), queued = [];
+    h.env.navigator.locks = { request(_key, callback) { return new Promise(resolve => queued.push(() => resolve(callback()))); } };
+    h.api.setSession('t1'); h.api.receive('geral', {});
+    const original = h.message('Conteúdo que mudou'); h.api.receive('geral', { a: original });
+    const changed = kind === 'edit' ? { ...original, text: 'Corrigida', editedAt: h.env.Date.now(), revision: 1 } : { ...original, text: '', deletedAt: h.env.Date.now(), revision: 1 };
+    h.api.receive('geral', { a: changed }); queued.shift()(); await flush();
+    assert.equal(h.calls.banners.length, 0); assert.equal(h.calls.shows.length, 0);
+    assert.equal(h.api.getState().unread, kind === 'delete' ? 0 : 1);
+  }
+});
+
+test('worker registration and show completion recheck whether notification content has been changed or deleted', async () => {
+  for (const kind of ['edit', 'delete']) {
+    let resolveRegistration;
+    const h = harness({ hidden: true, registration: new Promise(resolve => resolveRegistration = resolve) });
+    h.api.setSession('t1'); await h.api.requestPermission(); h.api.receive('geral', {});
+    const original = h.message('Texto antigo'); h.api.receive('geral', { a: original });
+    const changed = kind === 'edit' ? { ...original, text: 'Corrigida', editedAt: h.env.Date.now(), revision: 1 } : { ...original, text: '', deletedAt: h.env.Date.now(), revision: 1 };
+    h.api.receive('geral', { a: changed }); resolveRegistration(h.worker); await flush();
+    assert.equal(h.calls.shows.length, 0, `${kind} cancels the pending notification before showing`);
+
+    let completeShow;
+    const late = harness({ hidden: true, beforeShow: () => new Promise(resolve => completeShow = resolve) });
+    late.api.setSession('t1'); await late.api.requestPermission(); late.api.receive('geral', {}); late.api.receive('geral', { a: original }); await flush();
+    late.api.receive('geral', { a: changed }); completeShow(); await flush();
+    assert.ok(late.calls.closes.some(item => item.messageId === 'a'), `${kind} closes a notification that finishes showing late`);
+  }
+});
+
+test('a shown system notification is closed when its message is edited or deleted', async () => {
+  for (const kind of ['edit', 'delete']) {
+    const h = harness({ hidden: true }); h.api.setSession('t1'); await h.api.requestPermission(); h.api.receive('geral', {});
+    const original = h.message('Mensagem visível na notificação'); h.api.receive('geral', { a: original }); await flush();
+    assert.equal(h.calls.shows.length, 1);
+    const changed = kind === 'edit' ? { ...original, text: 'Corrigida', editedAt: h.env.Date.now(), revision: 1 } : { ...original, text: '', deletedAt: h.env.Date.now(), revision: 1 };
+    h.api.receive('geral', { a: changed }); await flush();
+    assert.ok(h.calls.closes.some(item => item.messageId === 'a')); assert.equal(h.calls.shows.length, 1);
+  }
 });
