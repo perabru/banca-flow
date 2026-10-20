@@ -43,7 +43,7 @@ function adapter() {
       emit(path){for(const [registered,cbs]of this.listeners){const p=this.path(registered);if(p===path||p.startsWith(path+'/')||path.startsWith(p+'/'))for(const cb of cbs)cb(this.snapshot(registered));}}
     };
     const initializeApp=()=>({}),getAuth=()=>({currentUser:{uid:'t1'}}),getDatabase=()=>({}),onAuthStateChanged=()=>()=>{},ref=(_db,path='')=>path;
-    const onValue=(target,cb,error)=>{const path=mock.path(target);mock.listens.push(path);if(!mock.listeners.has(target))mock.listeners.set(target,new Set());mock.listeners.get(target).add(cb);if(mock.chatReadError&&path.startsWith('chat'))error?.(Object.assign(Error('chat permission denied'),{code:'PERMISSION_DENIED'}));else cb(mock.snapshot(target));return()=>mock.listeners.get(target)?.delete(cb);};
+    const onValue=(target,cb,error)=>{const path=mock.path(target);mock.listens.push(path);if(!mock.listeners.has(target))mock.listeners.set(target,new Set());mock.listeners.get(target).add(cb);if(mock.chatReadError&&path.startsWith('chat')){mock.listeners.get(target).delete(cb);error?.(Object.assign(Error('chat permission denied'),{code:'PERMISSION_DENIED'}));}else cb(mock.snapshot(target));return()=>mock.listeners.get(target)?.delete(cb);};
     const query=(target,...constraints)=>({path:mock.path(target),constraints}),orderByChild=key=>({kind:'order',key}),limitToLast=count=>({kind:'last',count}),endBefore=(value,key)=>({kind:'before',value,key});
     const onDisconnect=target=>({remove:async()=>{mock.disconnects||=[];mock.disconnects.push({kind:'remove',path:mock.path(target)});},cancel:async()=>{mock.disconnects||=[];mock.disconnects.push({kind:'cancel',path:mock.path(target)});}});
     const chatChannel=new BroadcastChannel('bancaflow-chat-test');chatChannel.onmessage=event=>{const{path,value}=event.data||{};if(typeof path==='string'&&path.startsWith('chat')){mock.write(path,value);mock.emit(path);}};
@@ -84,7 +84,7 @@ async function openApp(t,{timezoneId='UTC'}={}) {
   };
   await page.route('**/*',requestHandler);
   const bootstrap = adapter() + source + `
-    globalThis.appTest={state,go,render,resetAppData,createBoards,makeBoard,openBoardImport,closeBoardImport,confirmBoardImport,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,chatRooms,chatView,openChatRoom,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
+    globalThis.appTest={state,go,render,resetAppData,createBoards,makeBoard,openBoardImport,closeBoardImport,confirmBoardImport,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
       mount(uid){clearListeners();resetAppData();mock.uid=uid;state.user={uid,email:uid+'@example.test'};state.profile=mock.clone(mock.data.users[uid]);for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])state[key]=mock.clone(mock.data[key]||{});state.connected=true;document.querySelector('#login-view').classList.add('hidden');document.querySelector('#app-view').classList.remove('hidden');if(isCoord())for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])listen(key,key);else syncTeacherSubs();syncTimerSubs();go('avaliar','b1');}
     };appTest.mount('t1');
   `;
@@ -703,6 +703,43 @@ test('two professors exchange live bank chat messages, preserve drafts, online p
   assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
 });
 
+test('legacy and newly registered teachers without banks recover denied general chat and converse without reloading', {skip}, async t=>{
+  const{page,errors,cspErrors,createPeer}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-chat-qa';mkdirSync(qa,{recursive:true});
+  await page.setViewportSize({width:1440,height:900});
+  const before=await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,boards:firebaseMock.data.boards,timers:firebaseMock.data.timers}));
+  await page.evaluate(()=>{firebaseMock.data.users.legacy={name:'Professor já cadastrado',role:'teacher'};appTest.mount('coord');appTest.go('professores');});
+  await page.locator('#teacher-name').fill('Professora Nova Chat');await page.locator('#teacher-email').fill('nova-chat@example.test');await page.locator('#teacher-key').fill('nova-chat');await page.locator('#teacher-role').selectOption('teacher');await page.locator('#teacher-password').fill('strongpass');
+  await page.locator('#teacher-form button[type="submit"]').click();await page.waitForFunction(()=>firebaseMock.data.users['new-teacher']?.role==='teacher');
+  assert.equal(await page.evaluate(()=>appTest.state.user.uid),'coord');
+  const peer=await createPeer('new-teacher');
+  await page.evaluate(()=>{appTest.mount('legacy');appTest.state.chatRoom='b1';firebaseMock.chatReadError=true;globalThis.chatDocumentMarker='same document';});
+  await page.locator('#open-chat').click();
+  assert.equal(await page.locator('#chat-room-select').inputValue(),'geral','header always enters the common room even after a stale private selection');
+  assert.deepEqual(await page.locator('#chat-room-select option').evaluateAll(nodes=>nodes.map(n=>n.value)),['geral']);
+  assert.ok(await page.evaluate(()=>!!appTest.state.chatError));assert.equal(await page.locator('#chat-form button[type="submit"]').isDisabled(),true);
+  const failedReads=await page.evaluate(()=>firebaseMock.listens.filter(path=>path==='chatMessages/geral').length);
+  await page.evaluate(()=>{firebaseMock.chatReadError=false;});
+  await page.waitForFunction(()=>!appTest.state.chatError&&!appTest.state.chatLoading,{},{timeout:15000});
+  assert.ok(await page.evaluate(count=>firebaseMock.listens.filter(path=>path==='chatMessages/geral').length>count,failedReads),'a denied subscription must be re-created automatically');
+  assert.equal(await page.evaluate(()=>globalThis.chatDocumentMarker),'same document');
+  await peer.locator('#open-chat').click();await peer.waitForFunction(()=>!appTest.state.chatError&&!appTest.state.chatLoading);
+  assert.deepEqual(await peer.locator('#chat-room-select option').evaluateAll(nodes=>nodes.map(n=>n.value)),['geral']);
+  await page.waitForFunction(()=>document.querySelectorAll('[data-chat-person]').length===2);await peer.waitForFunction(()=>document.querySelectorAll('[data-chat-person]').length===2);
+  await page.locator('#chat-message').fill('Todos os professores já têm acesso?');await page.locator('#chat-message').press('Enter');
+  await peer.waitForFunction(()=>[...document.querySelectorAll('[data-chat-message] p')].some(el=>el.textContent==='Todos os professores já têm acesso?'));
+  await peer.locator('#chat-message').fill('Sim, entrei agora sem estar em uma banca.');await peer.locator('#chat-message').press('Enter');
+  await page.waitForFunction(()=>document.querySelectorAll('[data-chat-message]').length===2);
+  assert.match(await page.locator('[data-chat-message]').last().textContent(),/Professora Nova Chat/);
+  for(const width of [320,390,1440]){await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:join(qa,`chat-all-teachers-${width}.png`),fullPage:true});}
+  assert.equal(await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,boards:firebaseMock.data.boards,timers:firebaseMock.data.timers})),before);
+  assert.equal(await peer.evaluate(()=>Object.values(firebaseMock.data.boards).some(board=>board.members?.['new-teacher'])),false);
+  await page.evaluate(()=>{firebaseMock.data.users.legacy.active=false;appTest.mount('legacy');appTest.go('chat');});
+  assert.equal(await page.locator('#chat-form').count(),0,'inactive teachers do not retain the conversation UI');
+  await page.evaluate(()=>{appTest.stopChat();appTest.state.user=null;appTest.state.profile=null;appTest.render();});
+  assert.equal(await page.locator('#chat-form').count(),0,'anonymous sessions do not expose a composer');
+  assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
 test('chat paginates saved history and keeps a read-access failure separate from grading', {skip}, async t=>{
   const{page,errors}=await openApp(t);
   await page.evaluate(()=>{
@@ -712,7 +749,7 @@ test('chat paginates saved history and keeps a read-access failure separate from
   assert.match(await page.locator('[data-chat-message]').first().textContent(),/Histórico 0/);assert.equal(await page.locator('[data-chat-older]').count(),0);
   await page.evaluate(()=>{appTest.stopChat();firebaseMock.chatReadError=true;appTest.openChatRoom('b1');});
   assert.match(await page.locator('[data-chat-panel]').textContent(),/Não foi possível abrir o chat/);assert.equal(await page.locator('#chat-form button[type="submit"]').isDisabled(),true);
-  await page.evaluate(()=>{firebaseMock.chatReadError=false;});await page.locator('[data-chat-retry]').click();await page.waitForFunction(()=>!appTest.state.chatError&&!appTest.state.chatLoading);
+  await page.evaluate(()=>{firebaseMock.chatReadError=false;});await page.locator('[data-chat-retry]').first().click();await page.waitForFunction(()=>!appTest.state.chatError&&!appTest.state.chatLoading);
   await page.locator('#mobile-nav [data-route="avaliar"]').click();assert.equal(await page.locator('[data-grade-form="b1"]').count(),2);assert.equal(await page.locator('[data-grade-form="b1"][data-student="s1"] input[name="presentation"]').inputValue(),'10');
   assert.deepEqual(errors,[]);
 });

@@ -45,6 +45,8 @@
     const description = line(options.roomDescription) || line(room?.description);
     const connected = options.connected === true, loading = options.loading === true, sending = options.sending === true;
     const error = line(options.error), draft = String(options.draft ?? '');
+    const chatReady = connected && !loading && !error;
+    const connectionLabel = !connected ? 'Sem conexão' : error ? 'Chat indisponível' : loading ? 'Conectando ao chat' : 'Chat conectado';
     const messages = sortedMessages(options.messages);
     const people = connected ? [...new Map(list(options.people).filter(person => person && person.uid).map(person => [String(person.uid), person])).values()].sort((a, b) => line(a.name).localeCompare(line(b.name), 'pt-BR')) : [];
     const cannotSend = !connected || loading || sending || !!error || !room || !draft.trim();
@@ -55,7 +57,7 @@
       return `<article class="bf-chat-message${own ? ' bf-chat-message-own' : ''}" data-chat-message="${esc(message.id)}"><div class="bf-chat-message-meta"><strong>${esc(name)}${own ? '<span>Você</span>' : ''}</strong><time${datetime}>${esc(dateLabel(message.at))}</time></div><p>${esc(message.text)}</p></article>`;
     }).join('') : `<div class="bf-chat-empty">${CHAT}<strong>${loading ? 'Carregando mensagens' : 'A conversa começa aqui'}</strong><p>${loading ? 'Aguarde a atualização da sala.' : 'Envie a primeira mensagem para os professores desta sala.'}</p></div>`;
     return `<section class="bf-chat" data-chat-panel="${esc(roomId)}" aria-labelledby="chat-heading">
-      <header class="bf-chat-heading"><div class="bf-chat-heading-icon">${CHAT}</div><div><p class="bf-chat-eyebrow">CONVERSAS DA BANCA</p><h2 id="chat-heading">${esc(title)}</h2>${description ? `<p class="bf-chat-description">${esc(description)}</p>` : ''}</div><span class="bf-chat-connection${connected ? ' is-online' : ''}"><i aria-hidden="true"></i>${connected ? 'Conectado' : 'Sem conexão'}</span></header>
+      <header class="bf-chat-heading"><div class="bf-chat-heading-icon">${CHAT}</div><div><p class="bf-chat-eyebrow">CONVERSAS DA BANCA</p><h2 id="chat-heading">${esc(title)}</h2>${description ? `<p class="bf-chat-description">${esc(description)}</p>` : ''}</div><span class="bf-chat-connection${chatReady ? ' is-online' : ''}"><i aria-hidden="true"></i>${connectionLabel}</span></header>
       <div class="bf-chat-room-control"><label for="chat-room-select">Sala de conversa</label><select id="chat-room-select" ${!rooms.length ? 'disabled' : ''}>${rooms.length ? rooms.map(item => `<option value="${esc(item.id)}" ${String(item.id) === roomId ? 'selected' : ''}>${esc(item.label)}</option>`).join('') : '<option>Nenhuma sala disponível</option>'}</select></div>
       ${error ? `<div class="bf-chat-error" role="alert"><p>${esc(error)}</p><button type="button" class="btn soft" data-chat-retry="1">Tentar novamente</button></div>` : ''}
       ${!connected ? '<p class="bf-chat-offline">A conversa será atualizada ao reconectar. Você pode continuar escrevendo.</p>' : ''}

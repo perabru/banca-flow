@@ -78,6 +78,26 @@ test('offline and sending prevent duplicate submission while keeping the text ed
   assert.match(offline, /Olá, professores!/);
 });
 
+test('chat connection badge is green only after the conversation is ready without errors', () => {
+  const cases = [
+    { extra: {}, label: 'Chat conectado', ready: true },
+    { extra: { loading: true }, label: 'Conectando ao chat', ready: false },
+    { extra: { error: 'Acesso à sala indisponível.' }, label: 'Chat indisponível', ready: false },
+    { extra: { loading: true, error: 'Acesso à sala indisponível.' }, label: 'Chat indisponível', ready: false },
+    { extra: { connected: false, loading: true, error: 'Acesso à sala indisponível.' }, label: 'Sem conexão', ready: false }
+  ];
+  for (const { extra, label, ready } of cases) {
+    const html = chat.renderChat(fixture(extra));
+    const badge = html.match(/<span class="bf-chat-connection[^"]*">[\s\S]*?<\/span>/)[0];
+    assert.ok(badge.includes(`>${label}</span>`), `Expected connection label: ${label}`);
+    assert.equal(badge.includes(' is-online'), ready, `Unexpected ready indicator for: ${label}`);
+  }
+  const unavailable = chat.renderChat(fixture({ error: 'Acesso à sala indisponível.' }));
+  assert.match(unavailable, /data-chat-person="t1"/);
+  assert.match(unavailable.match(/<button type="submit"[^>]*>/)[0], /disabled/);
+  assert.doesNotMatch(unavailable.match(/<textarea[^>]*>/)[0], /disabled/);
+});
+
 test('history, loading and retry controls are explicit and unavailable history is not fabricated', () => {
   const html = chat.renderChat(fixture({ roomId: 'b1', hasMore: true, loadingOlder: true, error: 'Acesso indisponível <temporário>.' }));
   assert.match(html, /data-chat-older="1" disabled/);

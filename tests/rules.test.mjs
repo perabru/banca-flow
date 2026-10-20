@@ -339,6 +339,40 @@ test('all active professors and coordinators use the common room without opening
   }
 });
 
+test('legacy registered teacher needs no active flag, key, bank assignment or chat allowlist for general messages and presence', async () => {
+  const uid='legacyTeacher',profile={name:'Professor já cadastrado',role:'teacher'};
+  await bypass(`users/${uid}`,profile);
+  const before=await readPrivileged('/');
+  await assertSucceeds(get(ref(db(uid),'chatMessages/geral')));
+  await assertSucceeds(get(ref(db(uid),'chatPresence')));
+  await assertSucceeds(set(ref(db(uid),`chatMessages/geral/${uid}`),{uid,name:profile.name,text:'Participando sem banca.',at:Date.now()}));
+  await assertSucceeds(set(ref(db(uid),`chatPresence/${uid}/first-tab`),{name:profile.name,role:'teacher',at:Date.now()}));
+  await assertFails(get(ref(db(uid),'chatMessages/b1')));
+  await assertFails(get(ref(db(uid),'grades/b1/teacher1')));
+  await assertFails(set(ref(db(uid),`chatMessages/geral/${uid}-forged`),{uid,name:'Outra pessoa',text:'Nome falso',at:Date.now()}));
+  const after=await readPrivileged('/');
+  for(const root of ['users','boards','groups','grades','deliveries'])assert.deepEqual(after[root],before[root],root);
+});
+
+test('new teacher profile created by Alberson immediately authorizes general chat and presence without bank membership', async () => {
+  const uid='newChatTeacher',profile=profileDraft('teacher',{name:'Nova professora',email:'nova-chat@example.test',key:'nova-chat'});
+  await assertSucceeds(set(ref(db('coord'),`users/${uid}`),profile));
+  await assertSucceeds(get(ref(db(uid),'chatMessages/geral')));
+  await assertSucceeds(get(ref(db(uid),'chatPresence')));
+  await assertSucceeds(set(ref(db(uid),`chatMessages/geral/${uid}`),{uid,name:profile.name,text:'Primeiro acesso.',at:Date.now()}));
+  await assertSucceeds(set(ref(db(uid),`chatPresence/${uid}/first-tab`),{name:profile.name,role:'teacher',at:Date.now()}));
+  assert.equal((await readPrivileged('boards/b1/members'))[uid],undefined);
+  assert.deepEqual(await readPrivileged(`users/${uid}`),profile,'access follows the saved teacher role without extra profile fields');
+  await assertFails(get(ref(db(uid),'chatMessages/b1')));
+  await bypass(`users/${uid}/active`,false);
+  for(const blocked of [uid,'authenticated-without-profile',null]){
+    await assertFails(get(ref(db(blocked),'chatMessages/geral')));
+    await assertFails(get(ref(db(blocked),'chatPresence')));
+    await assertFails(set(ref(db(blocked),'chatMessages/geral/blocked'),{uid:blocked||uid,name:profile.name,text:'Sem acesso',at:Date.now()}));
+    await assertFails(set(ref(db(blocked),`chatPresence/${uid}/blocked`),{name:profile.name,role:'teacher',at:Date.now()}));
+  }
+});
+
 test('bank conversations are private to active bank members and coordinators even after closure and archival', async () => {
   for (const uid of ['teacher1','teacher2','coord','otherCoord']) {
     await assertSucceeds(set(ref(db(uid), `chatMessages/b1/open-${uid}`), chatMessage(uid)));

@@ -34,7 +34,8 @@ function harness(uid = 't1') {
   const data = fixture();
   const calls = { reads: [], sets: [], updates: [], transactions: [], confirmations: [], authCreates:[], authDeletes:[], appDeletes:[], listens:[], disconnects:[], removals:[], pushCount:0 };
   const options = { confirm: true, setError: null, updateError: null, transactionError: null };
-  const elements = new Map();
+  const elements = new Map(), pendingTimeouts = new Map();
+  let timeoutId = 0;
   const element = selector => {
     if (!elements.has(selector)) elements.set(selector, {
       textContent: '', innerHTML: '', value: '', dataset: {}, style: {},
@@ -87,14 +88,16 @@ function harness(uid = 't1') {
       createElement: () => ({ getContext: () => ({ font: '10px Arial', measureText(value) { return { width: String(value).length * (parseFloat(this.font.match(/[\d.]+/)?.[0]) || 10) * .55 }; } }) }),
       getElementById: id => id === 'roster-criptografado' ? { textContent: '{}' } : element('#' + id)
     },
-    setInterval() {}, clearInterval() {}, setTimeout() {}, clearTimeout() {},
+    setInterval() {}, clearInterval() {},
+    setTimeout(callback, delay=0) { const id=++timeoutId;pendingTimeouts.set(id,{callback,delay});return id; },
+    clearTimeout(id) { pendingTimeouts.delete(id); },
     confirm(message) { calls.confirmations.push(message); return options.confirm; },
     initializeApp: (_config,name='main') => ({name}), getAuth: () => ({}), getDatabase: () => ({}),
     initializeAuth: app => ({app}), inMemoryPersistence:{},
     createUserWithEmailAndPassword: async (_auth,email,password) => {calls.authCreates.push({email,password});if(options.authCreateError)throw options.authCreateError;return{user:{uid:options.newAuthUid||'new-teacher'}};},
     deleteUser: async user => {calls.authDeletes.push(user.uid);if(options.authDeleteError)throw options.authDeleteError;},
     deleteApp: async app => {calls.appDeletes.push(app.name);}, signOut:async()=>{},
-    onAuthStateChanged: () => () => {}, onValue: (target,callback,error) => {calls.listens.push(pathOf(target));listeners.set(target,callback);listenerErrors.set(target,error);if(pathOf(target).startsWith('chat'))callback(snapshot(queryValue(target)));return()=>{listeners.delete(target);listenerErrors.delete(target);};},
+    onAuthStateChanged: () => () => {}, onValue: (target,callback,error) => {calls.listens.push(pathOf(target));listeners.set(target,callback);listenerErrors.set(target,error);if(pathOf(target).startsWith('chat')){if(options.chatReadError){listeners.delete(target);listenerErrors.delete(target);error?.(Object.assign(Error('Permission denied'),{code:'PERMISSION_DENIED'}));}else callback(snapshot(queryValue(target)));}return()=>{listeners.delete(target);listenerErrors.delete(target);};},
     query:(target,...constraints)=>({path:pathOf(target),constraints}),orderByChild:key=>({kind:'order',key}),limitToLast:count=>({kind:'last',count}),endBefore:(value,key)=>({kind:'before',value,key}),
     onDisconnect: target => ({remove:async()=>{calls.disconnects.push({kind:'remove',path:pathOf(target)});if(options.disconnectError)throw options.disconnectError;},cancel:async()=>calls.disconnects.push({kind:'cancel',path:pathOf(target)})}),
     remove: async target => {const path=pathOf(target);calls.removals.push(path);write(path,null);emit(path);},
@@ -131,7 +134,7 @@ function harness(uid = 't1') {
     globalThis.testDownloads = [];
     downloadBlob = (blob, filename) => globalThis.testDownloads.push({blob,filename});
     globalThis.appTest = { state, CRITERIOS, notaValida, mediaAvaliador, situacao, resultadoAluno,
-      chatRooms,chatView,openChatRoom,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,
+      chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,
       elapsedAt, formatElapsed, boardElapsed, timerRecord, controlTimer, closeBoard, reopenBoard,
       createBoardShareSnapshot, assertShareSnapshotCurrent, buildSharePdf, buildBoardShareText, whatsappTextUrl, boardShareFilename,
       assertBoardAccess, hasUnsavedDrafts, saveGrade, saveDelivery, reportHtml, refreshReportData,
@@ -148,7 +151,8 @@ function harness(uid = 't1') {
   `, context, { filename: 'index.html.inline-module.js' });
   const app = context.appTest;
   Object.assign(app.state, clone(data), { user: { uid }, profile: clone(data.users[uid]), connected: true });
-  return { app, data, calls, options, elements, context, downloads: context.testDownloads, now: () => now, advance: ms => { now += ms; }, read, write, emit, emitError };
+  const runTimeouts = (maxDelay=Infinity) => { for(const[id,timer]of [...pendingTimeouts])if(timer.delay<=maxDelay&&pendingTimeouts.delete(id))timer.callback(); };
+  return { app, data, calls, options, elements, context, downloads: context.testDownloads, now: () => now, advance: ms => { now += ms; }, read, write, emit, emitError, runTimeouts, pendingTimeouts };
 }
 
 test('individual averages require all four valid grades, including valid zeroes', () => {
@@ -1065,6 +1069,53 @@ test('chat rooms include the common room and only assigned banks, with coordinat
   app.state.user=null;assert.equal(app.chatRooms().length,0);assert.match(app.chatView(),/restrito/i);
 });
 
+test('legacy registered teacher without active flag, login key or bank membership immediately uses general chat and presence',async()=>{
+  const h=harness('legacy'),{app}=h,profile={name:'Docente já cadastrado',role:'teacher'};
+  h.data.users.legacy=clone(profile);app.state.users.legacy=clone(profile);app.state.profile=clone(profile);
+  const before=clone({users:h.data.users,boards:h.data.boards,grades:h.data.grades,deliveries:h.data.deliveries});
+  assert.deepEqual(Array.from(app.chatRooms(),room=>room.id),['geral']);
+  app.state.chatRoom='b1';app.openGeneralChat();app.syncChat();
+  assert.equal(app.state.route,'chat');assert.equal(app.state.chatRoom,'geral');assert.equal(app.state.chatError,'');
+  await app.startChatPresence();await new Promise(setImmediate);
+  await app.sendChatMessage({dataset:{chatRoom:'geral'},values:{message:'Já consigo participar.'}});
+  const message=h.calls.sets.find(([path])=>path.startsWith('chatMessages/geral/'));
+  assert.deepEqual(message[1],{uid:'legacy',name:profile.name,text:'Já consigo participar.',at:{'.sv':'timestamp'}});
+  assert.ok(h.calls.sets.some(([path,value])=>path.startsWith('chatPresence/legacy/')&&value.name===profile.name&&value.role==='teacher'));
+  assert.throws(()=>app.openChatRoom('b1'),/acesso|sala/i);
+  assert.deepEqual({users:h.data.users,boards:h.data.boards,grades:h.data.grades,deliveries:h.data.deliveries},before,'chat access requires no migration, bank assignment or per-user authorization write');
+});
+
+test('Alberson creates a teacher whose first session has general chat without any bank or chat allowlist',async()=>{
+  const h=harness('coord'),{app}=h;
+  await app.addTeacher(adminForm({name:'Nova Professora',email:'nova-chat@example.test',key:'nova-chat',method:'new',password:'strongpass'}));
+  const profile=clone(h.data.users['new-teacher']),before=clone({users:h.data.users,boards:h.data.boards,grades:h.data.grades,deliveries:h.data.deliveries});
+  app.resetAppData();Object.assign(app.state,clone(h.data),{user:{uid:'new-teacher'},profile,connected:true});
+  assert.deepEqual(Array.from(app.chatRooms(),room=>room.id),['geral']);
+  app.openGeneralChat();app.syncChat();await new Promise(setImmediate);
+  await app.sendChatMessage({dataset:{chatRoom:'geral'},values:{message:'Primeiro acesso ao chat.'}});
+  assert.ok(h.calls.sets.some(([path,value])=>path.startsWith('chatMessages/geral/')&&value.uid==='new-teacher'&&value.name===profile.name));
+  assert.ok(h.calls.sets.some(([path])=>path.startsWith('chatPresence/new-teacher/')));
+  assert.deepEqual({users:h.data.users,boards:h.data.boards,grades:h.data.grades,deliveries:h.data.deliveries},before);
+  for(const change of [()=>app.state.profile.active=false,()=>{app.state.profile=profile;app.state.user=null;}]){
+    change();assert.equal(app.chatRooms().length,0);assert.throws(()=>app.openGeneralChat(),/acesso|restrito|sala|sessão/i);
+  }
+});
+
+test('chat automatically reopens cancelled permission reads when authorization becomes available and cancels retries on logout',async()=>{
+  const h=harness('outsider'),{app}=h;h.options.chatReadError=true;
+  app.state.chatDrafts.set('geral','Rascunho preservado');app.openGeneralChat();app.syncChat();await new Promise(setImmediate);
+  assert.ok(app.state.chatError);assert.equal(app.state.chatLoading,false);
+  const initialReads=h.calls.listens.filter(path=>path==='chatMessages/geral').length;
+  h.options.chatReadError=false;h.advance(30000);h.runTimeouts();await new Promise(setImmediate);
+  assert.ok(h.calls.listens.filter(path=>path==='chatMessages/geral').length>initialReads,'permission cancellation must create a new subscription without reloading the page');
+  assert.equal(app.state.chatError,'');assert.equal(app.state.chatLoading,false);assert.equal(app.state.chatDrafts.get('geral'),'Rascunho preservado');
+  assert.equal(h.calls.sets.some(([path])=>path.startsWith('chatMessages/')),false,'reconnection never submits a draft');
+  await app.sendChatMessage({dataset:{chatRoom:'geral'},values:{message:'Permissões disponíveis.'}});
+  h.emitError('chatMessages/geral');app.resetAppData();const count=h.calls.listens.length;
+  app.state.user=null;app.state.profile=null;h.advance(30000);h.runTimeouts();await new Promise(setImmediate);
+  assert.equal(h.calls.listens.length,count,'an old retry cannot reopen chat after session cleanup');
+});
+
 test('chat sends plain text with canonical author/server time only to the selected authorized room and never changes grades',async()=>{
   const h=harness(),{app}=h,before=clone({grades:h.data.grades,deliveries:h.data.deliveries,boards:h.data.boards});
   app.state.chatRoom='b1';const form={dataset:{chatRoom:'b1'},values:{message:'  Boa apresentação!\r\nPodemos começar.  '}};
@@ -1151,6 +1202,20 @@ test('cancelled chat access prevents a pending older-history read from restoring
   const older=app.loadOlderChat();assert.equal(app.state.chatLoadingOlder,true);h.emitError('chatMessages/geral');
   assert.equal(Object.keys(app.state.chatMessages).length,0);assert.ok(app.state.chatError);release();await older;
   assert.equal(Object.keys(app.state.chatMessages).length,0,'late history must stay cleared after access cancellation');assert.equal(app.state.chatLoadingOlder,false);
+});
+
+test('retrying a presence-only failure releases pending history loading and ignores its old result',async()=>{
+  const h=harness(),{app}=h;
+  h.data.chatMessages={geral:Object.fromEntries(Array.from({length:130},(_,i)=>['m'+String(i).padStart(3,'0'),{uid:'t2',name:'Professora Dois',text:'Histórico '+i,at:h.now()-200000+i}]))};
+  app.state.route='chat';app.syncChat();let release;
+  h.options.beforeRead=async path=>{if(path==='chatMessages/geral')await new Promise(resolve=>release=resolve);};
+  const older=app.loadOlderChat();assert.equal(app.state.chatLoadingOlder,true);
+  h.emitError('chatPresence');assert.ok(app.state.chatPresenceError);assert.equal(app.state.chatError,'','the message subscription remains valid until retry');
+  app.retryChat();assert.equal(app.state.chatLoadingOlder,false,'replacing the subscription releases pagination from its previous epoch');
+  assert.equal(Object.keys(app.state.chatMessages).length,100);
+  release();await older;assert.equal(Object.keys(app.state.chatMessages).length,100,'the completed older request belongs to the replaced subscription');
+  h.options.beforeRead=null;await app.loadOlderChat();
+  assert.equal(Object.keys(app.state.chatMessages).length,130);assert.equal(app.state.chatLoadingOlder,false);
 });
 
 function installAdditionalCoordinator(h,uid='coord2'){

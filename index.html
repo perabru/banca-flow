@@ -6,7 +6,7 @@
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="stylesheet" href="assets/analytics.css">
 <link rel="stylesheet" href="assets/board-chat.css">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-+cteUwpORC0+VUUWAV969frkHYto1j+LMJDzUWy3PjU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-8xpn1gdfb8syuzIAp0ChS4EuSAJHct5ArFCVgFbzKrk='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>BancaFlow · Gestão de bancas | Univap</title><style>
 /* Mobile first. Cores institucionais Univap; recursos locais em assets/. */
@@ -1066,7 +1066,7 @@ const stats = (label,n,code)=>`<div class="stat"><div class="stat-label"><span>$
 
 let accessRevision=0;
 // Chat: salas e presença isoladas das avaliações e dos relatórios.
-const chatRuntime={epoch:0,room:'',messagesOff:null,presenceOff:null,connection:null,presenceStarting:false};
+const chatRuntime={epoch:0,room:'',messagesOff:null,presenceOff:null,connection:null,presenceStarting:false,retryTicket:null,retryAttempt:0};
 function chatRooms(){
  if(!state.user||!isActiveTeacher(state.profile))return [];
  return [{id:'geral',label:'Sala dos professores',description:'Conversa geral entre os professores e a coordenação.'},...activeBoards().filter(([bid,b])=>bid!=='geral'&&(isCoord()||b.members?.[state.user.uid]===true)).sort((a,b)=>(a[1].startAt||0)-(b[1].startAt||0)).map(([id,b])=>({id,label:`${groupOf(b)?.name||b.groupId||id} · ${dateStr(b.startAt)}`,description:'Conversa da banca, acessível aos avaliadores participantes e à coordenação.'}))];
@@ -1105,13 +1105,37 @@ function chatView(){
 }
 function openChatRoom(room='geral'){
  assertChatAccess(room);captureChatUi();
- if(state.chatRoom!==room){state.chatRoom=room;state.chatMessages={};state.chatLoading=true;state.chatError='';state.chatHasMore=false;state.chatLoadingOlder=false;}
+ if(state.chatRoom!==room){clearChatReconnect(true);state.chatRoom=room;state.chatMessages={};state.chatLoading=true;state.chatError='';state.chatHasMore=false;state.chatLoadingOlder=false;}
  go('chat');
 }
-function chatAccessError(){return 'Não foi possível abrir o chat. Peça à coordenação para conferir o acesso e tente novamente.';}
+function openGeneralChat(){
+ openChatRoom('geral');
+ if(state.chatError||state.chatPresenceError)retryChat();
+}
+function chatAccessError(error){
+ return /permission.?denied/i.test(String(error?.code||error?.message||''))
+  ?`Não foi possível abrir o chat. ${isCoord()?'Confira se a política de acesso atualizada foi publicada no Firebase.':'A coordenação precisa conferir a liberação das conversas.'} A conexão será tentada novamente automaticamente.`
+  :'Não foi possível abrir o chat. A conexão será tentada novamente automaticamente; você também pode tentar agora.';
+}
+function clearChatReconnect(reset=false){
+ if(chatRuntime.retryTicket)clearTimeout(chatRuntime.retryTicket.handle);
+ chatRuntime.retryTicket=null;if(reset)chatRuntime.retryAttempt=0;
+}
+function scheduleChatReconnect(){
+ if(chatRuntime.retryTicket||state.route!=='chat'||!state.connected||!state.user||!isActiveTeacher(state.profile)||!(state.chatError||state.chatPresenceError))return;
+ const ticket={uid:state.user.uid,revision:accessRevision,room:state.chatRoom,handle:null};
+ const delay=Math.min(30000,2000*2**Math.min(chatRuntime.retryAttempt++,4));chatRuntime.retryTicket=ticket;
+ ticket.handle=setTimeout(()=>{
+  if(chatRuntime.retryTicket!==ticket)return;chatRuntime.retryTicket=null;
+  if(state.user?.uid!==ticket.uid||accessRevision!==ticket.revision||state.chatRoom!==ticket.room||state.route!=='chat'||!state.connected||!isActiveTeacher(state.profile)||!chatRooms().some(room=>room.id===ticket.room))return;
+  if(!(state.chatError||state.chatPresenceError)){if(!state.chatLoading)chatRuntime.retryAttempt=0;return;}
+  retryChat({automatic:true});
+ },delay);
+}
 function syncChat(){
  if(!state.user||!isActiveTeacher(state.profile))return;
  if(state.route!=='chat'){
+  clearChatReconnect(true);
   if(chatRuntime.messagesOff){chatRuntime.messagesOff();chatRuntime.messagesOff=null;chatRuntime.room='';++chatRuntime.epoch;}
   return;
  }
@@ -1120,14 +1144,14 @@ function syncChat(){
   chatRuntime.presenceOff=()=>{};
   chatRuntime.presenceOff=onValue(ref(db,'chatPresence'),snapshot=>{
    if(state.user?.uid!==uid||revision!==accessRevision)return;
-   state.chatPresence=snapshot.val()||{};state.chatPresenceError='';if(state.route==='chat')render();
-  },()=>{if(state.user?.uid===uid&&revision===accessRevision){state.chatPresence={};state.chatPresenceError='Não foi possível atualizar os professores online. Reconecte o chat para tentar novamente.';if(state.route==='chat')render();}});
+   state.chatPresence=snapshot.val()||{};state.chatPresenceError='';if(!state.chatError&&!state.chatLoading)clearChatReconnect(true);if(state.route==='chat')render();
+  },()=>{if(state.user?.uid===uid&&revision===accessRevision){state.chatPresence={};state.chatPresenceError='Não foi possível atualizar os professores online. A conexão será tentada novamente automaticamente.';scheduleChatReconnect();if(state.route==='chat')render();}});
  }
  if(state.connected)void startChatPresence();
  const room=state.chatRoom;assertChatAccess(room);
- if(chatRuntime.room===room&&chatRuntime.messagesOff)return;
+ if(chatRuntime.room===room&&chatRuntime.messagesOff){scheduleChatReconnect();return;}
  chatRuntime.messagesOff?.();const epoch=++chatRuntime.epoch,uid=state.user.uid,revision=accessRevision;
- chatRuntime.room=room;state.chatMessages={};state.chatLoading=true;state.chatError='';state.chatHasMore=false;
+ chatRuntime.room=room;state.chatMessages={};state.chatLoading=true;state.chatLoadingOlder=false;state.chatError='';state.chatHasMore=false;
  chatRuntime.messagesOff=()=>{};
  let first=true;
  chatRuntime.messagesOff=onValue(query(ref(db,`chatMessages/${room}`),orderByChild('at'),limitToLast(100)),snapshot=>{
@@ -1135,15 +1159,17 @@ function syncChat(){
   if(!chatRooms().some(item=>item.id===room))return;
   const messages=snapshot.val()||{};
   state.chatMessages={...state.chatMessages,...messages};state.chatLoading=false;state.chatError='';
+  if(!state.chatPresenceError)clearChatReconnect(true);
   if(first){state.chatHasMore=Object.keys(messages).length===100;first=false;}
   if(state.route==='chat')render();
- },()=>{
+ },error=>{
   if(epoch!==chatRuntime.epoch||uid!==state.user?.uid||revision!==accessRevision)return;
-  ++chatRuntime.epoch;state.chatMessages={};state.chatLoading=false;state.chatLoadingOlder=false;state.chatHasMore=false;state.chatError=chatAccessError();if(state.route==='chat')render();
+  ++chatRuntime.epoch;state.chatMessages={};state.chatLoading=false;state.chatLoadingOlder=false;state.chatHasMore=false;state.chatError=chatAccessError(error);scheduleChatReconnect();if(state.route==='chat')render();
  });
 }
-function retryChat(){
+function retryChat({automatic=false}={}){
  assertChatAccess(state.chatRoom);
+ clearChatReconnect(!automatic);
  chatRuntime.messagesOff?.();chatRuntime.messagesOff=null;chatRuntime.room='';chatRuntime.presenceOff?.();chatRuntime.presenceOff=null;
  syncChat();render();
 }
@@ -1203,6 +1229,7 @@ async function stopChatPresence(){
  try{await remove(connection.entry);await connection.disconnect.cancel();}catch{/* A limpeza no servidor continua registrada em caso de queda. */}
 }
 function stopChat(){
+ clearChatReconnect(true);
  ++chatRuntime.epoch;chatRuntime.messagesOff?.();chatRuntime.messagesOff=null;chatRuntime.room='';chatRuntime.presenceOff?.();chatRuntime.presenceOff=null;
  void stopChatPresence();
  state.chatRoom='geral';state.chatMessages={};state.chatPresence={};state.chatDrafts.clear();state.chatLoading=false;state.chatError='';state.chatPresenceError='';state.chatSending=false;state.chatHasMore=false;state.chatLoadingOlder=false;
@@ -1214,6 +1241,7 @@ async function logoutAccount(){
 setInterval(()=>{
  const current=chatRuntime.connection;
  if(current&&state.connected&&current.uid===state.user?.uid&&current.revision===accessRevision&&isActiveTeacher(state.profile))void set(current.entry,{name:state.profile.name,role:state.profile.role,at:serverTimestamp()}).catch(()=>{});
+ else if(!current&&state.connected)void startChatPresence();
  if(state.route==='chat'&&state.user)render();
 },45000);
 
@@ -1257,14 +1285,14 @@ $('#toggle-password').addEventListener('click',()=>{
  password.type=visible?'text':'password';button.setAttribute('aria-pressed',String(visible));button.setAttribute('aria-label',visible?'Ocultar senha':'Mostrar senha');button.innerHTML=icon(visible?'ocultar':'olho');
 });
 $('#logout').addEventListener('click',()=>logoutAccount().catch(fail));
-$('#open-chat').addEventListener('click',()=>handle(()=>openChatRoom(state.chatRoom)));
+$('#open-chat').addEventListener('click',()=>handle(openGeneralChat));
 $('#top-initials').addEventListener('click',openMobileMenu);
 $('#mobile-menu').addEventListener('close',()=>document.body.classList.remove('menu-open'));
 $('#mobile-menu').addEventListener('click',e=>{
  const button=e.target.closest('button');
  if(e.target===$('#mobile-menu')||button?.dataset.closeMenu!==undefined)return closeMobileMenu();
  if(!button?.dataset.route)return;
- if(button.dataset.route==='sair'){closeMobileMenu();logoutAccount().catch(fail);}else go(button.dataset.route);
+ if(button.dataset.route==='sair'){closeMobileMenu();logoutAccount().catch(fail);}else if(button.dataset.route==='chat')handle(openGeneralChat);else go(button.dataset.route);
 });
 $('#copy-access-uid').addEventListener('click',async()=>{
  const uid=auth.currentUser?.uid;if(!uid)return;
@@ -1330,6 +1358,7 @@ function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,
  const completed=isCoord()?ready.length:boards.filter(([id,b])=>{const g=groupOf(b);return g&&studentsOf(g).every(([sid])=>mediaAvaliador(state.grades[id]?.[state.user.uid]?.[sid])!==null);}).length;
  return `<div class="hero"><div><span class="pill">UNIVAP · ANO LETIVO 2026</span><h2>${isCoord()?'Painel da coordenação':'Painel do professor'}</h2><p>${isCoord()?'Agenda, avaliações e relatórios.':'Consulta de bancas e registro de notas.'}</p></div><button class="btn" data-route="${isCoord()?'minhasavaliacoes':'bancas'}">${isCoord()?'Lançar minhas notas':'Minhas bancas'} ${icon('seta')}</button></div>
  <div class="grid">${stats(isCoord()?'Grupos ativos':'Bancas atribuídas',isCoord()?availableGroups().length:boards.length,'01')}${stats('Bancas agendadas',boards.length,'02')}${stats(isCoord()?'Prontas para concluir':'Minhas bancas avaliadas',completed,'03')}${stats(isCoord()?'Professores ativos':'Alunos para avaliar',isCoord()?activeTeachers().length:boards.reduce((s,[,b])=>s+studentsOf(groupOf(b)).length,0),'04')}</div>
+ <section class="card">${heading('Sala dos professores','Conversa entre todos os professores cadastrados e a coordenação. Não é necessário estar em uma banca.',`<button type="button" class="btn primary" data-general-chat="1">Abrir chat ${icon('seta')}</button>`)}</section>
  ${isCoord() && !Object.keys(state.groups).length ? '<div class="notice">Nenhum grupo cadastrado. Acesse Grupos e cursos para cadastrar um grupo ou importar uma planilha.</div>' : ''}<section class="card">${heading('Agenda de bancas',isCoord()?'Agendamentos e situação das avaliações.':'Bancas atribuídas ao professor.',`<div class="row">${isCoord()?'<button class="btn soft" data-route="notas">Todas as notas</button>':''}<button class="btn soft" data-route="bancas">Ver todas →</button></div>`)}${boardList(boards.slice().sort((a,b)=>a[1].startAt-b[1].startAt).slice(0,5))}</section>`;
 }
 function boardStatus(bid,b){if(state.seals[bid])return badge('Avaliação encerrada','green');if(!isCoord())return badge('Agendada','blue');const g=groupOf(b);if(g&&situacao(b,g,boardGrades(bid),state.deliveries[bid]).pronta)return badge('Notas completas','green');return badge('Em avaliação','orange');}
@@ -3112,7 +3141,7 @@ async function refreshReportData(ids){
 }
 
 onValue(ref(db,'.info/serverTimeOffset'),snap=>{state.serverOffset=snap.val()||0;});
-onValue(ref(db,'.info/connected'),snap=>{state.connected=!!snap.val();if(state.connected&&state.user)void startChatPresence();else if(!state.connected){void stopChatPresence();if(typeof closeBoardImport==='function')closeBoardImport(true);}if(state.route==='chat'&&state.user)render();if(state.selectedBoard)refreshTimerUi(state.selectedBoard);});
+onValue(ref(db,'.info/connected'),snap=>{state.connected=!!snap.val();if(state.connected&&state.user){void startChatPresence();if(state.route==='chat'&&isActiveTeacher(state.profile)&&(state.chatError||state.chatPresenceError))retryChat({automatic:true});}else if(!state.connected){clearChatReconnect();void stopChatPresence();if(typeof closeBoardImport==='function')closeBoardImport(true);}if(state.route==='chat'&&state.user)render();if(state.selectedBoard)refreshTimerUi(state.selectedBoard);});
 setInterval(()=>{if(!document.hidden)updateTimerDisplays();},10);
 
 function assertCurrentSession(uid,revision){
@@ -3389,13 +3418,14 @@ async function openBoardShare(boardId, { studentId = '' } = {}) {
 }
 
 const handle = async cb=>{try{await cb();}catch(err){fail(err);}};
-for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('click',e=>{const el=e.target.closest('button');if(!el)return;if(el.dataset.openMenu!==undefined)return openMobileMenu();if(!el.dataset.route)return;if(el.dataset.route==='sair')logoutAccount().catch(fail);else go(el.dataset.route);});
+for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('click',e=>{const el=e.target.closest('button');if(!el)return;if(el.dataset.openMenu!==undefined)return openMobileMenu();if(!el.dataset.route)return;if(el.dataset.route==='sair')logoutAccount().catch(fail);else if(el.dataset.route==='chat')handle(openGeneralChat);else go(el.dataset.route);});
 $('#view').addEventListener('click',e=>{
  const summary=e.target.closest('summary'),notesBoard=summary?.parentElement?.dataset.notesBoard;
  // O evento toggle é assíncrono: registre a intenção antes de uma atualização ao vivo.
  if(summary?.parentElement?.dataset.coordinatorCharts&&isCoord()){state.notesChartsOpen=!summary.parentElement.open;return;}
  if(notesBoard&&isCoord()){if(summary.parentElement.open)state.notesExpanded.delete(notesBoard);else state.notesExpanded.add(notesBoard);return;}
  const el=e.target.closest('button');if(!el||el.disabled)return;
+ if(el.dataset.generalChat||el.dataset.route==='chat')return handle(openGeneralChat);
  if(el.dataset.route)return go(el.dataset.route);
  if(el.dataset.coordinatorExport)return handle(()=>exportCoordinatorReport(el.dataset.coordinatorExport));
  if(el.dataset.notesReset){if(!isCoord())return;resetNotesFilters();render();return;}

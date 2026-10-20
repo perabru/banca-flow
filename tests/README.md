@@ -81,7 +81,13 @@ BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test --test-name-pattern=chat tes
 
 A aplicação verifica a sala geral de professores ativos e as salas de bancas restritas aos participantes e à coordenação. As regressões cobrem autoria canônica, horário do servidor, texto simples, mensagens vazias ou acima de 2.000 caracteres, falta de conexão, mudança de sala/sessão, duplo envio, falhas de gravação, preservação de novos rascunhos e paginação de 130 mensagens por horário e identificador. Uma regressão com 200 mensagens no mesmo horário confirma a ordenação de chaves do Firebase; outra impede que uma leitura atrasada de histórico restaure mensagens após a revogação de acesso. A presença registra a limpeza no desconectar, considera uma pessoa apenas uma vez mesmo com várias abas, ignora conexões antigas e limpa os dados da sessão anterior. Uma confirmação atrasada de presença também é removida sem afetar uma conexão nova.
 
+Há regressões específicas para professores já cadastrados com perfil antigo, sem os campos `active` e `key`, e para o primeiro acesso de um professor criado pelo Alberson. Ambos usam mensagens e presença na sala geral sem participar de banca e sem cadastro adicional de permissões. O atalho do cabeçalho abre a sala geral mesmo quando havia uma sala privada selecionada. Após uma recusa de leitura, a aplicação repete a conexão automaticamente quando a autorização fica disponível; preserva o rascunho, não o envia sozinha e cancela tentativas da sessão encerrada. Professores desativados e sessões sem autenticação continuam bloqueados.
+
+Uma falha apenas na presença durante a leitura de mensagens antigas também é reproduzida. Ao reconectar, a paginação é liberada, o resultado da assinatura anterior é descartado e o histórico pode ser carregado novamente.
+
 O teste de navegador abre duas abas como professores diferentes. Um adaptador de Firebase em memória compartilha somente os caminhos do chat por `BroadcastChannel`, permitindo conferir envio, recebimento e resposta em tempo real sem acesso a contas ou dados de produção. Verifica Enter para enviar e Shift + Enter para quebrar linha, escape de HTML, rascunho e cursor durante mensagens recebidas, erro de envio, reconexão sem envio automático, presença online, troca de sala, acesso do coordenador e ausência de acesso à banca por um professor de fora. As notas e entregas dos alunos são comparadas antes e depois da conversa.
+
+Outro cenário cadastra uma professora pelo formulário do Alberson e abre sua primeira sessão em uma segunda aba. Ela conversa com um professor de perfil antigo, ambos sem banca. A primeira leitura do professor antigo é recusada; a autorização é liberada no adaptador e a conversa se recupera sem atualizar a página. O cenário confere a presença dos dois professores, as mensagens em ambas as direções, as larguras de 320, 390 e 1440 px e a preservação das notas, entregas, bancas e cronômetros. Capturas desse fluxo usam o nome `chat-all-teachers`.
 
 A interface é conferida em 320, 390, 768 e 1440 px. Capturas do chat ficam em `BANCAFLOW_SCREENSHOT_DIR` ou `/tmp/bancaflow-chat-qa`. Outro cenário percorre o histórico e confere que uma falha de leitura do chat não bloqueia a avaliação da banca. A abertura do HTML sem alterações também valida os novos arquivos locais e os imports do SDK sob a política CSP.
 
@@ -102,10 +108,12 @@ A suíte completa conserva os testes do chat entre duas abas, avaliações indiv
 Requer Node.js 20 ou 22 e Java 17 ou posterior. O Firebase CLI 14.22.0 permite usar Java 17. Na raiz do repositório:
 
 ```bash
-npm install --no-save --package-lock=false firebase-tools@14.22.0 firebase @firebase/rules-unit-testing
+npm install --no-save --package-lock=false firebase-tools@14.22.0 firebase@12.19.0 @firebase/rules-unit-testing@5.0.0
 npx firebase emulators:exec --project demo-banca-flow --only database --config tests/firebase.json "node --test tests/rules.test.mjs"
 ```
 
 O primeiro uso baixa o emulador. Nenhum login no Firebase é necessário. As dependências também podem ser instaladas fora do repositório com `npm install --prefix DIRETORIO ...`. Nesse caso, defina `BANCAFLOW_RULES_DEPS` com o caminho absoluto desse diretório e use o executável Firebase instalado nele. Para conectar a um emulador já iniciado, defina `FIREBASE_DATABASE_EMULATOR_HOST=127.0.0.1:9000`.
 
 A suíte carrega a política atualizada incorporada ao `index.html` e confirma sua correspondência com `database.rules.json`. Verifica a leitura restrita das notas individuais, exclusividade da coordenação nas entregas, encerramento/reabertura por membros ativos da banca e coordenador, cronômetro compartilhado com validação de revisão e rejeição atômica de gravações antigas. As permissões das demais coleções existentes são verificadas para evitar alterações não relacionadas. Os testes não publicam regras nem alteram dados no projeto real. O projeto `demo-banca-flow` e o endereço explícito do emulador mantêm essas verificações locais.
+
+As regras também são exercitadas com um perfil antigo contendo apenas nome e função de professor e com um professor criado por uma gravação autorizada do Alberson. A sala geral e a presença ficam acessíveis imediatamente, sem alterar o perfil nem atribuir uma banca. A sala privada da banca e as notas dos avaliadores continuam protegidas; professores desativados, usuários autenticados sem perfil e conexões anônimas são recusados.

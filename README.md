@@ -36,15 +36,17 @@ O encerramento pode ocorrer antes de todos os lançamentos. O relatório e o res
 
 O chat integra a mesma aplicação de avaliações, com acesso pelas contas já cadastradas.
 
-Todos os professores ativos e a coordenação podem abrir **Chat dos professores** no menu ou pelo ícone de conversa no cabeçalho. No celular, o professor também tem **Chat** na navegação inferior; para a coordenação, a opção fica em **Mais**. O botão **Chat da banca** abre diretamente a conversa daquela banca.
+Todos os professores ativos e a coordenação podem abrir **Chat dos professores** no menu, pelo ícone de conversa no cabeçalho ou pelo botão **Abrir chat** na visão geral. Esses atalhos sempre abrem a sala geral, inclusive após uma mudança de banca. No celular, o professor também tem **Chat** na navegação inferior; para a coordenação, a opção fica em **Mais**. O botão **Chat da banca** abre diretamente a conversa daquela banca.
 
-- **Sala dos professores** reúne todos os professores e a coordenação, inclusive quando não estão na mesma banca.
+- **Sala dos professores** reúne todos os professores e a coordenação. Professores já cadastrados, inclusive perfis antigos sem os campos `active` ou `key`, e novos cadastros ativos têm acesso sem convite, autorização individual para o chat ou atribuição a uma banca.
 - **Sala da banca** é restrita aos avaliadores participantes e à coordenação. O encerramento das notas não encerra a conversa.
 - As mensagens mostram nome, data e horário, aceitam até 2.000 caracteres e ficam salvas no histórico. Não há envio automático nem edição de mensagens antigas.
 - **Enter** envia e **Shift + Enter** insere uma nova linha. No celular, o botão **Enviar** também está disponível.
 - Os rascunhos de cada sala permanecem durante a navegação e as atualizações da conversa. Sair da conta limpa os rascunhos e os dados da sessão.
 - A lista **Professores online** considera as conexões ativas. Cada aba ou dispositivo tem sua própria presença; fechar uma aba não desconecta as demais. A conexão é removida ao sair ou desconectar e registros sem atualização recente deixam de aparecer.
 - O chat abre as 100 mensagens mais recentes. **Carregar mensagens anteriores** recupera o histórico sem perder a posição da leitura. Campos em edição e o cursor são preservados quando novas mensagens chegam.
+- Se uma leitura for recusada ou interrompida, o chat refaz a conexão automaticamente, com intervalo crescente de 2 a 30 segundos enquanto a sala estiver aberta. Depois da publicação das regras no Firebase, a conversa pode se recuperar sem recarregar a página. A reconexão conserva os rascunhos e não envia mensagens automaticamente. Trocar de conta ou sair da área de chat cancela as tentativas pendentes.
+- O indicador mostra **Chat conectado** apenas quando as mensagens carregaram. Falhas de autorização aparecem como **Chat indisponível**, com uma orientação para a coordenação conferir as regras do Firebase.
 
 Os caminhos novos são `chatMessages/SALA/MENSAGEM` e `chatPresence/UID/CONEXAO`. A sala geral usa `geral`; as salas de banca usam o identificador da banca. As regras validam o autor pela conta autenticada, bloqueiam professores desativados e impedem alterações e exclusões do histórico. As notas, monografias e relatórios não são incluídos nas mensagens nem alterados pelo chat.
 
