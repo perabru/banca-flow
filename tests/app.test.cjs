@@ -144,7 +144,7 @@ function harness(uid = 't1') {
       return { committed: true, snapshot: snapshot(read(path)) };
     }
   });
-  for(const asset of ['roster-import.js','analytics.js','analytics-pdf.js','coordinator-report.js','coordinator-report-pdf.js','board-chat.js','board-import.js','chat-notifications.js','weighted-model.js','weighted-report-ui.js','weighted-report-pdf.js','weighted-workbench.js'].filter(asset=>require('node:fs').existsSync(join(__dirname,'..','assets',asset))))vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
+  for(const asset of ['roster-import.js','analytics.js','analytics-pdf.js','coordinator-report.js','coordinator-report-pdf.js','board-chat.js','board-import.js','chat-notifications.js','weighted-model.js','weighted-report-ui.js','weighted-report-pdf.js','weighted-workbench.js','board-assignment.js'].filter(asset=>require('node:fs').existsSync(join(__dirname,'..','assets',asset))))vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
   vm.runInContext(source + `
     render = () => {};
     refreshTimerUi = () => {};
@@ -160,9 +160,10 @@ function harness(uid = 't1') {
       printReports, exportCsv, csvCell, boardActions, timerHtml,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,
       analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,
       localDayKey,boardMatchesDay,filteredBoards,filteredReportBoards,reportGroups,setBancaDateFilter,resetAppData,boardsView,reportsView,exportSchedulePdf,
-      canManageGroups:typeof canManageGroups==='function'?canManageGroups:null,teachersView,createBoards,makeBoard,teacherIdentity,teacherEditIdentity,teacherProfileFingerprint,addTeacher,changeTeacherAccess,saveTeacherEdit,
+      openBoardAssignment:typeof openBoardAssignment==='function'?openBoardAssignment:null,saveBoardAssignment:typeof saveBoardAssignment==='function'?saveBoardAssignment:null,closeBoardAssignment:typeof closeBoardAssignment==='function'?closeBoardAssignment:null,canManageTeachers:typeof canManageTeachers==='function'?canManageTeachers:null,promoteTeacher:typeof promoteTeacher==='function'?promoteTeacher:null,prepareAdministratorRegistration:typeof prepareAdministratorRegistration==='function'?prepareAdministratorRegistration:null,canManageGroups:typeof canManageGroups==='function'?canManageGroups:null,teachersView,createBoards,makeBoard,teacherIdentity,teacherEditIdentity,teacherProfileFingerprint,addTeacher,changeTeacherAccess,saveTeacherEdit,
       validatedGroupDraft,groupRelatedBoards,groupAdminFingerprint,resetGroupAdmin,editGroup,saveGroup,changeGroupAccess,addGroupStudentRow,removeGroupStudentRow,
       confirmExcelImport,confirmBoardImport,openBoardImport,closeBoardImport,renderBoardImportCard,downloadBoardImportModel,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,gradeView,myEvaluationsView,evaluatorBoards,navItems,setNotesFilter,resetNotesFilters,
+      startBoardAssignment(bid){const paths=['users','groups','boards','grades','seals','locks'],catalog=Object.fromEntries(paths.map(key=>[key,state[key]||{}]));boardAssignmentSession={bid,uid:state.user.uid,revision:accessRevision,busy:false,fingerprint:assignmentFingerprint(catalog,bid),dialog:{open:false,remove(){},querySelectorAll(){return[];},querySelector(){return{textContent:''};}}};return boardAssignmentSession;},
       startTeacherEdit(uid){teacherEditSession={uid,ownerUid:state.user.uid,revision:accessRevision,profileFingerprint:teacherProfileFingerprint(state.users[uid]),dialog:{open:false,remove(){},querySelectorAll(){return[];}},saving:false};},
       prepareBankImport(rows){const catalog={users:state.users,groups:state.groups,boards:state.boards,groupBoards:state.groupBoards,locks:state.locks,roomLocks:state.roomLocks},preview=BancaBoardImport.parseRows(rows,{...catalog,now:Date.now()});boardImportState={uid:state.user.uid,revision:accessRevision,busy:false,rows,catalog,preview,fingerprint:boardImportFingerprint(preview)};return boardImportState;},
       prepareImport(rows){const catalog={users:state.users,existingGroups:state.groups},preview=BancaFlowImport.parseRows(rows,catalog);excelImportState={uid:state.user.uid,revision:accessRevision,busy:false,rows,defaultCourse:'',catalog,preview,fingerprint:excelPreviewFingerprint(preview)};return excelImportState;},
@@ -518,15 +519,15 @@ function groupForm(draft){
 const newGroupDraft=()=>({name:'Grupo do novo curso',className:'1A',courseName:'Redes de Computadores',title:'Rede segura',advisorUid:'t1',students:[{sid:'s1',name:'Carla'},{sid:'s2',name:'Daniel'}]});
 const importRows=()=>[['Curso','Turma','Grupo','Título','Orientador','Aluno'],['Engenharia','1E','Grupo novo','Sensores','one@example.test','Carla'],['Engenharia','1E','Grupo novo','Sensores','one@example.test','Daniel']];
 
-test('only Alberson manages access profiles while a teacher cannot manage groups or coordinators',async()=>{
-  for(const uid of ['t1','coord']){
-    const h=harness(uid);if(uid==='coord')h.app.state.profile.key='other-coordinator';
-    await assert.rejects(h.app.addTeacher(adminForm({name:'Nova',email:'new@example.test',key:'nova',method:'new',password:'strongpass',role:'coordinator'})),/Somente o Alberson/);
-    await assert.rejects(h.app.changeTeacherAccess('t2',false),/Somente o Alberson/);
-    if(uid==='t1'){
-      await assert.rejects(h.app.saveGroup(groupForm(newGroupDraft())),/coordena|restrito|Somente/i);
-      await assert.rejects(h.app.changeGroupAccess('g1',false),/coordena|restrito|Somente/i);
-    }
+test('only active coordinators manage access profiles; teachers and inactive sessions cannot manage groups or coordinators',async()=>{
+  for(const scenario of ['teacher','inactive','no-session']){
+    const h=harness(scenario==='teacher'?'t1':'coord');
+    if(scenario==='inactive')h.app.state.profile.active=false;
+    if(scenario==='no-session')h.app.state.user=null;
+    await assert.rejects(h.app.addTeacher(adminForm({name:'Nova',email:'new@example.test',key:'nova',method:'new',password:'strongpass',role:'coordinator'})),/coordena|permissão|acesso|Somente/i);
+    await assert.rejects(h.app.changeTeacherAccess('t2',false),/coordena|permissão|acesso|Somente/i);
+    await assert.rejects(h.app.saveGroup(groupForm(newGroupDraft())),/coordena|restrito|Somente/i);
+    await assert.rejects(h.app.changeGroupAccess('g1',false),/coordena|restrito|Somente/i);
     assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
   }
 });
@@ -561,11 +562,11 @@ test('teacher edit changes name/contact only and retains login identity and hist
   assert.throws(()=>app.teacherEditIdentity(data,h.data.users.t1),/não podem ser alterados/);
 });
 
-test('teacher edit detects stale profiles and removal checks fresh boards before preserving history',async()=>{
+test('teacher edit detects stale profiles and disabling preserves open board history',async()=>{
   const h=harness('coord'),{app}=h;app.startTeacherEdit('t1');h.data.users.t1.name='Mudou em outra janela';
   await assert.rejects(app.saveTeacherEdit(adminForm({name:'Sobrescrever',contactEmail:''},{teacherUid:'t1'})),/outra janela/);
   assert.equal(h.data.users.t1.name,'Mudou em outra janela');
-  app.state.boards={};await assert.rejects(app.changeTeacherAccess('t1',false),/bancas em aberto/);
+  app.state.boards={};const preserved=academicSnapshot(h);await app.changeTeacherAccess('t1',false);assert.equal(h.data.users.t1.active,false);assert.deepEqual(academicSnapshot(h),preserved);await app.changeTeacherAccess('t1',true);
   h.write('seals/b1',{by:'coord',at:h.now()});const grades=clone(h.data.grades);
   await app.changeTeacherAccess('t1',false);assert.equal(h.data.users.t1.active,false);assert.deepEqual(h.data.grades,grades);
   await app.changeTeacherAccess('t1',true);assert.equal(h.data.users.t1.active,true);assert.equal(h.data.users.t1.disabledAt,undefined);
@@ -1414,14 +1415,14 @@ test('Alberson can edit and reactivate another coordinator while his own protect
   await assert.rejects(h.app.changeTeacherAccess('protected',false),/Alberson|protegido|própri|coordenação/i);
   assert.equal(h.data.users.coord.active,true);assert.equal(h.data.users.protected.active,true);
   const saved=clone(h.data.grades);h.write('boards/b2',{groupId:'g1',members:{coord2:true,t1:true}});
-  await assert.rejects(h.app.changeTeacherAccess('coord2',false),/bancas em aberto/);assert.deepEqual(h.data.grades,saved);
+  const bank=clone(h.data.boards.b2);await h.app.changeTeacherAccess('coord2',false);assert.equal(h.data.users.coord2.active,false);assert.deepEqual(h.data.grades,saved);assert.deepEqual(h.data.boards.b2,bank);
 });
 
-test('additional active coordinators manage groups and import a group sheet without acquiring access administration',async()=>{
+test('additional active coordinators manage groups, access profiles and group imports',async()=>{
   const h=harness('coord');installAdditionalCoordinator(h);const before=clone(h.data);h.app.resetGroupAdmin();
   assert.equal(h.app.canManageGroups(),true);await h.app.saveGroup(groupForm(newGroupDraft()));
   assert.equal(h.data.groups['new-group'].createdBy,'coord2');assert.equal(h.data.groups['new-group'].courseName,'Redes de Computadores');assert.deepEqual(h.data.grades,before.grades);
-  await assert.rejects(h.app.addTeacher(adminForm({name:'Indevida',email:'bad@example.test',key:'bad',role:'coordinator',method:'new',password:'strongpass'})),/Somente o Alberson/);
+  await h.app.addTeacher(adminForm({name:'Outra Coordenação',email:'extra@example.test',key:'extra-coord',role:'coordinator',method:'new',password:'strongpass'}));assert.equal(h.data.users['new-teacher'].role,'coordinator');assert.equal(h.data.users['new-teacher'].createdBy,'coord2');
   const importing=harness('coord');installAdditionalCoordinator(importing);const session=importing.app.prepareImport(importRows());await importing.app.confirmExcelImport(session);
   assert.equal(importing.data.groups['new-group'].createdBy,'coord2');assert.equal(importing.data.groups['new-group'].courseName,'Engenharia');assert.deepEqual(importing.data.grades,fixture().grades);
 });
@@ -1518,4 +1519,121 @@ test('ID-only bank sheet renews its preview when the referenced group display or
     assert.deepEqual(session.catalog.groups.g2,h.data.groups.g2,'renewed preview contains the current group that will receive the bank');
     await h.app.confirmBoardImport(session);assert.equal(h.calls.updates.length,1);assert.equal(h.data.groupBoards.g2,'new-group');
   }
+});
+
+const academicSnapshot = h => clone(Object.fromEntries(['groups','boards','grades','deliveries','seals','timers'].map(key=>[key,h.data[key]])));
+function installAdministrator(h){
+  installAdditionalCoordinator(h,'admin');
+  Object.assign(h.data.users.admin,{name:'Administração Univap',email:'admin@univap.br',key:'admin'});
+  h.app.state.users.admin=clone(h.data.users.admin);h.app.state.profile=clone(h.data.users.admin);
+}
+
+test('every active coordinator including the administrator creates and manages evaluator access without changing academic history',async()=>{
+  for(const actor of ['coord2','admin']){
+    const h=harness('coord');if(actor==='admin')installAdministrator(h);else installAdditionalCoordinator(h);
+    const before=academicSnapshot(h);assert.equal(h.app.canManageTeachers(),true);assert.match(h.app.teachersView(),/id="teacher-form"/);
+    await h.app.addTeacher(adminForm({name:'Docente da equipe',email:'team@example.test',key:'docente-equipe',role:'teacher',method:'new',password:'initial-test-pass'}));
+    assert.equal(h.data.users['new-teacher'].createdBy,actor);assert.equal(h.app.state.user.uid,actor);assert.equal(h.data.users['new-teacher'].role,'teacher');
+    h.app.startTeacherEdit('new-teacher');await h.app.saveTeacherEdit(adminForm({name:'Docente Atualizado',contactEmail:'contact@example.test'},{teacherUid:'new-teacher'}));
+    assert.equal(h.data.users['new-teacher'].name,'Docente Atualizado');assert.equal(h.data.users['new-teacher'].email,'team@example.test');
+    await h.app.changeTeacherAccess('new-teacher',false);assert.equal(h.data.users['new-teacher'].active,false);
+    await h.app.changeTeacherAccess('new-teacher',true);assert.equal(h.data.users['new-teacher'].active,true);
+    await assert.rejects(h.app.changeTeacherAccess(actor,false),/própri|proteg|conta|Alberson/i);
+    await assert.rejects(h.app.changeTeacherAccess('coord',false),/própri|proteg|conta|Alberson/i);
+    assert.deepEqual(academicSnapshot(h),before);assert.equal('password' in h.data.users['new-teacher'],false);
+  }
+});
+
+test('Wagner is promoted on his existing UID and retains every board, saved criterion and delivery',async()=>{
+  const h=harness('coord');h.data.users.t1={...h.data.users.t1,name:'Wagner',key:'wagner'};h.app.state.users.t1=clone(h.data.users.t1);
+  const original=clone(h.data.users.t1),before=academicSnapshot(h);
+  assert.match(h.app.teachersView(),/data-promote-teacher="t1"/);
+  await h.app.promoteTeacher('t1');
+  assert.deepEqual(h.data.users.t1,{...original,role:'coordinator'});assert.equal(h.data.users.t1.email,original.email);
+  assert.equal(h.calls.authCreates.length,0);assert.equal(h.calls.authDeletes.length,0);assert.ok(h.calls.confirmations.some(message=>/Wagner/.test(message)&&message.includes(original.email)));
+  assert.deepEqual(academicSnapshot(h),before);assert.equal(h.data.boards.b1.members.t1,true);assert.equal(h.data.grades.b1.t1.s1.presentation,10);
+  h.app.state.user={uid:'t1'};h.app.state.profile=clone(h.data.users.t1);assert.equal(h.app.canManageTeachers(),true);assert.match(h.app.teachersView(),/id="teacher-form"/);
+  assert.equal(h.app.coordinatorReportBoards()[0].students.length,2);assert.equal(h.app.weightedWorkbench.viewData().summary.studentCount,2);
+});
+
+test('promotion requires an active target, confirmation, a fresh coordinator actor and an unchanged profile',async()=>{
+  for(const scenario of ['teacher','inactive-actor','revoked','inactive-target','cancel','concurrent','session']){
+    const h=harness(scenario==='teacher'?'t2':'coord'),before=academicSnapshot(h);
+    if(scenario==='inactive-actor')h.app.state.profile.active=false;
+    if(scenario==='revoked')h.data.users.coord.role='teacher';
+    if(scenario==='inactive-target'){h.data.users.t1.active=false;h.app.state.users.t1.active=false;}
+    if(scenario==='cancel')h.options.confirm=false;
+    if(scenario==='concurrent')h.options.transactionRetries=[clone(h.data.users.t1),{...clone(h.data.users.t1),name:'Mudou em outra janela'}];
+    if(scenario==='session')h.options.onRead=()=>{h.app.state.user={uid:'t2'};h.app.state.profile=clone(h.data.users.t2);};
+    if(scenario==='cancel')await h.app.promoteTeacher('t1');
+    else await assert.rejects(h.app.promoteTeacher('t1'),/coordena|permissão|acesso|ativo|desabilit|outra janela|sessão|alterad/i,scenario);
+    assert.equal(h.data.users.t1.role,'teacher',scenario);assert.equal(h.calls.authCreates.length,0);assert.equal(h.calls.authDeletes.length,0);assert.deepEqual(academicSnapshot(h),before);
+  }
+});
+
+test('fresh revocation blocks professor creation, editing and disabling even when the local coordinator profile is stale',async()=>{
+  for(const action of ['create','edit','disable']){
+    const h=harness('coord');installAdditionalCoordinator(h);h.data.users.coord2.active=false;
+    if(action==='edit')h.app.startTeacherEdit('t2');
+    const before=clone(h.data),operation=action==='create'?()=>h.app.addTeacher(adminForm({name:'Novo',email:'new@example.test',key:'new',role:'teacher',method:'new',password:'initial-test-pass'}))
+      :action==='edit'?()=>h.app.saveTeacherEdit(adminForm({name:'Alterado',contactEmail:''},{teacherUid:'t2'})):()=>h.app.changeTeacherAccess('t2',true);
+    await assert.rejects(operation(),/coordena|permissão|acesso|mudou|sessão/i,action);
+    assert.deepEqual(h.data,before);assert.equal(h.calls.authCreates.length,0);assert.equal(h.calls.transactions.length,0);
+  }
+});
+
+test('administrator registration uses the existing safe coordinator role and never exposes a fixed login password in the public HTML',async()=>{
+  const h=harness('coord'),before=academicSnapshot(h);
+  await h.app.addTeacher(adminForm({name:'Administração Univap',email:'admin@univap.br',key:'admin',role:'coordinator',method:'new',password:'initial-test-pass'}));
+  const saved=h.data.users['new-teacher'];assert.equal(saved.email,'admin@univap.br');assert.equal(saved.key,'admin');assert.equal(saved.role,'coordinator');
+  assert.equal('password' in saved,false);assert.doesNotMatch(html,/id="teacher-password"[^>]*\bvalue=/i);
+  assert.deepEqual(academicSnapshot(h),before);assert.equal(h.app.state.user.uid,'coord');
+});
+
+test('additional coordinators and the administrator can issue agenda, official, analytic, global and custom PDFs with the same grades',async()=>{
+  for(const actor of ['coord2','admin']){
+    const h=harness('coord');if(actor==='admin')installAdministrator(h);else installAdditionalCoordinator(h);
+    h.write('seals/b1',{by:actor,at:h.now()});h.app.state.seals.b1=clone(h.data.seals.b1);const before=academicSnapshot(h);
+    h.app.exportSchedulePdf(false);await h.app.printReports(['b1']);await h.app.printAnalytics();
+    for(const kind of ['pdf','charts','csv'])await h.app.exportCoordinatorReport(kind);
+    for(const kind of ['pdf','charts','csv'])await h.app.weightedWorkbench.exportReport(kind);
+    assert.equal(h.downloads.length,9);for(const file of h.downloads.filter(file=>file.filename.endsWith('.pdf'))){const contents=await file.blob.text();assert.match(contents,/^%PDF-1\.4/);assert.match(contents,/%%EOF\s*$/);}
+    assert.deepEqual(academicSnapshot(h),before);assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
+  }
+});
+
+function assignmentForm(memberUids){return{dataset:{board:'b1'},querySelectorAll:()=>memberUids.map(value=>({value}))};}
+
+test('coordinator assignment updates only members and reservations and releases an ungraded evaluator without stale local locks',async()=>{
+  const h=harness('coord');installAdditionalCoordinator(h);const before=academicSnapshot(h),initial=clone(h.data.boards.b1);
+  h.app.startBoardAssignment('b1');await h.app.saveBoardAssignment(assignmentForm(['t1','t2','coord2']));
+  assert.equal(h.data.boards.b1.members.coord2,true);assert.equal(h.data.boards.b1.assignmentRevision,1);assert.equal(h.data.boards.b1.memberNames.coord2,'Coordenação Nova');
+  for(const slot of ['900000','1800000']){assert.equal(h.data.locks[slot].coord2,'b1');assert.equal(h.app.state.locks[slot].coord2,'b1');}
+  assert.deepEqual(h.data.grades,before.grades);assert.deepEqual(h.data.deliveries,before.deliveries);assert.deepEqual(h.data.groups,before.groups);
+  h.app.startBoardAssignment('b1');await h.app.saveBoardAssignment(assignmentForm(['t1','t2']));
+  assert.equal(h.data.boards.b1.assignmentRevision,2);for(const slot of ['900000','1800000']){assert.equal(h.data.locks[slot]?.coord2,undefined);assert.equal(h.app.state.locks[slot]?.coord2,undefined);}
+  const final=clone(h.data.boards.b1);delete final.assignmentRevision;assert.deepEqual(final,initial);assert.deepEqual(h.data.grades,before.grades);
+  assert.equal(h.calls.updates.length,2);for(const changes of h.calls.updates)for(const path of Object.keys(changes))assert.match(path,/^(boards\/b1\/(members|memberNames|assignmentRevision)|locks\/)/);
+});
+
+test('assignment rejects a freshly sealed, archived, changed or unauthorized bank and pending edits before writing',async()=>{
+  for(const scenario of ['sealed','archived','changed','revoked','unsaved','session']){
+    const h=harness('coord');installAdditionalCoordinator(h);h.app.startBoardAssignment('b1');
+    if(scenario==='sealed')h.data.seals.b1={by:'coord',at:h.now()};
+    if(scenario==='archived')h.data.groups.g1.active=false;
+    if(scenario==='changed')h.data.boards.b1.room='Alterada';
+    if(scenario==='revoked')h.data.users.coord2.role='teacher';
+    if(scenario==='unsaved')h.app.state.drafts.set('delivery/b1/s1',{delivery:'7'});
+    if(scenario==='session')h.options.onRead=()=>{h.app.state.user={uid:'t2'};h.app.state.profile=clone(h.data.users.t2);};
+    const before=academicSnapshot(h);
+    await assert.rejects(h.app.saveBoardAssignment(assignmentForm(['t1','t2','coord2'])),/Reabra|encerrad|ativo|alterad|outra janela|permissão|coordena|Salve|sessão/i,scenario);
+    assert.deepEqual(academicSnapshot(h),before);assert.equal(h.calls.updates.length,0);
+  }
+});
+
+test('assignment rereads grades and blocks removal of a professor who has saved a new criterion since the dialog opened',async()=>{
+  const h=harness('coord');installAdditionalCoordinator(h);delete h.data.grades.b1.t2;delete h.app.state.grades.b1.t2;
+  h.app.startBoardAssignment('b1');h.data.grades.b1.t2={s1:{presentation:0}};const before=academicSnapshot(h);
+  await assert.rejects(h.app.saveBoardAssignment(assignmentForm(['t1','coord2'])),/notas|avaliações.*preserv/i);
+  assert.deepEqual(academicSnapshot(h),before);assert.equal(h.calls.updates.length,0);assert.equal(h.data.boards.b1.members.t2,true);
 });

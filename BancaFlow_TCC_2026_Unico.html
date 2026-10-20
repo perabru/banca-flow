@@ -11,7 +11,7 @@
 <link rel="stylesheet" href="assets/analytics.css">
 <link rel="stylesheet" href="assets/weighted-report.css?v=8a4f2f973cae">
 <link rel="stylesheet" href="assets/board-chat.css?v=abb21e37de44">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-4RLFPYhTHOb4dtiiMUZceQgFeN6Wy0/QyD/0hRdc55M='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-MVDiK7BB4cS9mPRJmo/5vHZEzQX9lfiVDiLyVkuSaok='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>BancaFlow · Gestão de bancas | Univap</title><style>
 /* Mobile first. Cores institucionais Univap; recursos locais em assets/. */
@@ -641,8 +641,8 @@ button.avatar{width:44px;height:44px;padding:0}
       ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$uid": {
         ".read": "auth !== null && auth.uid === $uid",
-        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('key').val() === 'alberson' && auth.uid !== $uid && (!data.exists() || ((data.child('role').val() === 'teacher' || data.child('role').val() === 'coordinator') && data.child('key').val() !== 'alberson')) && newData.exists() && (newData.child('role').val() === 'teacher' || newData.child('role').val() === 'coordinator') && newData.child('key').val() !== 'alberson' && (!data.exists() || (newData.child('email').val() === data.child('email').val() && newData.child('key').val() === data.child('key').val() && newData.child('role').val() === data.child('role').val()))",
-        ".validate": "newData.hasChildren(['name','email','role','key','active']) && (newData.child('role').val() === 'teacher' || newData.child('role').val() === 'coordinator') && newData.child('key').val() !== 'alberson'",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && auth.uid !== $uid && (!data.exists() || ((data.child('role').val() === 'teacher' || data.child('role').val() === 'coordinator') && data.child('key').val() !== 'alberson')) && newData.exists() && (newData.child('role').val() === 'teacher' || newData.child('role').val() === 'coordinator') && newData.child('key').val() !== 'alberson' && (!data.exists() || (newData.child('email').val() === data.child('email').val() && newData.child('key').val() === data.child('key').val() && (newData.child('role').val() === data.child('role').val() || (data.child('role').val() === 'teacher' && newData.child('role').val() === 'coordinator'))))",
+        ".validate": "newData.hasChildren(['name','role']) && (data.exists() || newData.hasChildren(['email','key','active'])) && (newData.child('role').val() === 'teacher' || newData.child('role').val() === 'coordinator') && newData.child('key').val() !== 'alberson'",
         "name": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
         },
@@ -741,7 +741,7 @@ button.avatar{width:44px;height:44px;padding:0}
       ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).exists()",
       "$bid": {
         ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && !data.exists() && newData.exists()",
-        ".validate": "newData.hasChildren(['groupId','advisorUid','advisorName','members','memberNames','startAt','durationMin','room','createdBy','createdAt']) && root.child('groups').child(newData.child('groupId').val()).exists() && newData.child('advisorUid').val() === root.child('groups').child(newData.child('groupId').val()).child('advisorUid').val() && newData.child('members').hasChildren() && newData.child('createdBy').val() === auth.uid && newData.child('durationMin').val() % 15 === 0 && newData.child('startAt').val() % 900000 === 0 && newData.child('startAt').val() > now - 60000 && root.child('groups').child(newData.child('groupId').val()).child('active').val() !== false && newData.parent().parent().child('groups').child(newData.child('groupId').val()).child('active').val() !== false && newData.parent().parent().child('groupBoards').child(newData.child('groupId').val()).val() === $bid",
+        ".validate": "(!data.exists() && (newData.hasChildren(['groupId','advisorUid','advisorName','members','memberNames','startAt','durationMin','room','createdBy','createdAt']) && root.child('groups').child(newData.child('groupId').val()).exists() && newData.child('advisorUid').val() === root.child('groups').child(newData.child('groupId').val()).child('advisorUid').val() && newData.child('members').hasChildren() && newData.child('createdBy').val() === auth.uid && newData.child('durationMin').val() % 15 === 0 && newData.child('startAt').val() % 900000 === 0 && newData.child('startAt').val() > now - 60000 && root.child('groups').child(newData.child('groupId').val()).child('active').val() !== false && newData.parent().parent().child('groups').child(newData.child('groupId').val()).child('active').val() !== false && newData.parent().parent().child('groupBoards').child(newData.child('groupId').val()).val() === $bid)) || (data.exists() && newData.hasChildren(['groupId','advisorUid','advisorName','members','memberNames','startAt','durationMin','room','createdBy','createdAt','assignmentRevision']) && newData.child('members').hasChildren() && newData.child('memberNames').hasChildren() && newData.child('groupId').val() === data.child('groupId').val() && newData.child('advisorUid').val() === data.child('advisorUid').val() && newData.child('advisorName').val() === data.child('advisorName').val() && newData.child('startAt').val() === data.child('startAt').val() && newData.child('durationMin').val() === data.child('durationMin').val() && newData.child('room').val() === data.child('room').val() && newData.child('createdBy').val() === data.child('createdBy').val() && newData.child('createdAt').val() === data.child('createdAt').val() && ((!data.child('assignmentRevision').exists() && newData.child('assignmentRevision').val() === 1) || (data.child('assignmentRevision').isNumber() && newData.child('assignmentRevision').val() === data.child('assignmentRevision').val() + 1)))",
         "groupId": {
           ".validate": "newData.isString()"
         },
@@ -753,12 +753,14 @@ button.avatar{width:44px;height:44px;padding:0}
         },
         "members": {
           "$uid": {
-            ".validate": "newData.val() === true && root.child('users').child($uid).exists() && root.child('users').child($uid).child('active').val() !== false && (root.child('users').child($uid).child('role').val() === 'teacher' || root.child('users').child($uid).child('role').val() === 'coordinator')"
+            ".validate": "newData.val() === true && root.child('users').child($uid).exists() && root.child('users').child($uid).child('active').val() !== false && (root.child('users').child($uid).child('role').val() === 'teacher' || root.child('users').child($uid).child('role').val() === 'coordinator') && newData.parent().parent().child('memberNames').child($uid).isString()",
+            ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('boards').child($bid).exists() && !root.child('seals').child($bid).exists() && !newData.parent().parent().parent().parent().child('seals').child($bid).exists() && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('active').val() !== false && newData.parent().parent().parent().parent().child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('active').val() !== false && ((!root.child('boards').child($bid).child('assignmentRevision').exists() && newData.parent().parent().child('assignmentRevision').val() === 1) || (root.child('boards').child($bid).child('assignmentRevision').isNumber() && newData.parent().parent().child('assignmentRevision').val() === root.child('boards').child($bid).child('assignmentRevision').val() + 1)) && ((newData.exists() && newData.val() === true) || (!newData.exists() && !root.child('grades').child($bid).child($uid).exists() && !newData.parent().parent().child('memberNames').child($uid).exists()))"
           }
         },
         "memberNames": {
           "$uid": {
-            ".validate": "newData.isString() && root.child('users').child($uid).exists() && root.child('users').child($uid).child('active').val() !== false && (root.child('users').child($uid).child('role').val() === 'teacher' || root.child('users').child($uid).child('role').val() === 'coordinator')"
+            ".validate": "newData.isString() && root.child('users').child($uid).exists() && root.child('users').child($uid).child('active').val() !== false && (root.child('users').child($uid).child('role').val() === 'teacher' || root.child('users').child($uid).child('role').val() === 'coordinator') && newData.parent().parent().child('members').child($uid).val() === true && (data.exists() || newData.val() === root.child('users').child($uid).child('name').val())",
+            ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('boards').child($bid).exists() && !root.child('seals').child($bid).exists() && !newData.parent().parent().parent().parent().child('seals').child($bid).exists() && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('active').val() !== false && newData.parent().parent().parent().parent().child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('active').val() !== false && ((!root.child('boards').child($bid).child('assignmentRevision').exists() && newData.parent().parent().child('assignmentRevision').val() === 1) || (root.child('boards').child($bid).child('assignmentRevision').isNumber() && newData.parent().parent().child('assignmentRevision').val() === root.child('boards').child($bid).child('assignmentRevision').val() + 1)) && ((newData.exists() && (!data.exists() || newData.val() === data.val())) || (!newData.exists() && !root.child('grades').child($bid).child($uid).exists() && !newData.parent().parent().child('members').child($uid).exists()))"
           }
         },
         "startAt": {
@@ -778,6 +780,10 @@ button.avatar{width:44px;height:44px;padding:0}
         },
         "$other": {
           ".validate": false
+        },
+        "assignmentRevision": {
+          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('boards').child($bid).exists() && !root.child('seals').child($bid).exists() && !newData.parent().parent().parent().child('seals').child($bid).exists() && root.child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('active').val() !== false && newData.parent().parent().parent().child('groups').child(root.child('boards').child($bid).child('groupId').val()).child('active').val() !== false && ((!root.child('boards').child($bid).child('assignmentRevision').exists() && newData.parent().child('assignmentRevision').val() === 1) || (root.child('boards').child($bid).child('assignmentRevision').isNumber() && newData.parent().child('assignmentRevision').val() === root.child('boards').child($bid).child('assignmentRevision').val() + 1))",
+          ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() % 1 === 0 && newData.val() <= 9007199254740991 && (data.parent().exists() ? newData.val() === (data.exists() ? data.val() + 1 : 1) : newData.val() === 0)"
         }
       }
     },
@@ -801,8 +807,8 @@ button.avatar{width:44px;height:44px;padding:0}
       ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$slice": {
         "$uid": {
-          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child($uid).exists() && !data.exists() && newData.exists()",
-          ".validate": "newData.isString()"
+          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child($uid).exists() && ((!data.exists() && newData.isString() && newData.parent().parent().parent().child('boards').child(newData.val()).child('members').child($uid).val() === true && (!root.child('boards').child(newData.val()).exists() || (!root.child('seals').child(newData.val()).exists() && !newData.parent().parent().parent().child('seals').child(newData.val()).exists() && ((!root.child('boards').child(newData.val()).child('assignmentRevision').exists() && newData.parent().parent().parent().child('boards').child(newData.val()).child('assignmentRevision').val() === 1) || (root.child('boards').child(newData.val()).child('assignmentRevision').isNumber() && newData.parent().parent().parent().child('boards').child(newData.val()).child('assignmentRevision').val() === root.child('boards').child(newData.val()).child('assignmentRevision').val() + 1))))) || (data.isString() && !newData.exists() && root.child('boards').child(data.val()).exists() && !root.child('seals').child(data.val()).exists() && !newData.parent().parent().parent().child('seals').child(data.val()).exists() && newData.parent().parent().parent().child('boards').child(data.val()).exists() && !newData.parent().parent().parent().child('boards').child(data.val()).child('members').child($uid).exists() && !root.child('grades').child(data.val()).child($uid).exists() && ((!root.child('boards').child(data.val()).child('assignmentRevision').exists() && newData.parent().parent().parent().child('boards').child(data.val()).child('assignmentRevision').val() === 1) || (root.child('boards').child(data.val()).child('assignmentRevision').isNumber() && newData.parent().parent().parent().child('boards').child(data.val()).child('assignmentRevision').val() === root.child('boards').child(data.val()).child('assignmentRevision').val() + 1))))",
+          ".validate": "newData.isString() && newData.parent().parent().parent().child('boards').child(newData.val()).child('members').child($uid).val() === true"
         }
       }
     },
@@ -948,6 +954,7 @@ button.avatar{width:44px;height:44px;padding:0}
 <script src="assets/board-chat.js?v=f599a8da8799" defer></script>
 <script src="assets/chat-notifications.js?v=1407d8562564" defer></script>
 <script src="assets/board-import.js" defer></script>
+<script src="assets/board-assignment.js?v=beb6bc65da14" defer></script>
 <script type="module">
 // Configuração pública do app Firebase (não é uma chave administrativa).
 // A segurança das notas depende das regras do Realtime Database.
@@ -1053,7 +1060,7 @@ const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBo
 const isActiveTeacher = profile => !!profile && ['coordinator','teacher'].includes(profile.role) && profile.active !== false;
 const activeTeachers = () => Object.entries(state.users).filter(([,profile])=>isActiveTeacher(profile));
 const isCoord = () => state.profile?.role === 'coordinator' && state.profile.active !== false;
-const canManageTeachers = () => !!state.user && isCoord() && state.profile.key === 'alberson';
+const canManageTeachers = () => !!state.user && isCoord();
 const canManageGroups = () => !!state.user && isCoord();
 const weightedWorkbench = typeof BancaWeightedWorkbench==='undefined' ? null : BancaWeightedWorkbench.createController({
  getSession:()=>({uid:state.user?.uid,role:state.profile?.role,active:state.profile?.active,revision:accessRevision}),
@@ -1449,6 +1456,7 @@ function showAccessProblem(message,user=auth.currentUser){
 function resetAppData(){
  stopChat();
  weightedWorkbench?.reset();
+ closeBoardAssignment(true);
  closeMobileMenu();$('#mobile-menu').innerHTML='';
  if(typeof resetGroupAdmin==='function')resetGroupAdmin();
  if(typeof closeExcelImport==='function')closeExcelImport(true);
@@ -1892,29 +1900,40 @@ function teachersView(){
  const active=activeTeachers().sort(([,a],[,b])=>a.name.localeCompare(b.name,'pt-BR'));
  const removed=Object.entries(state.users).filter(([,u])=>u.active===false).sort(([,a],[,b])=>a.name.localeCompare(b.name,'pt-BR'));
  const manager=canManageTeachers();
- const teacherRow=([uid,u])=>`<article class="group-card"><div><h4>${esc(u.name)}</h4><p>${esc(u.email||'')} · ${u.role==='coordinator'?'Coordenador e avaliador':'Professor avaliador'}</p>${u.contactEmail?`<p class="tiny">Contato: ${esc(u.contactEmail)}</p>`:''}<p class="tiny">${openTeacherBoards(uid).length} banca(s) em aberto · Identificador: ${esc(u.key||'—')}</p></div><div class="row teacher-card-actions">${badge(u.active===false?'Acesso removido':u.role==='coordinator'?'Coordenação':'Avaliador',u.active===false?'orange':u.role==='coordinator'?'blue':'gray')}${manager&&canAdministerProfile(uid,u)?`<button class="btn soft" type="button" data-edit-teacher="${esc(uid)}" ${state.teacherBusy?'disabled':''}>Editar ${u.role==='coordinator'?'coordenador':'professor'}</button><button class="btn ${u.active===false?'soft':'danger'}" type="button" data-${u.active===false?'restore':'remove'}-teacher="${esc(uid)}" ${state.teacherBusy?'disabled':''}>${u.active===false?'Reativar':'Remover'} ${u.role==='coordinator'?'coordenador':'professor'}</button>`:''}</div></article>`;
+ const roleLabel=profile=>profile.role==='coordinator'?(profile.key==='admin'?'Administrador e coordenador':'Coordenador e avaliador'):'Professor avaliador';
+ const teacherRow=([uid,u])=>`<article class="group-card"><div><h4>${esc(u.name)}</h4><p>${esc(u.email||'')} · ${roleLabel(u)}</p>${u.contactEmail?`<p class="tiny">Contato: ${esc(u.contactEmail)}</p>`:''}<p class="tiny">${openTeacherBoards(uid).length} banca(s) em aberto · Identificador: ${esc(u.key||'—')}</p></div><div class="row teacher-card-actions">${badge(u.active===false?'Acesso desabilitado':u.role==='coordinator'?'Coordenação':'Avaliador',u.active===false?'orange':u.role==='coordinator'?'blue':'gray')}${manager&&canAdministerProfile(uid,u)?`${u.role==='teacher'&&u.active!==false?`<button class="btn soft" type="button" data-promote-teacher="${esc(uid)}" ${state.teacherBusy?'disabled':''}>Tornar coordenador</button>`:''}<button class="btn soft" type="button" data-edit-teacher="${esc(uid)}" ${state.teacherBusy?'disabled':''}>Editar ${u.role==='coordinator'?'coordenador':'professor'}</button><button class="btn ${u.active===false?'soft':'danger'}" type="button" data-${u.active===false?'restore':'remove'}-teacher="${esc(uid)}" ${state.teacherBusy?'disabled':''}>${u.active===false?'Reativar':'Desabilitar'} ${u.role==='coordinator'?'coordenador':'professor'}</button>`:''}</div></article>`;
  return `${heading('Professores e coordenadores','Equipe autorizada a organizar bancas e registrar avaliações.')}
- <div class="grid three">${stats('Docentes ativos',active.length,'04')}${stats('Coordenação',active.filter(([,u])=>u.role==='coordinator').length,'05')}${stats('Acessos removidos',removed.length,'06')}</div>
- ${manager?`<section class="card">${heading('Adicionar professor ou coordenador','Escolha a função e cadastre uma nova conta ou vincule um acesso existente.')}
+ <div class="grid three">${stats('Docentes ativos',active.length,'04')}${stats('Coordenação',active.filter(([,u])=>u.role==='coordinator').length,'05')}${stats('Acessos desabilitados',removed.length,'06')}</div>
+ ${manager?`<section class="card">${heading('Adicionar professor ou coordenador','Coordenadores gerenciam a equipe, atribuem bancas e emitem todos os relatórios.',`<button class="btn soft" type="button" data-prepare-administrator="1" ${state.teacherBusy?'disabled':''}>Preparar cadastro de administrador</button>`)}
  <form id="teacher-form" class="form-grid" autocomplete="off">
  <div class="field"><label for="teacher-name">Nome completo</label><input id="teacher-name" name="name" maxlength="120" placeholder="Nome completo" required></div>
  <div class="field"><label for="teacher-email">E-mail de acesso</label><input id="teacher-email" name="email" type="email" maxlength="254" placeholder="professor@univap.br" required></div>
  <div class="field"><label for="teacher-key">Identificador nas planilhas</label><input id="teacher-key" name="key" pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="60" placeholder="Ex.: bruno, helio, jose-eduardo" required><small>Use o identificador da planilha para associar o orientador.</small></div>
- <div class="field"><label for="teacher-role">Função de acesso</label><select id="teacher-role" name="role"><option value="teacher">Professor avaliador</option><option value="coordinator">Coordenador e avaliador</option></select><small>Coordenadores organizam bancas, importam planilhas e consultam todas as notas. A gestão de acessos permanece com o Alberson.</small></div>
+ <div class="field"><label for="teacher-role">Função de acesso</label><select id="teacher-role" name="role"><option value="teacher">Professor avaliador</option><option value="coordinator">Coordenador e avaliador</option></select><small>Coordenadores gerenciam professores e bancas, importam planilhas, consultam todas as notas e emitem os PDFs. O administrador usa estas mesmas permissões.</small></div>
  <div class="field"><label for="teacher-method">Tipo de cadastro</label><select id="teacher-method" name="method"><option value="new">Criar nova conta</option><option value="existing">Vincular conta existente</option></select></div>
  <div class="field wide" id="teacher-password-field"><label for="teacher-password">Senha inicial</label><input id="teacher-password" name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Pelo menos 8 caracteres" required><small>Informe a senha ao professor. Ela não será gravada na lista de perfis.</small></div>
  <div class="field wide hidden" id="teacher-uid-field"><label for="teacher-uid">UID da conta existente</label><input id="teacher-uid" name="uid" maxlength="128" disabled placeholder="Copie de Firebase Authentication → Usuários"><small>Use o UID da conta do mesmo e-mail acima.</small></div>
- <div class="wide row"><button class="btn primary" type="submit" ${state.teacherBusy?'disabled':''}>Cadastrar acesso</button><span class="tiny">A sessão do Alberson permanece aberta durante o cadastro.</span></div>
- </form></section>`:'<div class="notice">O cadastro, a edição e a remoção de acessos são exclusivos do Alberson. A coordenação pode gerenciar grupos e bancas, importar planilhas e acompanhar as avaliações.</div>'}
- <section class="card">${heading('Equipe ativa','Professores e coordenadores ativos podem participar das próximas bancas.')}<p class="teacher-admin-note">A remoção encerra o acesso e preserva os registros anteriores. Avaliadores com bancas em aberto precisam concluir as avaliações antes da remoção.</p><div class="teacher-list">${active.map(teacherRow).join('')||empty('Nenhum acesso ativo')}</div>
- ${removed.length?`<details class="teacher-archive"><summary>Acessos removidos (${removed.length})</summary><div class="teacher-list">${removed.map(teacherRow).join('')}</div></details>`:''}</section>
+ <div class="wide row"><button class="btn primary" type="submit" ${state.teacherBusy?'disabled':''}>Cadastrar acesso</button><span class="tiny">Sua sessão permanece aberta durante o cadastro.</span></div>
+ </form></section>`:'<div class="notice">O cadastro, a edição e a desabilitação de acessos são administrados pelos coordenadores.</div>'}
+ <section class="card">${heading('Equipe ativa','Professores e coordenadores ativos podem participar das próximas bancas.')}<p class="teacher-admin-note">Desabilitar encerra o acesso e preserva todas as bancas, atribuições e notas anteriores. O professor pode ser reativado quando necessário. Para ampliar as permissões de um professor, use Tornar coordenador sem criar outra conta.</p><div class="teacher-list">${active.map(teacherRow).join('')||empty('Nenhum acesso ativo')}</div>
+ ${removed.length?`<details class="teacher-archive"><summary>Acessos desabilitados (${removed.length})</summary><div class="teacher-list">${removed.map(teacherRow).join('')}</div></details>`:''}</section>
  <div class="card">${heading('Grupos e cursos','Cadastro de grupos e importação de planilhas.')}<button class="btn primary" data-route="grupos">Gerenciar grupos e cursos →</button></div>
- <div class="card">${heading('Configuração de permissões','A política desta versão contempla novos coordenadores, gestão de bancas e o chat dos professores, mantendo as avaliações protegidas.')}
+ <div class="card">${heading('Configuração de permissões','A política desta versão libera a gestão de professores para os coordenadores e preserva todas as avaliações e bancas.')}
  <button class="btn soft" data-copy-policy="1" type="button">Copiar política de acesso</button>
- <details class="policy-guide"><summary>Como aplicar no Firebase</summary><ol><li>No projeto <code>avaliadortcc</code>, abra <b>Realtime Database → Regras</b>.</li><li>Cole a política copiada acima e clique em <b>Publicar</b>.</li><li>Em <b>Dados → users → UID do Alberson</b>, confirme <code>role: "coordinator"</code> e <code>key: "alberson"</code>.</li><li>Em <b>Authentication → Método de login</b>, mantenha <b>E-mail/senha</b> habilitado.</li></ol><p>A política está incluída neste mesmo index.html. Não é necessário criar outro arquivo.</p></details></div>`;
+ <details class="policy-guide"><summary>Como aplicar no Firebase</summary><ol><li>No projeto <code>avaliadortcc</code>, abra <b>Realtime Database → Regras</b>.</li><li>Cole a política copiada acima e clique em <b>Publicar</b>.</li><li>Os coordenadores e o administrador usam <code>role: "coordinator"</code>. Promova professores pela lista da equipe para manter a conta e o histórico existentes.</li><li>Em <b>Authentication → Método de login</b>, mantenha <b>E-mail/senha</b> habilitado.</li></ol><p>A política está incluída neste mesmo index.html. Não é necessário criar outro arquivo.</p></details></div>`;
 }
 function openTeacherBoards(uid){return Object.entries(state.boards).filter(([id,b])=>b.members?.[uid]&&!state.seals[id]);}
 function canAdministerProfile(uid,profile){return !!profile&&['teacher','coordinator'].includes(profile.role)&&profile.key!=='alberson'&&uid!==state.user?.uid;}
+function prepareAdministratorRegistration(){
+ if(!canManageTeachers())throw Error('Somente a coordenação pode preparar o acesso de administrador.');
+ if(state.teacherBusy||teacherAdminOperation)throw Error('Aguarde a operação com professores em andamento.');
+ const existing=Object.entries(state.users).find(([,profile])=>String(profile.email||'').toLowerCase()==='admin@univap.br'||profile.key==='admin');
+ if(existing){notice(existing[1].role==='coordinator'?'O acesso administrativo já está cadastrado. Confira sua situação na equipe.':'O acesso já existe na equipe. Use Tornar coordenador na conta existente para preservar seu histórico.');return;}
+ const fields={'teacher-name':'Administração Univap','teacher-email':'admin@univap.br','teacher-key':'admin','teacher-role':'coordinator','teacher-method':'new','teacher-password':'','teacher-uid':''};
+ for(const [id,value] of Object.entries(fields)){const field=document.getElementById(id);if(field)field.value=value;}
+ teacherRegistrationMethod();$('#teacher-password')?.focus();
+ notice('Cadastro de administrador preparado. Informe a senha inicial e clique em Cadastrar acesso.');
+}
 function teacherRegistrationMethod(){
  const existing=$('#teacher-method')?.value==='existing';
  $('#teacher-password-field')?.classList.toggle('hidden',existing);$('#teacher-uid-field')?.classList.toggle('hidden',!existing);
@@ -1953,7 +1972,7 @@ function teacherEditIdentity(data,profile){
 }
 function assertTeacherAdminSession(operation){
  assertCurrentSession(operation.uid,operation.revision);
- if(!canManageTeachers())throw Error('Somente o Alberson pode gerenciar os professores.');
+ if(!canManageTeachers())throw Error('Somente a coordenação pode gerenciar os professores.');
  if(!state.connected)throw Error('Conecte-se à internet para gerenciar os professores.');
  if(teacherAdminOperation!==operation)throw Error('Esta operação foi encerrada. Tente novamente.');
 }
@@ -1961,7 +1980,7 @@ function teacherAdminSessionIsCurrent(operation){
  return state.user?.uid===operation.uid&&accessRevision===operation.revision&&canManageTeachers();
 }
 function beginTeacherAdminOperation(form){
- if(!canManageTeachers())throw Error('Somente o Alberson pode gerenciar os professores.');
+ if(!canManageTeachers())throw Error('Somente a coordenação pode gerenciar os professores.');
  if(!state.connected)throw Error('Conecte-se à internet para gerenciar os professores.');
  if(state.teacherBusy||teacherAdminOperation)throw Error('Aguarde a operação com professores em andamento.');
  const operation={uid:state.user.uid,revision:accessRevision};
@@ -1976,14 +1995,38 @@ function finishTeacherAdminOperation(operation){
 }
 function assertTeacherDirectory(directory,operation,profile,targetUid=''){
  assertTeacherAdminSession(operation);
- const actor=directory?.[operation.uid];
- if(!actor||actor.active===false||actor.role!=='coordinator'||actor.key!=='alberson')throw Error('A permissão de gerenciamento mudou. Entre novamente no sistema.');
+ assertTeacherAdminActor(directory?.[operation.uid],operation);
  if(targetUid&&directory?.[targetUid])throw Error('Este UID já está cadastrado. Edite ou reative o professor existente.');
  const duplicate=Object.values(directory||{}).find(user=>user.key===profile.key||String(user.email||'').toLowerCase()===profile.email);
  if(duplicate)throw Error(duplicate.active===false?'Este professor foi removido. Use Reativar professor para recuperar o acesso.':'Já existe um professor com este e-mail ou identificador.');
 }
+function assertTeacherAdminActor(actor,operation){
+ assertTeacherAdminSession(operation);
+ if(!actor||actor.active===false||actor.role!=='coordinator')throw Error('A permissão de gerenciamento mudou. Entre novamente no sistema.');
+}
+async function promoteTeacher(uid){
+ const operation=beginTeacherAdminOperation();
+ try{
+  if(typeof uid!=='string'||!uid||uid.length>128||/[.#$\[\]\/\s]/.test(uid))throw Error('Selecione um professor cadastrado.');
+  const directory=(await get(ref(db,'users'))).val()||{};
+  assertTeacherAdminActor(directory[operation.uid],operation);
+  const profile=directory[uid];
+  if(!canAdministerProfile(uid,profile)||profile.active===false)throw Error('Selecione outro professor ativo para tornar coordenador.');
+  if(profile.role==='coordinator'){notice(`${profile.name} já possui acesso de coordenação.`);return;}
+  if(!confirm(`Tornar ${profile.name} (${profile.email||'conta existente'}) coordenador? Esta conta poderá gerenciar professores, bancas, todas as notas e relatórios. O login e todo o histórico serão preservados.`))return;
+  assertTeacherAdminSession(operation);
+  const fingerprint=teacherProfileFingerprint(profile),next={...profile,role:'coordinator'};
+  const result=await runTransaction(ref(db,`users/${uid}`),current=>{
+   assertTeacherAdminSession(operation);
+   return current&&current.active!==false&&current.role==='teacher'&&teacherProfileFingerprint(current)===fingerprint?next:undefined;
+  },{applyLocally:false});
+  if(!result.committed)throw Error('O cadastro foi alterado em outra janela. Atualize a lista antes de promover o professor.');
+  assertTeacherAdminSession(operation);state.users[uid]=result.snapshot.val();
+  notice(`${profile.name} agora é coordenador e avaliador. O professor deve entrar novamente para carregar as novas permissões.`);
+ }finally{finishTeacherAdminOperation(operation);}
+}
 async function addTeacher(form){
- if(!canManageTeachers())throw Error('Somente o Alberson pode cadastrar professores.');
+ if(!canManageTeachers())throw Error('Somente a coordenação pode cadastrar professores.');
  if(state.teacherBusy||teacherAdminOperation)throw Error('Aguarde a operação com professores em andamento.');
  const data=new FormData(form),profile=teacherIdentity(data),existing=data.get('method')==='existing';
  const password=String(data.get('password')||'');let uid=String(data.get('uid')||'').trim();
@@ -2027,16 +2070,17 @@ async function addTeacher(form){
  }
 }
 async function changeTeacherAccess(uid,active){
- if(typeof active!=='boolean')throw Error('Escolha remover ou reativar o professor.');
+ if(typeof active!=='boolean')throw Error('Escolha desabilitar ou reativar o professor.');
  const operation=beginTeacherAdminOperation();
  try{
-  const snapshots=await Promise.all([get(ref(db,`users/${uid}`)),get(ref(db,'boards')),get(ref(db,'seals'))]);
+  const snapshots=await Promise.all([get(ref(db,`users/${uid}`)),get(ref(db,'boards')),get(ref(db,'seals')),get(ref(db,`users/${operation.uid}`))]);
   assertTeacherAdminSession(operation);
+  assertTeacherAdminActor(snapshots[3].val(),operation);
   const profile=snapshots[0].val(),boards=snapshots[1].val()||{},seals=snapshots[2].val()||{};
   if(!canAdministerProfile(uid,profile))throw Error('O acesso principal do Alberson e a própria conta não podem ser alterados nesta operação.');
-  if(!active&&Object.entries(boards).some(([bid,board])=>board.members?.[uid]&&!seals[bid]))throw Error(`${profile.name} possui bancas em aberto. Conclua as bancas antes de remover o acesso.`);
   if((profile.active!==false)===active)return;
-  if(!active&&!confirm(`Remover ${profile.name}? O acesso será encerrado, mas todas as notas e bancas anteriores serão preservadas.`))return;
+  const openCount=Object.entries(boards).filter(([bid,board])=>board.members?.[uid]&&!seals[bid]).length;
+  if(!active&&!confirm(`Desabilitar ${profile.name}? O acesso será encerrado, mas todas as notas, bancas e atribuições serão preservadas.${openCount?` Este professor possui ${openCount} banca(s) em aberto; as notas já registradas continuam disponíveis e ele poderá ser reativado para concluir os lançamentos.`:''}`))return;
   assertTeacherAdminSession(operation);
   const fingerprint=teacherProfileFingerprint(profile),next={...profile,active};
   if(active){delete next.disabledBy;delete next.disabledAt;}
@@ -2047,7 +2091,7 @@ async function changeTeacherAccess(uid,active){
   },{applyLocally:false});
   if(!result.committed)throw Error('O cadastro foi alterado em outra janela. Atualize a lista e confira o professor novamente.');
   assertTeacherAdminSession(operation);state.users[uid]=result.snapshot.val();
-  notice(`${profile.name}: ${active?'acesso reativado':'acesso removido'}.`);
+  notice(`${profile.name}: ${active?'acesso reativado':'acesso desabilitado'}.`);
  }finally{finishTeacherAdminOperation(operation);}
 }
 function closeTeacherEdit(force=false){
@@ -2061,14 +2105,15 @@ function closeTeacherEdit(force=false){
 async function editTeacher(uid){
  const operation=beginTeacherAdminOperation();
  try{
-  const snapshot=await get(ref(db,`users/${uid}`));assertTeacherAdminSession(operation);
-  const profile=snapshot.val();
+  const snapshots=await Promise.all([get(ref(db,`users/${uid}`)),get(ref(db,`users/${operation.uid}`))]);assertTeacherAdminSession(operation);
+  assertTeacherAdminActor(snapshots[1].val(),operation);
+  const profile=snapshots[0].val();
   if(!canAdministerProfile(uid,profile))throw Error('Selecione um professor ou coordenador para editar. O acesso principal do Alberson é protegido.');
   closeTeacherEdit(true);
   const dialog=document.createElement('dialog');dialog.id='teacher-edit-dialog';dialog.className='share-dialog teacher-edit-dialog';dialog.setAttribute('aria-labelledby','teacher-edit-title');
   const session={uid,ownerUid:operation.uid,revision:operation.revision,profileFingerprint:teacherProfileFingerprint(profile),dialog,returnFocus:document.activeElement,saving:false};
   teacherEditSession=session;
-  dialog.innerHTML=`<div class="share-panel"><div class="row space"><div><p class="eyebrow">EQUIPE DE AVALIAÇÃO</p><h3 id="teacher-edit-title">Editar ${profile.role==='coordinator'?'coordenador':'professor'}</h3></div><button class="btn soft" type="button" data-teacher-edit-close aria-label="Fechar edição do acesso">${icon('fechar')}</button></div><p class="share-description">Atualize os dados de contato. As avaliações e os nomes registrados nas bancas anteriores serão preservados.</p><form id="teacher-edit-form" data-teacher-uid="${esc(uid)}" class="form-grid"><div class="field wide"><label for="teacher-edit-name">Nome completo</label><input id="teacher-edit-name" name="name" maxlength="120" value="${esc(profile.name)}" autocomplete="name" required></div><div class="field wide"><label for="teacher-edit-contact">E-mail de contato <span class="muted">(opcional)</span></label><input id="teacher-edit-contact" name="contactEmail" type="email" maxlength="254" value="${esc(profile.contactEmail||'')}" autocomplete="email" placeholder="Contato profissional"><small>Este endereço serve para contato e não altera o login.</small></div><div class="field"><label for="teacher-edit-login">E-mail de acesso</label><input id="teacher-edit-login" type="email" value="${esc(profile.email||'')}" readonly aria-describedby="teacher-login-explanation"></div><div class="field"><label for="teacher-edit-key">Identificador nas planilhas</label><input id="teacher-edit-key" value="${esc(profile.key||'')}" readonly></div><div class="field wide"><label for="teacher-edit-role">Função de acesso</label><input id="teacher-edit-role" value="${profile.role==='coordinator'?'Coordenador e avaliador':'Professor avaliador'}" readonly></div><p id="teacher-login-explanation" class="tiny wide">O e-mail de acesso, o identificador e a função permanecem vinculados à conta existente. Alterações no login precisam ser realizadas no Firebase Authentication pela administração.</p><p class="teacher-edit-status tiny wide" role="status" aria-live="polite"></p><div class="wide row"><button class="btn primary" type="submit">Salvar alterações</button><button class="btn soft" type="button" data-teacher-edit-close>Cancelar</button></div></form></div>`;
+  dialog.innerHTML=`<div class="share-panel"><div class="row space"><div><p class="eyebrow">EQUIPE DE AVALIAÇÃO</p><h3 id="teacher-edit-title">Editar ${profile.role==='coordinator'?'coordenador':'professor'}</h3></div><button class="btn soft" type="button" data-teacher-edit-close aria-label="Fechar edição do acesso">${icon('fechar')}</button></div><p class="share-description">Atualize os dados de contato. As avaliações e os nomes registrados nas bancas anteriores serão preservados.</p><form id="teacher-edit-form" data-teacher-uid="${esc(uid)}" class="form-grid"><div class="field wide"><label for="teacher-edit-name">Nome completo</label><input id="teacher-edit-name" name="name" maxlength="120" value="${esc(profile.name)}" autocomplete="name" required></div><div class="field wide"><label for="teacher-edit-contact">E-mail de contato <span class="muted">(opcional)</span></label><input id="teacher-edit-contact" name="contactEmail" type="email" maxlength="254" value="${esc(profile.contactEmail||'')}" autocomplete="email" placeholder="Contato profissional"><small>Este endereço serve para contato e não altera o login.</small></div><div class="field"><label for="teacher-edit-login">E-mail de acesso</label><input id="teacher-edit-login" type="email" value="${esc(profile.email||'')}" readonly aria-describedby="teacher-login-explanation"></div><div class="field"><label for="teacher-edit-key">Identificador nas planilhas</label><input id="teacher-edit-key" value="${esc(profile.key||'')}" readonly></div><div class="field wide"><label for="teacher-edit-role">Função de acesso</label><input id="teacher-edit-role" value="${profile.role==='coordinator'?'Coordenador e avaliador':'Professor avaliador'}" readonly></div><p id="teacher-login-explanation" class="tiny wide">O e-mail de acesso e o identificador permanecem vinculados à conta existente. Para ampliar a função, use Tornar coordenador na lista da equipe. Alterações no login são realizadas no Firebase Authentication pela administração.</p><p class="teacher-edit-status tiny wide" role="status" aria-live="polite"></p><div class="wide row"><button class="btn primary" type="submit">Salvar alterações</button><button class="btn soft" type="button" data-teacher-edit-close>Cancelar</button></div></form></div>`;
   for(const button of dialog.querySelectorAll('[data-teacher-edit-close]'))button.addEventListener('click',()=>closeTeacherEdit());
   dialog.addEventListener('cancel',event=>{event.preventDefault();closeTeacherEdit();});
   dialog.addEventListener('close',()=>{if(teacherEditSession===session)closeTeacherEdit(true);});
@@ -2086,7 +2131,9 @@ async function saveTeacherEdit(form){
  const operation=beginTeacherAdminOperation(form);session.saving=true;
  for(const button of session.dialog.querySelectorAll('[data-teacher-edit-close]'))button.disabled=true;
  try{
-  const profile=(await get(ref(db,`users/${session.uid}`))).val();assertTeacherAdminSession(operation);
+  const snapshots=await Promise.all([get(ref(db,`users/${session.uid}`)),get(ref(db,`users/${operation.uid}`))]);assertTeacherAdminSession(operation);
+  assertTeacherAdminActor(snapshots[1].val(),operation);
+  const profile=snapshots[0].val();
   if(teacherEditSession!==session)throw Error('A edição foi encerrada. Abra o professor novamente.');
   if(!canAdministerProfile(session.uid,profile))throw Error('Este cadastro não está disponível para edição.');
   if(teacherProfileFingerprint(profile)!==session.profileFingerprint)throw Error('O cadastro foi alterado em outra janela. Feche a edição e abra o professor novamente.');
@@ -2558,6 +2605,95 @@ function busy(uid,candidate,planned=[]){const occupied=Object.values(state.board
 function roomKey(room){return Array.from(new TextEncoder().encode(String(room).trim().toLocaleLowerCase('pt-BR'))).map(byte=>byte.toString(16).padStart(2,'0')).join('');}
 function roomLocksFor(board){return chavesOcupacao(board,roomKey(board.room));}
 function roomBusy(room,candidate,planned=[]){const normalized=String(room).trim().toLocaleLowerCase('pt-BR');return [...Object.values(state.boards),...planned].some(b=>b.room?.trim().toLocaleLowerCase('pt-BR')===normalized&&intervalosConflitam(b,candidate))||chavesOcupacao(candidate,roomKey(room)).some(key=>state.roomLocks?.[key.split('/')[0]]?.[roomKey(room)]);}
+let boardAssignmentSession=null;
+function closeBoardAssignment(force=false){
+ const session=boardAssignmentSession;if(!session)return true;
+ if(session.busy&&!force)return false;
+ boardAssignmentSession=null;
+ if(session.dialog){if(session.dialog.open)session.dialog.close();session.dialog.remove();}
+ if(!force&&session.returnFocus?.isConnected)session.returnFocus.focus({preventScroll:true});
+ return true;
+}
+function assertBoardAssignmentSession(session){
+ assertCurrentSession(session.uid,session.revision);
+ if(!isCoord())throw Error('Somente a coordenação pode atribuir avaliadores.');
+ if(!state.connected)throw Error('Conecte-se à internet para alterar os avaliadores.');
+ if(boardAssignmentSession!==session)throw Error('A edição dos avaliadores foi encerrada. Abra a banca novamente.');
+}
+async function readBoardAssignmentCatalog(session){
+ assertBoardAssignmentSession(session);
+ const paths=['users','groups','boards','grades','seals','locks'];
+ const snapshots=await Promise.all(paths.map(path=>get(ref(db,path))));assertBoardAssignmentSession(session);
+ const catalog=Object.fromEntries(paths.map((path,index)=>[path,snapshots[index].val()||{}]));
+ if(!isActiveTeacher(catalog.users[session.uid])||catalog.users[session.uid].role!=='coordinator')throw Error('A permissão da coordenação mudou. Entre novamente.');
+ return catalog;
+}
+function assignmentFingerprint(catalog,bid){
+ const board=catalog.boards[bid];return groupAdminFingerprint({board,group:catalog.groups[board?.groupId]});
+}
+async function openBoardAssignment(bid){
+ if(!state.user||!isCoord())throw Error('Somente a coordenação pode atribuir avaliadores.');
+ if(typeof BancaBoardAssignment==='undefined')throw Error('Recarregue a página para carregar a gestão de avaliadores.');
+ if(state.busyBoards.has(bid))throw Error('Aguarde a alteração em andamento nesta banca.');
+ if(!closeBoardAssignment())throw Error('Aguarde o salvamento dos avaliadores.');
+ const session={bid,uid:state.user.uid,revision:accessRevision,busy:false,dialog:null,returnFocus:document.activeElement};boardAssignmentSession=session;
+ try{
+  const catalog=await readBoardAssignmentCatalog(session),board=catalog.boards[bid],group=catalog.groups[board?.groupId];
+  if(!board||!group||group.active===false)throw Error('Selecione uma banca de um grupo ativo.');
+  if(catalog.seals[bid])throw Error('Reabra a banca antes de alterar seus avaliadores.');
+  session.fingerprint=assignmentFingerprint(catalog,bid);
+  Object.assign(state,catalog);state.profile=catalog.users[session.uid];
+  const roster=Object.entries(catalog.users).filter(([uid,profile])=>isActiveTeacher(profile)||board.members?.[uid]).sort(([,a],[,b])=>String(a.name).localeCompare(String(b.name),'pt-BR'));
+  for(const uid of Object.keys(board.members||{}))if(!roster.some(([id])=>id===uid))roster.push([uid,{name:board.memberNames?.[uid]||uid,active:false,role:'teacher'}]);
+  const hasGrades=uid=>{const values=catalog.grades[bid]?.[uid];return values!==null&&values!==undefined&&(typeof values!=='object'||Object.keys(values).length>0);};
+  const dialog=document.createElement('dialog');dialog.id='board-assignment-dialog';dialog.className='share-dialog';dialog.setAttribute('aria-labelledby','board-assignment-title');session.dialog=dialog;
+  dialog.innerHTML=`<div class="share-panel"><div class="row space"><div><p class="eyebrow">COMPOSIÇÃO DA BANCA</p><h3 id="board-assignment-title">Atribuir avaliadores</h3></div><button type="button" class="icon-btn" data-assignment-close aria-label="Fechar atribuição de avaliadores">${icon('fechar')}</button></div><p><b>${esc(group.name||board.groupId)}</b> · ${esc(dateStr(board.startAt))} · ${esc(board.room)}</p><p class="tiny muted">Selecione 2 ou 3 professores. Os avaliadores que já registraram notas permanecem na banca. A agenda, os alunos, as notas, a monografia e o cronômetro são preservados.</p><form id="board-assignment-form" data-board="${esc(bid)}"><div class="check-list">${roster.map(([uid,profile])=>{const member=board.members?.[uid]===true,locked=member&&hasGrades(uid);return `<label class="check-tag"><input type="checkbox" name="evaluator" value="${esc(uid)}" ${member?'checked':''} ${locked?'disabled':''}>${esc(profile.name)}${profile.role==='coordinator'?'<small> · coordenação</small>':''}${locked?'<small> · notas registradas, participação preservada</small>':''}${profile.active===false?'<small> · acesso desabilitado; participação histórica</small>':''}</label>`;}).join('')}</div><p id="board-assignment-status" class="tiny" role="status" aria-live="polite"></p><div class="row"><button type="submit" class="btn primary">Salvar avaliadores</button><button type="button" class="btn soft" data-assignment-close>Cancelar</button></div></form></div>`;
+  for(const button of dialog.querySelectorAll('[data-assignment-close]'))button.addEventListener('click',()=>closeBoardAssignment());
+  dialog.addEventListener('cancel',event=>{event.preventDefault();closeBoardAssignment();});
+  dialog.addEventListener('close',()=>{if(boardAssignmentSession===session)closeBoardAssignment(true);});
+  dialog.querySelector('form').addEventListener('submit',event=>{event.preventDefault();saveBoardAssignment(event.target).catch(error=>{if(boardAssignmentSession===session)dialog.querySelector('#board-assignment-status').textContent=errorMessage(error);});});
+  document.body.appendChild(dialog);dialog.showModal();dialog.querySelector('button[type="submit"]').focus();
+ }catch(error){if(boardAssignmentSession===session)closeBoardAssignment(true);throw error;}
+}
+async function saveBoardAssignment(form){
+ const session=boardAssignmentSession;
+ if(!session||form.dataset.board!==session.bid)throw Error('Abra novamente a atribuição dos avaliadores.');
+ assertBoardAssignmentSession(session);if(session.busy)return;
+ if(hasUnsavedDrafts(session.bid))throw Error('Salve as notas e a monografia em edição antes de alterar os avaliadores.');
+ const selected=[...form.querySelectorAll('input[name="evaluator"]:checked')].map(input=>input.value);
+ session.busy=true;state.busyBoards.add(session.bid);
+ for(const field of session.dialog.querySelectorAll('input,button'))field.disabled=true;
+ session.dialog.querySelector('#board-assignment-status').textContent='Conferindo as notas e as reservas de horário…';
+ try{
+  const catalog=await readBoardAssignmentCatalog(session);
+  if(assignmentFingerprint(catalog,session.bid)!==session.fingerprint)throw Error('A banca ou o grupo foi alterado em outra janela. Feche esta edição e abra novamente para conferir os avaliadores.');
+  const plan=BancaBoardAssignment.plan({...catalog,boardId:session.bid,memberUids:selected,actorUid:session.uid});
+  if(!Object.keys(plan.changes).length){closeBoardAssignment(true);notice('A composição da banca já corresponde à seleção.');return;}
+  assertBoardAssignmentSession(session);
+  if(hasUnsavedDrafts(session.bid))throw Error('Salve as notas e a monografia em edição antes de alterar os avaliadores.');
+  try{await update(ref(db),plan.changes);}catch(error){if(isPermissionDenied(error))throw Error('Não foi possível salvar a composição. A banca pode ter sido alterada ou encerrada. Atualize a lista; a coordenação também deve conferir se a política atual de acesso foi publicada no Firebase.');throw error;}
+  assertBoardAssignmentSession(session);
+  const board={...catalog.boards[session.bid],members:plan.members,memberNames:{...catalog.boards[session.bid].memberNames},assignmentRevision:plan.changes[`boards/${session.bid}/assignmentRevision`]};
+  for(const uid of plan.added)board.memberNames[uid]=catalog.users[uid].name;
+  for(const uid of plan.removed)delete board.memberNames[uid];
+  if((state.boards[session.bid]?.assignmentRevision||0)<=board.assignmentRevision){
+   state.boards[session.bid]=board;
+   for(const [path,value] of Object.entries(plan.changes)){
+    const [kind,slot,uid]=path.split('/');if(kind!=='locks')continue;
+    const current=state.locks[slot]?.[uid];
+    if(value===null){if(current===session.bid){delete state.locks[slot][uid];if(!Object.keys(state.locks[slot]).length)delete state.locks[slot];}}
+    else if(current===undefined||current===null||current===session.bid){state.locks[slot]||={};state.locks[slot][uid]=value;}
+   }
+  }
+  closeBoardAssignment(true);notice('Avaliadores atualizados. Todas as notas e os demais dados da banca foram preservados.');
+ }finally{
+  if(state.user?.uid===session.uid&&accessRevision===session.revision){state.busyBoards.delete(session.bid);if(boardAssignmentSession===session){session.busy=false;for(const button of session.dialog.querySelectorAll('button'))button.disabled=false;const locked=catalogSafeAssignmentInputs(session);for(const input of session.dialog.querySelectorAll('input[name="evaluator"]'))input.disabled=locked.has(input.value);}render();}
+ }
+}
+function catalogSafeAssignmentInputs(session){
+ const board=state.boards[session.bid]||{};
+ return new Set(Object.keys(board.members||{}).filter(uid=>Object.keys(state.grades[session.bid]?.[uid]||{}).length>0));
+}
 function makeBoard(group,startAt,durationMin,room,evaluators){const members=Object.fromEntries(evaluators.map(uid=>[uid,true]));return {groupId:group.id,advisorUid:group.advisorUid,advisorName:who(group.advisorUid),members,memberNames:Object.fromEntries(Object.keys(members).map(uid=>[uid,who(uid)])),startAt,durationMin,room,createdBy:state.user.uid,createdAt:Date.now()};}
 async function createBoards(plan){
  if(!state.user||!isCoord())throw Error('Apenas a coordenação pode montar bancas.');if(!Array.isArray(plan)||!plan.length)throw Error('Nenhuma banca para gravar.');
@@ -3291,7 +3427,8 @@ function boardActions(bid){
  const busy=state.busyBoards.has(bid);
  const chat=chatRooms().some(room=>room.id===bid)?`<button type="button" class="btn soft" data-chat-board="${esc(bid)}">Chat da banca ${icon('chat')}</button>`:'';
  if(groupOf(state.boards[bid])?.active===false)return chat+'<span class="tiny muted">Grupo removido. Restaure-o em Grupos e cursos para reabrir.</span>';
- return chat+(state.seals[bid]?`<button type="button" class="btn soft" data-reopen="${esc(bid)}" ${busy?'disabled':''}>Reabrir banca</button>`:`<button type="button" class="btn dark" data-seal="${esc(bid)}" ${busy?'disabled':''}>Encerrar avaliação da banca</button>`);
+ const assignment=state.user&&isCoord()&&!state.seals[bid]?`<button type="button" class="btn soft" data-board-assignment="${esc(bid)}" ${busy?'disabled':''}>Atribuir avaliadores</button>`:'';
+ return chat+assignment+(state.seals[bid]?`<button type="button" class="btn soft" data-reopen="${esc(bid)}" ${busy?'disabled':''}>Reabrir banca</button>`:`<button type="button" class="btn dark" data-seal="${esc(bid)}" ${busy?'disabled':''}>Encerrar avaliação da banca</button>`);
 }
 function timerIsOverrun(ms){return typeof ms==='number'&&Number.isFinite(ms)&&ms>15*60*1000;}
 function updateTimerDisplays(){
@@ -3681,6 +3818,7 @@ $('#view').addEventListener('click',e=>{
  if(el.dataset.generalChat||el.dataset.route==='chat')return handle(openGeneralChat);
  if(el.dataset.route)return go(el.dataset.route);
  if(el.dataset.coordinatorExport)return handle(()=>exportCoordinatorReport(el.dataset.coordinatorExport));
+ if(el.dataset.boardAssignment)return handle(()=>openBoardAssignment(el.dataset.boardAssignment));
  if(el.dataset.notesReset){if(!isCoord())return;resetNotesFilters();render();return;}
  if(el.dataset.notesExpand){if(!isCoord())return;for(const [bid] of filteredNotesBoards())state.notesExpanded.add(bid);render();return;}
  if(el.dataset.notesCollapse){if(!isCoord())return;state.notesExpanded.clear();render();return;}
@@ -3689,6 +3827,8 @@ $('#view').addEventListener('click',e=>{
  if(el.dataset.importRoster)return handle(importarGruposProtegidos);
  if(el.dataset.copyPolicy)return handle(copiarPoliticaDeAcesso);
  if(el.dataset.editTeacher)return handle(()=>editTeacher(el.dataset.editTeacher));
+ if(el.dataset.promoteTeacher)return handle(()=>promoteTeacher(el.dataset.promoteTeacher));
+ if(el.dataset.prepareAdministrator)return handle(prepareAdministratorRegistration);
  if(el.dataset.editGroup)return handle(()=>editGroup(el.dataset.editGroup));
  if(el.dataset.cancelGroupEdit)return handle(cancelGroupEdit);
  if(el.dataset.addGroupStudent)return handle(addGroupStudentRow);

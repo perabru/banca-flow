@@ -196,11 +196,19 @@ Compatibilidade: [Web Share](https://developer.mozilla.org/en-US/docs/Web/API/Na
 
 ## Professores e novos coordenadores
 
-Em **Professores**, Alberson pode selecionar **Professor avaliador** ou **Coordenador e avaliador** em **Função no sistema**, criar uma conta ou vincular um UID ainda sem perfil. O cadastro usa uma sessão secundária e mantém a conta principal aberta. Se a criação do perfil falhar, a conta nova criada pela operação é desfeita; contas existentes não são apagadas.
+Em **Professores**, todos os coordenadores ativos podem selecionar **Professor avaliador** ou **Coordenador e avaliador**, criar uma conta ou vincular um UID ainda sem perfil. O cadastro usa uma sessão secundária e mantém a conta principal aberta. Se a criação do perfil falhar, somente a conta nova criada pela operação é desfeita; contas existentes não são apagadas.
 
-Somente a conta ativa com `role: "coordinator"` e `key: "alberson"` gerencia os acessos. Alberson também pode editar nome/contato, remover e reativar coordenadores adicionais, preservando suas notas e bancas. A própria conta e qualquer perfil com identificador `alberson` ficam protegidos. E-mail de acesso, identificador e função de perfis existentes permanecem imutáveis; a edição de contato não promove um professor. Coordenadores adicionais gerenciam as bancas e os grupos, mas não criam outros coordenadores nem administram perfis.
+Uma conta ativa com `role: "coordinator"` gerencia os professores e coordenadores, consulta todas as notas, lança monografia, organiza bancas e emite os PDFs oficiais, individuais, analíticos e personalizados disponíveis no sistema. **Tornar coordenador** promove um professor na conta existente, com confirmação do nome e login. Wagner recebe os mesmos acessos ao ser promovido pelo seu UID; suas bancas e avaliações continuam vinculadas à mesma conta. A própria conta e o perfil principal com identificador `alberson` ficam protegidos de alteração por esta gestão.
 
-O **e-mail de contato** pode ser alterado sem afetar o login. O e-mail de acesso e o identificador nas planilhas permanecem vinculados à conta existente; a alteração de login é administrada no Firebase Authentication. Os nomes já registrados nas bancas não são reescritos ao editar o professor. A remoção bloqueia o acesso ao aplicativo, conserva o perfil e as avaliações e exige concluir as bancas em aberto.
+O **e-mail de contato** pode ser alterado sem afetar o login. O e-mail de acesso e o identificador nas planilhas permanecem vinculados à conta existente; a alteração de login é administrada no Firebase Authentication. Os nomes já registrados nas bancas não são reescritos ao editar o professor. **Desabilitar** bloqueia o acesso ao aplicativo e conserva o perfil, as bancas, as atribuições e todas as notas, inclusive em bancas abertas. **Reativar** restaura o acesso na mesma conta.
+
+O atalho **Preparar cadastro de administrador** preenche nome, e-mail `admin@univap.br`, identificador `admin` e função de coordenador. A senha é informada no campo protegido pelo responsável e nunca fica publicada no HTML ou no cadastro de perfis. Esse administrador tem os mesmos acessos de gestão, avaliação e relatórios dos demais coordenadores. O provisionamento administrativo de Wagner e dessa conta também pode ser feito pelo [procedimento de ativação](scripts/ADMINISTRADORES.md), usando uma conexão administrativa autorizada com o Firebase. A publicação do site não cria contas nem publica regras no banco automaticamente.
+
+### Atribuir avaliadores a bancas existentes
+
+Em **Bancas → Ver detalhes → Atribuir avaliadores**, a coordenação seleciona 2 ou 3 professores para uma banca aberta de grupo ativo. A alteração relê usuários, notas, composição, encerramento e reservas de horário antes de salvar. Novos avaliadores precisam estar ativos e livres naquele horário. Professores desabilitados permanecem no histórico; participantes sem notas podem ser retirados, e as reservas correspondentes são liberadas.
+
+Quem já registrou qualquer nota, inclusive zero ou uma avaliação incompleta, permanece na composição para preservar sua participação. Notas, alunos, monografia, cronômetro, data e sala não são alterados. As mudanças de composição e reservas são gravadas em uma única operação com `assignmentRevision`, que rejeita edições concorrentes desatualizadas. Bancas encerradas precisam ser reabertas antes da alteração.
 
 ## Grupos, cursos e planilhas
 

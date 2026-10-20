@@ -195,14 +195,16 @@ test('Alberson edits teacher name/contact, preserving login mapping and roles', 
   assert.equal(edited.email, 'one@example.test');
   assert.equal(edited.key, 'one');
   assert.equal(edited.role, 'teacher');
-  for (const change of [{ email: 'changed@example.test' }, { key: 'changed' }, { role: 'coordinator' }, { contactEmail: 42 }, { contactEmail: 'x'.repeat(255) }]) {
+  for (const change of [{ email: 'changed@example.test' }, { key: 'changed' }, { role: 'admin' }, { contactEmail: 42 }, { contactEmail: 'x'.repeat(255) }]) {
     await assertFails(update(ref(db('coord'), 'users/teacher1'), change));
   }
   await assertSucceeds(update(ref(db('coord'), 'users/teacher1'), { contactEmail: null }));
 });
 
-test('profile management remains exclusive to Alberson and cannot affect his own profile', async () => {
-  for (const uid of ['teacher1', 'teacher2', 'otherCoord', null]) await assertFails(update(ref(db(uid), 'users/teacher1'), { name: 'Alterado' }));
+test('active coordinators manage identities while teachers and anonymous users cannot, with self protection', async () => {
+  for (const uid of ['teacher1', 'teacher2', 'disabled', null]) await assertFails(update(ref(db(uid), 'users/teacher1'), { name: 'Alterado' }));
+  await assertSucceeds(update(ref(db('otherCoord'), 'users/teacher1'), { name: 'Editado pela coordenação' }));
+  await assertFails(update(ref(db('otherCoord'), 'users/otherCoord'), { active: false }));
   await assertFails(update(ref(db('coord'), 'users/coord'), { name: 'Alterado' }));
   await assertSucceeds(update(ref(db('coord'), 'users/otherCoord'), { name: 'Coordenação atualizada' }));
   await assertFails(remove(ref(db('coord'), 'users/teacher1')));
@@ -441,7 +443,7 @@ test('presence validates canonical identity, current heartbeat and permitted fie
   await assertFails(set(ref(db('teacher1'),'chatPresence'),{teacher2:{fake:chatPresence('teacher2')}}));
 });
 
-// Additional coordinators share academic operations; only Alberson manages identities.
+// All active coordinators share academic and identity management operations.
 const profileDraft = (role='coordinator', extra={}) => ({
   name:'Nova coordenação', email:'nova@example.test', key:'nova-coordenacao', role, active:true,
   createdBy:'coord', createdAt:Date.now(), ...extra
@@ -457,23 +459,53 @@ test('Alberson creates teacher and coordinator profiles without permitting reser
   }
 });
 
-test('only Alberson manages additional coordinators and existing role, key and login remain immutable', async () => {
-  for(const uid of ['otherCoord','teacher1','disabled',null]) {
-    await assertFails(set(ref(db(uid),'users/newCoordinator'),profileDraft()));
+test('all active coordinators create and manage accesses and promote teachers without changing identity or historical records', async () => {
+  const original=await readPrivileged('/');
+  for(const uid of ['teacher1','disabled',null]) {
+    await assertFails(set(ref(db(uid),'users/newCoordinator'),profileDraft('coordinator',{createdBy:uid||'anonymous'})));
     await assertFails(update(ref(db(uid),'users/otherCoord'),{active:false}));
   }
+  await assertSucceeds(set(ref(db('otherCoord'),'users/newCoordinator'),profileDraft('coordinator',{createdBy:'otherCoord'})));
+  await assertSucceeds(set(ref(db('otherCoord'),'users/newTeacher'),profileDraft('teacher',{key:'new-teacher',email:'new-teacher@example.test',createdBy:'otherCoord'})));
+  await assertSucceeds(update(ref(db('otherCoord'),'users/teacher1'),{role:'coordinator'}));
+  const promoted=await readPrivileged('users/teacher1');
+  assert.equal(promoted.role,'coordinator');assert.equal(promoted.email,original.users.teacher1.email);assert.equal(promoted.key,original.users.teacher1.key);
+  await assertSucceeds(get(ref(db('teacher1'),'grades')));
+  await assertSucceeds(set(ref(db('teacher1'),'users/byPromoted'),profileDraft('teacher',{createdBy:'teacher1',key:'by-promoted',email:'by-promoted@example.test'})));
   await assertSucceeds(update(ref(db('coord'),'users/otherCoord'),{name:'Coordenadora atualizada',contactEmail:'contato.coord@example.test'}));
   for(const change of [{role:'teacher'},{email:'newlogin@example.test'},{key:'new-key'},{key:'alberson'}]) {
     await assertFails(update(ref(db('coord'),'users/otherCoord'),change));
   }
-  await assertFails(update(ref(db('coord'),'users/teacher1'),{role:'coordinator'}));
-  await assertSucceeds(update(ref(db('coord'),'users/otherCoord'),{active:false,disabledBy:'coord',disabledAt:Date.now()}));
-  await assertFails(get(ref(db('otherCoord'),'users')));
-  await assertFails(set(ref(db('otherCoord'),'groups/g3'),{...fixture().groups.g2,id:'g3'}));
-  await assertSucceeds(update(ref(db('coord'),'users/otherCoord'),{active:true,disabledBy:null,disabledAt:null}));
-  const restored=await readPrivileged('users/otherCoord');
-  assert.equal(restored.role,'coordinator');assert.equal(restored.key,'another');assert.equal(restored.email,'othercoord@example.test');
-  await assertSucceeds(get(ref(db('otherCoord'),'users')));
+  await assertFails(update(ref(db('teacher1'),'users/teacher1'),{active:false}));
+  await assertFails(update(ref(db('teacher1'),'users/teacher2'),{email:'takeover@example.test',role:'coordinator'}));
+  await assertSucceeds(update(ref(db('otherCoord'),'users/outsider'),{active:false,disabledBy:'otherCoord',disabledAt:Date.now()}));
+  await assertFails(get(ref(db('outsider'),'groups')));
+  await assertSucceeds(update(ref(db('otherCoord'),'users/outsider'),{active:true,disabledBy:null,disabledAt:null}));
+  await assertSucceeds(get(ref(db('outsider'),'groups')));
+  for(const path of ['groups','boards','groupBoards','grades','deliveries','locks','roomLocks'])assert.deepEqual(await readPrivileged(path),original[path],path);
+});
+
+test('legacy Wagner profile can be promoted in place while retaining grades, UID mapping and chat eligibility', async () => {
+  await bypass('users/wagner',{name:'Wagner',role:'teacher'});
+  const original=await readPrivileged('/');
+  await assertSucceeds(update(ref(db('otherCoord'),'users/wagner'),{role:'coordinator'}));
+  assert.deepEqual(await readPrivileged('users/wagner'),{name:'Wagner',role:'coordinator'});
+  await assertSucceeds(get(ref(db('wagner'),'users')));
+  await assertSucceeds(get(ref(db('wagner'),'grades')));
+  await assertSucceeds(set(ref(db('wagner'),'users/byWagner'),profileDraft('teacher',{createdBy:'wagner',key:'by-wagner',email:'by-wagner@example.test'})));
+  for(const path of ['groups','boards','grades','deliveries'])assert.deepEqual(await readPrivileged(path),original[path],path);
+});
+
+test('administrative login uses the same coordinator permissions without a public admin role or password field', async () => {
+  const profile=profileDraft('coordinator',{name:'Administração Univap',email:'admin@univap.br',key:'admin',createdBy:'otherCoord'});
+  await assertSucceeds(set(ref(db('otherCoord'),'users/adminAccount'),profile));
+  await assertSucceeds(get(ref(db('adminAccount'),'grades')));
+  await assertSucceeds(get(ref(db('adminAccount'),'deliveries')));
+  await assertSucceeds(set(ref(db('adminAccount'),'users/byAdmin'),profileDraft('teacher',{key:'by-admin',email:'by-admin@example.test',createdBy:'adminAccount'})));
+  await assertSucceeds(update(ref(db('adminAccount'),'users/teacher2'),{active:false,disabledBy:'adminAccount',disabledAt:Date.now()}));
+  await assertSucceeds(update(ref(db('adminAccount'),'users/teacher2'),{active:true,disabledBy:null,disabledAt:null}));
+  for(const change of [{role:'admin'},{password:'not-public'},{name:''}])await assertFails(update(ref(db('coord'),'users/adminAccount'),change));
+  assert.equal((await readPrivileged('users/adminAccount')).role,'coordinator');
 });
 
 test('Alberson identity is protected by its reserved key at any UID and no identity can be deleted', async () => {
@@ -529,4 +561,82 @@ test('additional coordinators schedule a batch of banks and professor/room reser
   for(const uid of ['teacher1','disabled',null]) {
     await assertFails(update(ref(db(uid)),{'boards/forbidden':{...newBoard(),createdBy:uid||'anonymous'},'groupBoards/forbidden':'forbidden'}));
   }
+});
+
+test('coordinators assign and replace ungraded evaluators atomically with locks while preserving historical data and agenda', async () => {
+  const original=await readPrivileged('/');
+  await assertSucceeds(update(ref(db('otherCoord')),{
+    'boards/b1/members/disabled':null,'boards/b1/memberNames/disabled':null,
+    'boards/b1/members/outsider':true,'boards/b1/memberNames/outsider':'Outro professor',
+    'boards/b1/assignmentRevision':1,'locks/slice/outsider':'b1'
+  }));
+  const after=await readPrivileged('boards/b1');
+  assert.deepEqual(after.members,{teacher1:true,teacher2:true,outsider:true});
+  assert.deepEqual(after.memberNames,{teacher1:'Professor 1',teacher2:'Professor 2',outsider:'Outro professor'});
+  assert.equal(after.assignmentRevision,1);assert.equal(await readPrivileged('locks/slice/outsider'),'b1');
+  for(const key of ['groupId','advisorUid','advisorName','startAt','durationMin','room','createdBy','createdAt'])assert.equal(after[key],original.boards.b1[key],key);
+  for(const path of ['groups','grades','deliveries','groupBoards','roomLocks'])assert.deepEqual(await readPrivileged(path),original[path],path);
+  await assertSucceeds(get(ref(db('outsider'),'chatMessages/b1')));
+  await assertSucceeds(update(ref(db('otherCoord')),{
+    'boards/b1/members/outsider':null,'boards/b1/memberNames/outsider':null,
+    'boards/b1/assignmentRevision':2,'locks/slice/outsider':null
+  }));
+  assert.equal(await readPrivileged('locks/slice/outsider'),null);
+  assert.equal((await readPrivileged('boards/b1')).assignmentRevision,2);
+});
+
+test('assignment revision rejects stale concurrent plans, missing revisions and parent-map replacement', async () => {
+  await bypass('boards/b1/members/disabled',null);await bypass('boards/b1/memberNames/disabled',null);
+  const fresh={'boards/b1/members/outsider':true,'boards/b1/memberNames/outsider':'Outro professor','boards/b1/assignmentRevision':1,'locks/slice/outsider':'b1'};
+  await assertFails(update(ref(db('otherCoord')),{'boards/b1/members/outsider':true,'boards/b1/memberNames/outsider':'Outro professor'}));
+  await assertFails(update(ref(db('otherCoord')),{'boards/b1/members':{teacher1:true,teacher2:true,outsider:true},'boards/b1/memberNames':{teacher1:'Professor 1',teacher2:'Professor 2',outsider:'Outro professor'},'boards/b1/assignmentRevision':1}));
+  await assertSucceeds(update(ref(db('otherCoord')),fresh));
+  const after=await readPrivileged('/');
+  await assertFails(update(ref(db('coord')),{'boards/b1/members/otherCoord':true,'boards/b1/memberNames/otherCoord':'Outra coordenação','boards/b1/assignmentRevision':1,'locks/slice/otherCoord':'b1'}));
+  await assertFails(update(ref(db('coord')),{'boards/b1/members/otherCoord':true,'boards/b1/memberNames/otherCoord':'Outra coordenação','boards/b1/assignmentRevision':3,'locks/slice/otherCoord':'b1'}));
+  assert.deepEqual(await readPrivileged('/'),after);
+});
+
+test('assignment rules preserve evaluators with saved scores including zero, names and locked reservations', async () => {
+  await bypass('grades/b1/teacher1',{s1:{presentation:0,practice:0,code:0,time:0}});
+  const original=await readPrivileged('/');
+  await assertFails(update(ref(db('otherCoord')),{'boards/b1/members/teacher1':null,'boards/b1/memberNames/teacher1':null,'boards/b1/assignmentRevision':1,'locks/slice/teacher1':null}));
+  await assertFails(update(ref(db('otherCoord')),{'boards/b1/memberNames/teacher1':'Nome adulterado','boards/b1/assignmentRevision':1}));
+  await assertFails(update(ref(db('otherCoord')),{'boards/b1/assignmentRevision':1,'locks/slice/teacher1':null}));
+  await assertFails(update(ref(db('otherCoord')),{'boards/b1/assignmentRevision':1,'locks/slice/teacher1':'another-bank'}));
+  await assertFails(update(ref(db('otherCoord')),{'boards/b1/members/outsider':true,'boards/b1/assignmentRevision':1}));
+  await assertFails(update(ref(db('otherCoord')),{'boards/b1/memberNames/outsider':'Outro professor','boards/b1/assignmentRevision':1}));
+  await assertFails(update(ref(db('otherCoord')),{'boards/b1/members/outsider':true,'boards/b1/memberNames/outsider':'Nome falso','boards/b1/assignmentRevision':1}));
+  await assertFails(update(ref(db('otherCoord')),{'locks/unused/outsider':'b1'}));
+  assert.deepEqual(await readPrivileged('/'),original);
+});
+
+test('only active coordinators reassign open boards and the composition update cannot modify schedule, reports or grades', async () => {
+  const assignment={'boards/b1/members/outsider':true,'boards/b1/memberNames/outsider':'Outro professor','boards/b1/assignmentRevision':1,'locks/slice/outsider':'b1'};
+  const original=await readPrivileged('/');
+  for(const uid of ['teacher1','outsider','disabled',null])await assertFails(update(ref(db(uid)),assignment));
+  for(const change of [{'boards/b1/startAt':Date.now()+3600000},{'boards/b1/room':'Outra sala'},{'boards/b1/createdBy':'otherCoord'},{'boards/b1/groupId':'g2'},{'grades/b1/teacher1':null}])await assertFails(update(ref(db('otherCoord')),{...assignment,...change}));
+  await assertFails(remove(ref(db('otherCoord'),'boards/b1')));
+  assert.deepEqual(await readPrivileged('/'),original);
+  await bypass('seals/b1',seal());await assertFails(update(ref(db('otherCoord')),assignment));
+  await bypass('seals/b1',null);await bypass('groups/g1/active',false);await assertFails(update(ref(db('otherCoord')),assignment));
+  assert.deepEqual(await readPrivileged('grades'),original.grades);
+});
+
+test('adding an active evaluator retains an inactive graded member and historical names without requiring profile rewrites', async () => {
+  await bypass('boards/b1/members/disabled',null);await bypass('boards/b1/memberNames/disabled',null);
+  await bypass('users/teacher1/active',false);
+  await bypass('users/teacher2',null);
+  await bypass('boards/b1/memberNames/teacher1','Nome histórico do avaliador');
+  const original=await readPrivileged('/');
+  await assertSucceeds(update(ref(db('otherCoord')),{
+    'boards/b1/members/outsider':true,'boards/b1/memberNames/outsider':'Outro professor',
+    'boards/b1/assignmentRevision':1,'locks/slice/outsider':'b1'
+  }));
+  const after=await readPrivileged('boards/b1');
+  assert.equal(after.members.teacher1,true);assert.equal(after.members.teacher2,true);
+  assert.equal(after.memberNames.teacher1,'Nome histórico do avaliador');assert.equal(after.memberNames.teacher2,original.boards.b1.memberNames.teacher2);
+  assert.deepEqual(await readPrivileged('grades'),original.grades);assert.deepEqual(await readPrivileged('deliveries'),original.deliveries);
+  await assertFails(update(ref(db('otherCoord')),{'boards/b1/members/teacher1':null,'boards/b1/memberNames/teacher1':null,'boards/b1/assignmentRevision':2,'locks/slice/teacher1':null}));
+  await assertFails(update(ref(db('otherCoord')),{'boards/b1/members/disabled':true,'boards/b1/memberNames/disabled':'Desativado','boards/b1/assignmentRevision':2,'locks/slice/disabled':'b1'}));
 });

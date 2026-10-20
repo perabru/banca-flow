@@ -14,7 +14,7 @@ const html = readFileSync(join(__dirname, '..', 'index.html'), 'utf8');
 const source = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^import\s.+?;\s*$/gm, '');
 const markup = html.replace(/<script type="module">[\s\S]*?<\/script>/, '');
 const XLSX=require('../assets/vendor/xlsx-0.20.3.full.min.js');
-const localAssetPaths=['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js','/assets/board-chat.js','/assets/board-chat.css','/assets/board-import.js','/assets/chat-notifications.js','/assets/weighted-model.js','/assets/weighted-report-ui.js','/assets/weighted-report.css','/assets/weighted-report-pdf.js','/assets/weighted-workbench.js','/manifest.webmanifest','/chat-sw.js','/assets/app-icon-180.png','/assets/app-icon-192.png','/assets/app-icon-512.png','/assets/notification-badge.png'];
+const localAssetPaths=['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js','/assets/board-chat.js','/assets/board-chat.css','/assets/board-import.js','/assets/chat-notifications.js','/assets/weighted-model.js','/assets/weighted-report-ui.js','/assets/weighted-report.css','/assets/weighted-report-pdf.js','/assets/weighted-workbench.js','/assets/board-assignment.js','/manifest.webmanifest','/chat-sw.js','/assets/app-icon-180.png','/assets/app-icon-192.png','/assets/app-icon-512.png','/assets/notification-badge.png'];
 const assetContentType=path=>path.endsWith('.png')?'image/png':path.endsWith('.webmanifest')?'application/manifest+json':path.endsWith('.css')?'text/css':'text/javascript';
 const readLocalAsset=path=>readFileSync(join(__dirname,'..',path.slice(1)));
 const fixture = {
@@ -116,7 +116,7 @@ async function openApp(t,{timezoneId='UTC'}={}) {
   };
   await page.route('**/*',requestHandler);
   const bootstrap = adapter() + source + `
-    globalThis.appTest={state,go,render,resetAppData,createBoards,makeBoard,openBoardImport,closeBoardImport,confirmBoardImport,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,isChatVisible:typeof isChatVisible==='function'?isChatVisible:null,toggleChatWidget:typeof toggleChatWidget==='function'?toggleChatWidget:null,closeChatWidget:typeof closeChatWidget==='function'?closeChatWidget:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,toggleChatMuted:typeof toggleChatMuted==='function'?toggleChatMuted:null,requestChatNotifications:typeof requestChatNotifications==='function'?requestChatNotifications:null,syncChatAlerts:typeof syncChatAlerts==='function'?syncChatAlerts:null,stopChatAlerts:typeof stopChatAlerts==='function'?stopChatAlerts:null,getChatAlertsState:typeof getChatAlertsState==='function'?getChatAlertsState:null,weightedWorkbench:typeof weightedWorkbench!=='undefined'?weightedWorkbench:null,weightedReportsView:typeof weightedReportsView==='function'?weightedReportsView:null,buildWeightedReportPdf:typeof buildWeightedReportPdf==='function'?buildWeightedReportPdf:null,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
+    globalThis.appTest={state,go,render,resetAppData,openBoardAssignment:typeof openBoardAssignment==='function'?openBoardAssignment:null,saveBoardAssignment:typeof saveBoardAssignment==='function'?saveBoardAssignment:null,closeBoardAssignment:typeof closeBoardAssignment==='function'?closeBoardAssignment:null,promoteTeacher:typeof promoteTeacher==='function'?promoteTeacher:null,prepareAdministratorRegistration:typeof prepareAdministratorRegistration==='function'?prepareAdministratorRegistration:null,createBoards,makeBoard,openBoardImport,closeBoardImport,confirmBoardImport,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,isChatVisible:typeof isChatVisible==='function'?isChatVisible:null,toggleChatWidget:typeof toggleChatWidget==='function'?toggleChatWidget:null,closeChatWidget:typeof closeChatWidget==='function'?closeChatWidget:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,toggleChatMuted:typeof toggleChatMuted==='function'?toggleChatMuted:null,requestChatNotifications:typeof requestChatNotifications==='function'?requestChatNotifications:null,syncChatAlerts:typeof syncChatAlerts==='function'?syncChatAlerts:null,stopChatAlerts:typeof stopChatAlerts==='function'?stopChatAlerts:null,getChatAlertsState:typeof getChatAlertsState==='function'?getChatAlertsState:null,weightedWorkbench:typeof weightedWorkbench!=='undefined'?weightedWorkbench:null,weightedReportsView:typeof weightedReportsView==='function'?weightedReportsView:null,buildWeightedReportPdf:typeof buildWeightedReportPdf==='function'?buildWeightedReportPdf:null,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
       mount(uid){clearListeners();resetAppData();mock.uid=uid;state.user={uid,email:uid+'@example.test'};state.profile=mock.clone(mock.data.users[uid]);for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])state[key]=mock.clone(mock.data[key]||{});state.connected=true;document.querySelector('#login-view').classList.add('hidden');document.querySelector('#app-view').classList.remove('hidden');if(isCoord())for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])listen(key,key);else syncTeacherSubs();syncTimerSubs();go('avaliar','b1');}
     };appTest.mount('t1');
   `;
@@ -962,7 +962,7 @@ test('Alberson creates a coordinator who manages groups and schedules a bank man
   await page.locator('[data-edit-teacher="new-teacher"]').click();await page.locator('#teacher-edit-dialog').waitFor({state:'visible'});
   assert.match(await page.locator('#teacher-edit-role').inputValue(),/Coordenador/);await page.locator('#teacher-edit-name').fill('Coordenadora Atualizada');await page.locator('#teacher-edit-form button[type="submit"]').click();
   await page.waitForFunction(()=>firebaseMock.data.users['new-teacher'].name==='Coordenadora Atualizada');
-  await page.evaluate(()=>{appTest.mount('new-teacher');appTest.go('professores');});assert.equal(await page.locator('#teacher-form').count(),0,'new coordinator cannot mint other accounts');
+  await page.evaluate(()=>{appTest.mount('new-teacher');appTest.go('professores');});assert.equal(await page.locator('#teacher-form').count(),1,'new coordinators share access administration');
   await page.evaluate(()=>appTest.go('grupos'));
   await page.locator('#group-name').fill('Grupo da nova coordenação');await page.locator('#group-course').fill('ADS');await page.locator('#group-class').fill('3A');await page.locator('#group-title').fill('Banca organizada por outra coordenação');await page.locator('#group-advisor').selectOption('t1');
   await page.locator('[data-remove-group-student="s3"]').click();await page.locator('[data-group-student="s1"] input').fill('Carla');await page.locator('[data-group-student="s2"] input').fill('Daniel');
@@ -1026,4 +1026,81 @@ test('timer warning becomes red after fifteen minutes, survives pause and closur
   page.once('dialog',dialog=>dialog.accept());await page.locator('[data-timer-action="reset"]').click();await page.waitForFunction(()=>firebaseMock.data.timers.b1.elapsedMs===0);
   assert.equal(await display.textContent(),'00:00,00');assert.equal(await display.evaluate(el=>el.classList.contains('timer-overrun')),false);assert.equal(await panel.locator('[data-timer-warning]').isVisible(),false);
   assert.equal(await page.evaluate(()=>JSON.stringify(firebaseMock.data.grades)),before);assert.deepEqual(errors,[]);
+});
+
+test('Wagner and every coordinator share access administration; administrator creation and all report families preserve saved academics', {skip}, async t=>{
+  const {page,errors,cspErrors}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-administration-qa';mkdirSync(qa,{recursive:true});
+  const before=await page.evaluate(()=>{
+    firebaseMock.data.users.coord2={name:'Coordenação da equipe',email:'coord2@example.test',key:'coord-equipe',role:'coordinator',active:true};
+    Object.assign(firebaseMock.data.users.t1,{name:'Wagner',key:'wagner'});
+    appTest.mount('coord2');appTest.go('professores');
+    return JSON.stringify(Object.fromEntries(['groups','boards','grades','deliveries','seals','timers'].map(key=>[key,firebaseMock.data[key]])));
+  });
+  assert.equal(await page.locator('#teacher-form').count(),1);assert.equal(await page.locator('[data-remove-teacher="coord"]').count(),0);
+  page.once('dialog',dialog=>{assert.match(dialog.message(),/Wagner/);assert.match(dialog.message(),/one@example.test/);return dialog.accept();});
+  await page.locator('[data-promote-teacher="t1"]').click();await page.waitForFunction(()=>firebaseMock.data.users.t1.role==='coordinator');
+  assert.equal(await page.evaluate(()=>firebaseMock.data.boards.b1.members.t1),true);assert.equal(await page.evaluate(()=>firebaseMock.data.grades.b1.t1.s1.presentation),10);
+  await page.locator('[data-prepare-administrator]').click();
+  assert.equal(await page.locator('#teacher-email').inputValue(),'admin@univap.br');assert.equal(await page.locator('#teacher-key').inputValue(),'admin');assert.equal(await page.locator('#teacher-role').inputValue(),'coordinator');assert.equal(await page.locator('#teacher-password').inputValue(),'');
+  await page.locator('#teacher-password').fill('initial-test-pass');await page.locator('#teacher-form button[type="submit"]').click();
+  await page.waitForFunction(()=>firebaseMock.data.users['new-teacher']?.email==='admin@univap.br');assert.equal(await page.evaluate(()=>appTest.state.user.uid),'coord2');
+  assert.equal(await page.evaluate(()=>firebaseMock.data.users['new-teacher'].role),'coordinator');assert.equal(await page.evaluate(()=>Object.hasOwn(firebaseMock.data.users['new-teacher'],'password')),false);
+  await page.evaluate(()=>{appTest.mount('t1');appTest.go('professores');});assert.equal(await page.locator('#teacher-form').count(),1,'Wagner retains his UID and has coordinator administration');
+  await page.locator('#teacher-name').fill('Avaliadora da equipe');await page.locator('#teacher-email').fill('extra@example.test');await page.locator('#teacher-key').fill('extra');
+  await page.locator('#teacher-method').selectOption('existing');await page.locator('#teacher-uid').fill('extra-teacher');await page.locator('#teacher-form button[type="submit"]').click();
+  await page.waitForFunction(()=>firebaseMock.data.users['extra-teacher']?.createdBy==='t1');
+  await page.locator('[data-edit-teacher="extra-teacher"]').click();await page.locator('#teacher-edit-dialog').waitFor({state:'visible'});await page.locator('#teacher-edit-name').fill('Avaliadora Atualizada');await page.locator('#teacher-edit-form button[type="submit"]').click();
+  await page.waitForFunction(()=>firebaseMock.data.users['extra-teacher'].name==='Avaliadora Atualizada');
+  page.once('dialog',dialog=>dialog.accept());await page.locator('[data-remove-teacher="extra-teacher"]').click();await page.waitForFunction(()=>firebaseMock.data.users['extra-teacher'].active===false);
+  await page.locator('.teacher-archive>summary').click();await page.locator('[data-restore-teacher="extra-teacher"]').click();await page.waitForFunction(()=>firebaseMock.data.users['extra-teacher'].active===true);
+  for(const width of [320,390,1440]){await page.setViewportSize({width,height:920});await page.evaluate(()=>scrollTo(0,0));assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:join(qa,`coordinator-permissions-${width}.png`),fullPage:true});}
+  assert.equal(await page.evaluate(()=>JSON.stringify(Object.fromEntries(['groups','boards','grades','deliveries','seals','timers'].map(key=>[key,firebaseMock.data[key]])))),before);
+  await page.evaluate(()=>{firebaseMock.data.seals.b1={by:'t1',at:Date.now()};appTest.mount('new-teacher');appTest.go('professores');});assert.equal(await page.locator('#teacher-form').count(),1,'administrator has the same coordinator permissions');
+  const sealedBefore=await page.evaluate(()=>JSON.stringify(Object.fromEntries(['groups','boards','grades','deliveries','seals','timers'].map(key=>[key,firebaseMock.data[key]]))));
+  const exportPdf=async selector=>{const downloading=page.waitForEvent('download');await page.locator(selector).click();const file=await downloading;const content=readFileSync(await file.path(),'utf8');assert.match(content,/^%PDF-1\.4/);assert.match(content,/%%EOF\s*$/);assert.match(content,/Ana/);return content;};
+  await page.evaluate(()=>appTest.go('bancas'));await exportPdf('[data-pdf-agenda]');
+  await page.evaluate(()=>appTest.go('relatorios'));await exportPdf('[data-print-one="b1"]');await exportPdf('[data-print-analytics]');
+  await page.evaluate(()=>appTest.go('notas'));await exportPdf('[data-coordinator-export="pdf"]');await exportPdf('[data-coordinator-export="charts"]');
+  await page.evaluate(()=>appTest.go('personalizados'));await exportPdf('[data-weighted-export="pdf"]');await exportPdf('[data-weighted-export="charts"]');
+  assert.equal(await page.evaluate(()=>JSON.stringify(Object.fromEntries(['groups','boards','grades','deliveries','seals','timers'].map(key=>[key,firebaseMock.data[key]])))),sealedBefore);
+  await page.evaluate(()=>{firebaseMock.data.users.disabled={name:'Inativo',email:'disabled@example.test',key:'disabled',role:'coordinator',active:false};appTest.mount('disabled');appTest.go('professores');});assert.equal(await page.locator('#teacher-form').count(),0);
+  await page.evaluate(()=>{appTest.mount('t2');appTest.go('professores');});assert.equal(await page.locator('#teacher-form').count(),0);assert.equal(await page.locator('[data-promote-teacher]').count(),0);
+  assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('coordinators assign evaluators to an existing bank with atomic reservations and preserve all recorded notes', {skip}, async t=>{
+  const {page,errors,cspErrors}=await openApp(t);
+  const before=await page.evaluate(()=>{
+    firebaseMock.data.users.coord2={name:'Coordenadora responsável',email:'coord2@example.test',key:'coord-equipe',role:'coordinator',active:true};
+    appTest.mount('coord2');appTest.go('avaliar','b1');
+    return firebaseMock.clone({board:firebaseMock.data.boards.b1,grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,timers:firebaseMock.data.timers,groups:firebaseMock.data.groups,groupBoards:firebaseMock.data.groupBoards});
+  });
+  await page.locator('[data-board-assignment="b1"]').click();await page.locator('#board-assignment-dialog').waitFor({state:'visible'});
+  for(const uid of ['t1','t2']){assert.equal(await page.locator(`#board-assignment-form input[value="${uid}"]`).isChecked(),true);assert.equal(await page.locator(`#board-assignment-form input[value="${uid}"]`).isDisabled(),true,'an author with saved grades cannot be removed');}
+  await page.locator('#board-assignment-form input[value="coord2"]').check();await page.locator('#board-assignment-form button[type="submit"]').click();
+  await page.waitForFunction(()=>firebaseMock.data.boards.b1.members.coord2===true);assert.equal(await page.locator('#board-assignment-dialog').count(),0);
+  assert.equal(await page.evaluate(()=>firebaseMock.data.boards.b1.assignmentRevision),1);
+  const slots=await page.evaluate(()=>{const b=firebaseMock.data.boards.b1;return Array.from({length:b.durationMin/15},(_,i)=>String(b.startAt+i*900000));});
+  for(const slot of slots){assert.equal(await page.evaluate(slot=>firebaseMock.data.locks[slot].coord2,slot),'b1');assert.equal(await page.evaluate(slot=>appTest.state.locks?.[slot]?.coord2,slot),'b1');}
+  await page.evaluate(()=>appTest.go('minhasavaliacoes','b1'));assert.equal(await page.locator('[data-grade-form="b1"]').count(),2,'a newly assigned coordinator gets the evaluator forms');
+  await page.locator('[data-board-assignment="b1"]').click();await page.locator('#board-assignment-dialog').waitFor({state:'visible'});await page.locator('#board-assignment-form input[value="coord2"]').uncheck();await page.locator('#board-assignment-form button[type="submit"]').click();
+  await page.waitForFunction(()=>!firebaseMock.data.boards.b1.members.coord2);assert.equal(await page.evaluate(()=>firebaseMock.data.boards.b1.assignmentRevision),2);
+  for(const slot of slots){assert.equal(await page.evaluate(slot=>firebaseMock.data.locks?.[slot]?.coord2??null,slot),null);assert.equal(await page.evaluate(slot=>appTest.state.locks?.[slot]?.coord2??null,slot),null,'released slots are immediately reusable by the scheduler');}
+  const after=await page.evaluate(()=>firebaseMock.clone({board:firebaseMock.data.boards.b1,grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,timers:firebaseMock.data.timers,groups:firebaseMock.data.groups,groupBoards:firebaseMock.data.groupBoards}));
+  delete after.board.assignmentRevision;assert.deepEqual(after,before);
+  await page.evaluate(()=>{firebaseMock.data.users.blocked={name:'Docente ocupado',email:'blocked@example.test',key:'blocked',role:'teacher',active:true};firebaseMock.data.boards.b2={...firebaseMock.clone(firebaseMock.data.boards.b1),members:{blocked:true,t2:true},memberNames:{blocked:'Docente ocupado',t2:'Professora Dois'}};appTest.go('avaliar','b1');});
+  await page.locator('[data-board-assignment="b1"]').click();await page.locator('#board-assignment-dialog').waitFor({state:'visible'});await page.locator('#board-assignment-form input[value="blocked"]').check();await page.locator('#board-assignment-form button[type="submit"]').click();
+  await page.waitForFunction(()=>/outra banca|reserva/.test(document.querySelector('#board-assignment-status')?.textContent||''));assert.equal(await page.evaluate(()=>firebaseMock.data.boards.b1.members.blocked??null),null);
+  await page.locator('#board-assignment-dialog [data-assignment-close]').first().click();
+  await page.locator('[data-board-assignment="b1"]').click();await page.locator('#board-assignment-dialog').waitFor({state:'visible'});await page.locator('#board-assignment-form input[value="coord2"]').check();
+  await page.evaluate(()=>firebaseMock.write('boards/b1/room','Sala atualizada em outra janela'));await page.locator('#board-assignment-form button[type="submit"]').click();
+  await page.waitForFunction(()=>/outra janela/.test(document.querySelector('#board-assignment-status')?.textContent||''));assert.equal(await page.evaluate(()=>firebaseMock.data.boards.b1.members.coord2??null),null);
+  await page.locator('#board-assignment-dialog [data-assignment-close]').first().click();
+  await page.evaluate(()=>{firebaseMock.data.users.t1.active=false;appTest.go('avaliar','b1');});
+  await page.locator('[data-board-assignment="b1"]').click();await page.locator('#board-assignment-dialog').waitFor({state:'visible'});assert.equal(await page.locator('#board-assignment-form input[value="t1"]').isChecked(),true);assert.equal(await page.locator('#board-assignment-form input[value="t1"]').isDisabled(),true);
+  await page.locator('#board-assignment-form input[value="coord2"]').check();await page.locator('#board-assignment-form button[type="submit"]').click();await page.waitForFunction(()=>firebaseMock.data.boards.b1.members.coord2===true);
+  assert.equal(await page.evaluate(()=>firebaseMock.data.boards.b1.members.t1),true);assert.deepEqual(await page.evaluate(()=>firebaseMock.data.grades),before.grades);
+  await page.evaluate(()=>{firebaseMock.data.seals.b1={by:'coord2',at:Date.now()};appTest.mount('coord2');appTest.go('avaliar','b1');});assert.equal(await page.locator('[data-board-assignment="b1"]').count(),0);
+  const blocked=await page.evaluate(async()=>{try{await appTest.openBoardAssignment('b1');return false;}catch(error){return /Reabra|encerrad/.test(error.message);}});assert.equal(blocked,true);
+  await page.evaluate(()=>{appTest.mount('t2');appTest.go('avaliar','b1');});assert.equal(await page.locator('[data-board-assignment="b1"]').count(),0);assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
 });
