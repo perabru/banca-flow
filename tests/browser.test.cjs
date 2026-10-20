@@ -52,6 +52,12 @@ function adapter() {
     const set=async(target,value)=>{
       const path=mock.path(target);
       mock.writes.push({path,value:mock.clone(value)});
+      if(mock.optimisticChatWrites&&path.startsWith('chatMessages/')){
+        const previous=mock.clone(mock.read(path));mock.write(path,value);mock.emit(path);
+        if(mock.deferChatSets)await new Promise(resolve=>mock.releaseChatSet=resolve);
+        if(mock.chatSetError||mock.setError){mock.write(path,previous??null);mock.emit(path);throw Object.assign(Error(mock.chatSetError||mock.setError),{code:mock.chatSetErrorCode||'PERMISSION_DENIED'});}
+        chatChannel.postMessage({path,value:mock.read(path)});return;
+      }
       if(mock.deferSets)await new Promise(resolve=>mock.releaseSet=resolve);
       if(mock.setError)throw Error(mock.setError);
       mock.write(path,value);mock.emit(path);if(path.startsWith('chat'))chatChannel.postMessage({path,value:mock.read(path)});
@@ -701,6 +707,40 @@ test('two professors exchange live bank chat messages, preserve drafts, online p
   await page.evaluate(()=>{appTest.state.chatDrafts.set('b1','Rascunho anterior');appTest.mount('t2');appTest.go('chat');});
   assert.equal(await input.inputValue(),'');assert.equal(await page.evaluate(()=>appTest.state.chatDrafts.has('b1')),false,'changing account clears old drafts');
   assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('chat distinguishes pending server delivery, rejected optimistic sends and confirmed conversation between two professors', {skip}, async t=>{
+  const{page,errors,cspErrors,createPeer}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-chat-qa';mkdirSync(qa,{recursive:true});
+  await page.locator('#open-chat').click();const peer=await createPeer('t2');await peer.locator('#open-chat').click();
+  await page.waitForFunction(()=>document.querySelectorAll('[data-chat-person]').length===2);await peer.waitForFunction(()=>document.querySelectorAll('[data-chat-person]').length===2);
+  const before=await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,boards:firebaseMock.data.boards,timers:firebaseMock.data.timers}));
+  await page.evaluate(()=>{firebaseMock.optimisticChatWrites=true;firebaseMock.deferChatSets=true;firebaseMock.chatSetError='Permission denied';});
+  const input=page.locator('#chat-message'),text='Mensagem que precisa chegar ao outro professor.';
+  await input.fill(text);await input.press('Enter');await page.locator('[data-chat-delivery="pending"]').waitFor();
+  assert.equal(await page.locator('[data-chat-delivery="sent"]').count(),0);assert.equal(await peer.locator('[data-chat-message]').count(),0,'a local optimistic event does not prove server delivery');
+  await input.press('Enter');assert.equal(await page.evaluate(()=>firebaseMock.writes.filter(item=>item.path?.startsWith('chatMessages/')).length),1);
+  await page.evaluate(()=>firebaseMock.releaseChatSet());await page.locator('[data-chat-send-error]').waitFor();
+  assert.equal(await page.locator('[data-chat-message]').count(),0,'the rejected optimistic message is removed');assert.equal(await peer.locator('[data-chat-message]').count(),0);
+  assert.equal(await input.inputValue(),text);assert.equal(await page.evaluate(()=>appTest.state.chatPendingIds.size),0);
+  await page.evaluate(()=>{const toast=document.querySelector('#toast');toast.textContent='';toast.className='';});
+  await peer.locator('#chat-message').fill('Estou online e recebo mensagens confirmadas.');await peer.locator('#chat-message').press('Enter');
+  await page.waitForFunction(()=>document.querySelectorAll('[data-chat-message]').length===1);
+  assert.equal(await page.locator('[data-chat-send-error]').count(),1,'the send error survives another message and an unrelated render');
+  await page.screenshot({path:join(qa,'chat-rejected-send-390.png'),fullPage:true});
+  await page.evaluate(()=>{firebaseMock.chatSetError=null;});await input.press('Enter');await page.locator('[data-chat-delivery="pending"]').waitFor();
+  assert.equal(await peer.locator('[data-chat-message]').count(),1,'retry remains pending until the server acknowledgement');
+  await input.fill('Próxima pergunta ainda em edição.');await page.evaluate(()=>firebaseMock.releaseChatSet());
+  await peer.waitForFunction(()=>document.querySelectorAll('[data-chat-message]').length===2);await page.locator('[data-chat-delivery="sent"]').waitFor();
+  assert.equal(await page.locator('[data-chat-delivery="pending"]').count(),0);assert.equal(await page.locator('[data-chat-send-error]').count(),0);assert.equal(await input.inputValue(),'Próxima pergunta ainda em edição.');
+  assert.equal(await peer.locator('[data-chat-message] p').filter({hasText:text}).count(),1,'one manual retry creates exactly one delivered message');
+  const presenceReads=await page.evaluate(()=>firebaseMock.listens.filter(path=>path==='chatPresence').length);
+  await page.locator('[data-chat-refresh]').click();await page.waitForFunction(()=>!appTest.state.chatLoading);
+  assert.equal(await page.locator('[data-chat-message]').count(),2);assert.equal(await page.evaluate(()=>firebaseMock.listens.filter(path=>path==='chatPresence').length),presenceReads,'message refresh leaves healthy presence connected');
+  await page.locator('#chat-message-list').evaluate(el=>{el.style.height='55px';el.style.minHeight='55px';el.scrollTop=0;});await page.locator('[data-chat-latest]').click();
+  assert.ok(await page.locator('#chat-message-list').evaluate(el=>el.scrollHeight-el.clientHeight-el.scrollTop<2));
+  await page.locator('#chat-message-list').evaluate(el=>{el.style.removeProperty('height');el.style.removeProperty('min-height');});
+  for(const width of [320,390,1440]){await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:join(qa,`chat-delivery-confirmed-${width}.png`),fullPage:true});}
+  assert.equal(await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,boards:firebaseMock.data.boards,timers:firebaseMock.data.timers})),before);assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
 });
 
 test('legacy and newly registered teachers without banks recover denied general chat and converse without reloading', {skip}, async t=>{

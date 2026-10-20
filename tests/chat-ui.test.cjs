@@ -98,6 +98,89 @@ test('chat connection badge is green only after the conversation is ready withou
   assert.doesNotMatch(unavailable.match(/<textarea[^>]*>/)[0], /disabled/);
 });
 
+test('send errors preserve the editable draft and allow a manual retry independently of conversation errors', () => {
+  const options = fixture({ sendError: 'Envio recusado <temporariamente>.', draft: 'Mensagem preservada\npara reenviar' });
+  for (let render = 0; render < 2; render++) {
+    const html = chat.renderChat(options);
+    assert.match(html, /id="chat-send-error"[^>]*role="alert"/);
+    assert.match(html, /data-chat-send-error="1"/);
+    assert.match(html, /Envio recusado &lt;temporariamente&gt;\./);
+    assert.match(html, /aria-describedby="[^"]*chat-send-error"/);
+    assert.match(html, />Mensagem preservada\npara reenviar<\/textarea>/);
+    assert.match(html, /Você pode tentar enviar novamente/);
+    assert.doesNotMatch(html.match(/<button type="submit"[^>]*>/)[0], /disabled/);
+    assert.doesNotMatch(html.match(/<textarea[^>]*>/)[0], /disabled/);
+    assert.match(html, /data-chat-person="t1"/);
+    assert.doesNotMatch(html, /data-chat-retry="1"/);
+  }
+  const readError = chat.renderChat({ ...options, error: 'Não foi possível ler o histórico.' });
+  assert.match(readError, /Não foi possível ler o histórico/);
+  assert.match(readError, /Mensagem não enviada/);
+  assert.match(readError.match(/<button type="submit"[^>]*>/)[0], /disabled/);
+});
+
+test('copying access rules is offered only with a send error and an explicit capability', () => {
+  const enabled = chat.renderChat(fixture({ sendError: 'Permissão negada <temporariamente>.', canCopyAccessPolicy: true }));
+  const alert = enabled.match(/<div id="chat-send-error"[^>]*>[\s\S]*?<\/div>/)[0];
+  assert.match(alert, /<button type="button" class="btn soft" data-copy-policy="1">Copiar regras de acesso<\/button>/);
+  assert.match(alert, /Permissão negada &lt;temporariamente&gt;\./);
+  assert.doesNotMatch(enabled.match(/<button type="submit"[^>]*>/)[0], /disabled/);
+  for (const extra of [{ canCopyAccessPolicy: true }, { sendError: 'Permissão negada.' }, { sendError: 'Permissão negada.', canCopyAccessPolicy: false }, { sendError: 'Permissão negada.', canCopyAccessPolicy: 'true' }]) {
+    assert.doesNotMatch(chat.renderChat(fixture(extra)), /data-copy-policy|Copiar regras de acesso/);
+  }
+});
+
+test('only pending own messages show sending and confirmed own messages show sent without read claims', () => {
+  const html = chat.renderChat(fixture({
+    pendingIds: ['pending', 'other'],
+    messages: [
+      { id: 'pending', uid: 't1', name: 'Bruno', text: 'A caminho', at: 1 },
+      { id: 'sent', uid: 't1', name: 'Bruno', text: 'Confirmada', at: 2 },
+      { id: 'other', uid: 't2', name: 'Outra professora', text: 'Recebida', at: 3 }
+    ]
+  }));
+  const article = id => html.match(new RegExp(`<article[^>]*data-chat-message="${id}"[\\s\\S]*?<\\/article>`))[0];
+  assert.match(article('pending'), /bf-chat-message-pending/);
+  assert.match(article('pending'), /data-chat-delivery="pending"/);
+  assert.match(article('pending'), /aria-label="Mensagem em envio">Enviando…<\/span>/);
+  assert.doesNotMatch(article('pending'), />Enviada</);
+  assert.match(article('sent'), /aria-label="Mensagem enviada">Enviada<\/span>/);
+  assert.match(article('sent'), /data-chat-delivery="sent"/);
+  assert.doesNotMatch(article('sent'), /bf-chat-message-pending|is-pending/);
+  assert.doesNotMatch(article('other'), /bf-chat-message-delivery|Enviando…|Enviada/);
+  assert.doesNotMatch(html, /Mensagem lida|Visualizada/);
+});
+
+test('empty error and loading states never suggest the room has no previous conversation', () => {
+  for (const extra of [{ error: 'Falha na leitura.' }, { error: 'Falha na leitura.', loading: true }]) {
+    const html = chat.renderChat(fixture(extra));
+    assert.match(html, /Não foi possível carregar as mensagens/);
+    assert.doesNotMatch(html, /A conversa começa aqui|Envie a primeira mensagem/);
+  }
+  const loading = chat.renderChat(fixture({ loading: true }));
+  assert.match(loading, /Carregando mensagens/);
+  assert.doesNotMatch(loading, /A conversa começa aqui|Envie a primeira mensagem/);
+  const existing = chat.renderChat(fixture({ error: 'Falha ao atualizar.', messages: [{ id: 'm1', uid: 't2', text: 'Histórico preservado', at: 1 }] }));
+  assert.match(existing, /Histórico preservado/);
+  assert.doesNotMatch(existing, /class="bf-chat-empty"/);
+});
+
+test('conversation refresh and latest-message controls are explicit buttons without implicit message submission', () => {
+  const empty = chat.renderChat(fixture());
+  const refresh = empty.match(/<button[^>]*data-chat-refresh="1"[^>]*>/)[0];
+  assert.match(refresh, /type="button"/);
+  assert.doesNotMatch(refresh, /disabled/);
+  assert.match(empty, />Atualizar conversa<\/button>/);
+  assert.doesNotMatch(empty, /data-chat-latest/);
+  const existing = chat.renderChat(fixture({ messages: [{ id: 'm1', uid: 't2', text: 'Mensagem', at: 1 }] }));
+  const latest = existing.match(/<button[^>]*data-chat-latest="1"[^>]*>/)[0];
+  assert.match(latest, /type="button"/);
+  assert.match(latest, /aria-controls="chat-message-list"/);
+  assert.match(existing, />Últimas mensagens<\/button>/);
+  const noRoom = chat.renderChat({ rooms: [], roomId: '' });
+  assert.match(noRoom.match(/<button[^>]*data-chat-refresh="1"[^>]*>/)[0], /disabled/);
+});
+
 test('history, loading and retry controls are explicit and unavailable history is not fabricated', () => {
   const html = chat.renderChat(fixture({ roomId: 'b1', hasMore: true, loadingOlder: true, error: 'Acesso indisponível <temporário>.' }));
   assert.match(html, /data-chat-older="1" disabled/);

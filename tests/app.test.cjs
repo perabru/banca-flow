@@ -97,7 +97,7 @@ function harness(uid = 't1') {
     createUserWithEmailAndPassword: async (_auth,email,password) => {calls.authCreates.push({email,password});if(options.authCreateError)throw options.authCreateError;return{user:{uid:options.newAuthUid||'new-teacher'}};},
     deleteUser: async user => {calls.authDeletes.push(user.uid);if(options.authDeleteError)throw options.authDeleteError;},
     deleteApp: async app => {calls.appDeletes.push(app.name);}, signOut:async()=>{},
-    onAuthStateChanged: () => () => {}, onValue: (target,callback,error) => {calls.listens.push(pathOf(target));listeners.set(target,callback);listenerErrors.set(target,error);if(pathOf(target).startsWith('chat')){if(options.chatReadError){listeners.delete(target);listenerErrors.delete(target);error?.(Object.assign(Error('Permission denied'),{code:'PERMISSION_DENIED'}));}else callback(snapshot(queryValue(target)));}return()=>{listeners.delete(target);listenerErrors.delete(target);};},
+    onAuthStateChanged: () => () => {}, onValue: (target,callback,error) => {calls.listens.push(pathOf(target));listeners.set(target,callback);listenerErrors.set(target,error);if(pathOf(target).startsWith('chat')){if(options.chatReadError){listeners.delete(target);listenerErrors.delete(target);error?.(Object.assign(Error('Permission denied'),{code:'PERMISSION_DENIED'}));}else if(!options.deferChatMessages||!pathOf(target).startsWith('chatMessages/'))callback(snapshot(queryValue(target)));}return()=>{listeners.delete(target);listenerErrors.delete(target);};},
     query:(target,...constraints)=>({path:pathOf(target),constraints}),orderByChild:key=>({kind:'order',key}),limitToLast:count=>({kind:'last',count}),endBefore:(value,key)=>({kind:'before',value,key}),
     onDisconnect: target => ({remove:async()=>{calls.disconnects.push({kind:'remove',path:pathOf(target)});if(options.disconnectError)throw options.disconnectError;},cancel:async()=>calls.disconnects.push({kind:'cancel',path:pathOf(target)})}),
     remove: async target => {const path=pathOf(target);calls.removals.push(path);write(path,null);emit(path);},
@@ -108,9 +108,15 @@ function harness(uid = 't1') {
     set: async (target, value) => {
       const path=pathOf(target);
       calls.sets.push([path, clone(value)]);
+      if(options.optimisticChatWrites&&path.startsWith('chatMessages/')){
+        const previous=clone(read(path));write(path,value);emit(path);
+        await options.beforeSet?.(path,value);
+        if(options.setError){write(path,previous??null);emit(path);throw options.setError;}
+        return;
+      }
       if (options.setError) throw options.setError;
       await options.beforeSet?.(path,value);
-      write(path, value);emit(path);
+      write(path, value);if(!options.suppressChatMessageEmits||!path.startsWith('chatMessages/'))emit(path);
     },
     update: async (base, changes) => {
       calls.updates.push(clone(changes));
@@ -1116,6 +1122,16 @@ test('chat automatically reopens cancelled permission reads when authorization b
   assert.equal(h.calls.listens.length,count,'an old retry cannot reopen chat after session cleanup');
 });
 
+test('chat retries a message subscription that never delivers its first snapshot while keeping online presence connected',async()=>{
+  const h=harness(),{app}=h;h.options.deferChatMessages=true;app.openGeneralChat();app.syncChat();await new Promise(setImmediate);
+  assert.equal(app.state.chatLoading,true);const presenceReads=h.calls.listens.filter(path=>path==='chatPresence').length,initialReads=h.calls.listens.filter(path=>path==='chatMessages/geral').length;
+  h.advance(10000);h.runTimeouts(10000);
+  assert.equal(app.state.chatLoading,false);assert.match(app.state.chatError,/mensagens|conversa/i);
+  h.options.deferChatMessages=false;h.advance(2000);h.runTimeouts(2000);await new Promise(setImmediate);
+  assert.ok(h.calls.listens.filter(path=>path==='chatMessages/geral').length>initialReads);assert.equal(app.state.chatLoading,false);assert.equal(app.state.chatError,'');
+  assert.equal(h.calls.listens.filter(path=>path==='chatPresence').length,presenceReads,'a stalled message query does not discard healthy online presence');
+});
+
 test('chat sends plain text with canonical author/server time only to the selected authorized room and never changes grades',async()=>{
   const h=harness(),{app}=h,before=clone({grades:h.data.grades,deliveries:h.data.deliveries,boards:h.data.boards});
   app.state.chatRoom='b1';const form={dataset:{chatRoom:'b1'},values:{message:'  Boa apresentação!\r\nPodemos começar.  '}};
@@ -1143,12 +1159,54 @@ test('a pending chat send prevents double submission, retains newly typed drafts
   h.options.beforeSet=async path=>{if(path.startsWith('chatMessages/'))await new Promise(resolve=>release=resolve);};
   const form={dataset:{chatRoom:'geral'},values:{message:'Mensagem original'}};
   const sending=app.sendChatMessage(form);assert.equal(app.state.chatSending,true);
-  await app.sendChatMessage(form);assert.equal(h.calls.sets.length,1);
+  await app.sendChatMessage(form);await new Promise(setImmediate);assert.equal(h.calls.sets.length,1);
   app.state.chatDrafts.set('geral','Próxima mensagem ainda em edição');release();await sending;
   assert.equal(app.state.chatDrafts.get('geral'),'Próxima mensagem ainda em edição');assert.equal(app.state.chatSending,false);
   const failed=harness();failed.options.setError=Error('Falha de conexão');
   await assert.rejects(failed.app.sendChatMessage(form),/conexão/);
   assert.equal(failed.app.state.chatDrafts.get('geral'),'Mensagem original');assert.equal(failed.app.state.chatSending,false);assert.equal(failed.data.chatMessages,undefined);
+});
+
+test('optimistic chat delivery stays pending until acknowledgement and rollback removes a rejected message while keeping its draft and error',async()=>{
+  const h=harness(),{app}=h;app.openGeneralChat();app.syncChat();await new Promise(setImmediate);
+  h.options.optimisticChatWrites=true;let release;
+  h.options.beforeSet=async path=>{if(path.startsWith('chatMessages/'))await new Promise(resolve=>release=resolve);};
+  const form={dataset:{chatRoom:'geral'},values:{message:'Esta mensagem precisa chegar ao colega.'}},sending=app.sendChatMessage(form);
+  await new Promise(setImmediate);
+  assert.equal(Object.keys(app.state.chatMessages).length,1);assert.equal(app.state.chatPendingIds.size,1);
+  assert.match(app.chatView(),/data-chat-delivery="pending"/);assert.doesNotMatch(app.chatView(),/data-chat-delivery="sent"/);
+  await app.sendChatMessage(form);assert.equal(h.calls.sets.filter(([path])=>path.startsWith('chatMessages/')).length,1,'a delayed acknowledgement cannot produce a duplicate submission');
+  h.options.setError=Object.assign(Error('Permission denied'),{code:'PERMISSION_DENIED'});release();await assert.rejects(sending,/Permission denied/);
+  assert.equal(Object.keys(h.data.chatMessages.geral).length,0);assert.equal(Object.keys(app.state.chatMessages).length,0);assert.equal(app.state.chatPendingIds.size,0);
+  assert.equal(app.state.chatDrafts.get('geral'),form.values.message);assert.ok(app.state.chatSendError);assert.match(app.chatView(),/data-chat-send-error/);
+  h.write('chatPresence/t2/tab',{name:'Professora Dois',role:'teacher',at:h.now()});h.emit('chatPresence');
+  assert.ok(app.state.chatSendError,'an unrelated presence update cannot hide a failed send');
+  h.options.setError=null;h.options.beforeSet=null;await app.sendChatMessage(form);
+  assert.equal(Object.keys(h.data.chatMessages.geral).length,1);assert.equal(Object.keys(app.state.chatMessages).length,1);assert.equal(app.state.chatPendingIds.size,0);assert.equal(app.state.chatSendError,'');
+  assert.match(app.chatView(),/data-chat-delivery="sent"/);assert.doesNotMatch(app.chatView(),/data-chat-delivery="pending"/);
+});
+
+test('acknowledged chat send remains visible when its live snapshot is delayed and uses a freshly read canonical profile',async()=>{
+  const h=harness(),{app}=h;app.openGeneralChat();app.syncChat();await new Promise(setImmediate);
+  h.data.users.t1.name='Nome canônico atualizado';h.options.suppressChatMessageEmits=true;
+  await app.sendChatMessage({dataset:{chatRoom:'geral'},values:{message:'Gravada e confirmada.'}});
+  const sent=h.calls.sets.find(([path])=>path.startsWith('chatMessages/geral/'));
+  assert.equal(sent[1].name,'Nome canônico atualizado');assert.ok(h.calls.reads.includes('users/t1'));
+  assert.equal(Object.keys(app.state.chatMessages).length,1);assert.equal(app.state.chatPendingIds.size,0);assert.match(app.chatView(),/Gravada e confirmada\./);
+  h.emit('chatMessages/geral');assert.equal(Object.keys(app.state.chatMessages).length,1,'the later server snapshot never duplicates an acknowledged ID');
+  const disabled=harness();disabled.data.users.t1.active=false;
+  await assert.rejects(disabled.app.sendChatMessage({dataset:{chatRoom:'geral'},values:{message:'Não gravar.'}}),/acesso|ativo|sessão|removido/i);
+  assert.equal(disabled.calls.sets.filter(([path])=>path.startsWith('chatMessages/')).length,0);
+});
+
+test('authoritative live chat snapshots remove rolled-back records while retaining older history pages',async()=>{
+  const h=harness(),{app}=h;
+  h.data.chatMessages={geral:Object.fromEntries(Array.from({length:130},(_,i)=>['m'+String(i).padStart(3,'0'),{uid:'t2',name:'Professora Dois',text:'Mensagem '+i,at:h.now()-200000+i}]))};
+  app.openGeneralChat();app.syncChat();await app.loadOlderChat();assert.equal(Object.keys(app.state.chatMessages).length,130);
+  h.write('chatMessages/geral/local-unconfirmed',{uid:'t1',name:'Professor Um',text:'Evento local ainda não confirmado',at:h.now()});h.emit('chatMessages/geral');assert.ok(app.state.chatMessages['local-unconfirmed']);
+  h.write('chatMessages/geral/local-unconfirmed',null);h.emit('chatMessages/geral');
+  assert.equal(app.state.chatMessages['local-unconfirmed'],undefined);assert.ok(app.state.chatMessages.m000,'rolling back a live-window record does not discard the older history');
+  assert.equal(Object.keys(app.state.chatMessages).length,130);
 });
 
 test('chat history pages by timestamp and id without losing older messages or changing rooms',async()=>{
@@ -1204,18 +1262,31 @@ test('cancelled chat access prevents a pending older-history read from restoring
   assert.equal(Object.keys(app.state.chatMessages).length,0,'late history must stay cleared after access cancellation');assert.equal(app.state.chatLoadingOlder,false);
 });
 
-test('retrying a presence-only failure releases pending history loading and ignores its old result',async()=>{
+test('retrying only a presence failure preserves a pending history request and the message subscription',async()=>{
   const h=harness(),{app}=h;
   h.data.chatMessages={geral:Object.fromEntries(Array.from({length:130},(_,i)=>['m'+String(i).padStart(3,'0'),{uid:'t2',name:'Professora Dois',text:'Histórico '+i,at:h.now()-200000+i}]))};
   app.state.route='chat';app.syncChat();let release;
   h.options.beforeRead=async path=>{if(path==='chatMessages/geral')await new Promise(resolve=>release=resolve);};
   const older=app.loadOlderChat();assert.equal(app.state.chatLoadingOlder,true);
   h.emitError('chatPresence');assert.ok(app.state.chatPresenceError);assert.equal(app.state.chatError,'','the message subscription remains valid until retry');
-  app.retryChat();assert.equal(app.state.chatLoadingOlder,false,'replacing the subscription releases pagination from its previous epoch');
+  const reads=h.calls.listens.filter(path=>path==='chatMessages/geral').length;
+  app.retryChat();assert.equal(app.state.chatLoadingOlder,true,'presence reconnection does not replace the healthy message subscription');
+  assert.equal(h.calls.listens.filter(path=>path==='chatMessages/geral').length,reads);
   assert.equal(Object.keys(app.state.chatMessages).length,100);
-  release();await older;assert.equal(Object.keys(app.state.chatMessages).length,100,'the completed older request belongs to the replaced subscription');
-  h.options.beforeRead=null;await app.loadOlderChat();
+  release();await older;
   assert.equal(Object.keys(app.state.chatMessages).length,130);assert.equal(app.state.chatLoadingOlder,false);
+});
+
+test('refreshing only chat messages replaces a pending history epoch without reconnecting online presence',async()=>{
+  const h=harness(),{app}=h;
+  h.data.chatMessages={geral:Object.fromEntries(Array.from({length:130},(_,i)=>['m'+String(i).padStart(3,'0'),{uid:'t2',name:'Professora Dois',text:'Histórico '+i,at:h.now()-200000+i}]))};
+  app.openGeneralChat();app.syncChat();let release;
+  h.options.beforeRead=async path=>{if(path==='chatMessages/geral')await new Promise(resolve=>release=resolve);};
+  const older=app.loadOlderChat(),presenceReads=h.calls.listens.filter(path=>path==='chatPresence').length;
+  app.retryChat({messages:true,presence:false});assert.equal(app.state.chatLoadingOlder,false);
+  assert.equal(h.calls.listens.filter(path=>path==='chatPresence').length,presenceReads);
+  release();await older;assert.equal(Object.keys(app.state.chatMessages).length,100,'an old page cannot append after a manual message refresh');
+  h.options.beforeRead=null;await app.loadOlderChat();assert.equal(Object.keys(app.state.chatMessages).length,130);
 });
 
 function installAdditionalCoordinator(h,uid='coord2'){

@@ -5,8 +5,8 @@
 <meta name="color-scheme" content="light">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="stylesheet" href="assets/analytics.css">
-<link rel="stylesheet" href="assets/board-chat.css">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-8xpn1gdfb8syuzIAp0ChS4EuSAJHct5ArFCVgFbzKrk='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<link rel="stylesheet" href="assets/board-chat.css?v=170fee3d979f">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-AGJnS+lGRQWcvMijU8R6xm1zpCm83fgqSBS4vZJQ+ic='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>BancaFlow · Gestão de bancas | Univap</title><style>
 /* Mobile first. Cores institucionais Univap; recursos locais em assets/. */
@@ -933,7 +933,7 @@ button.avatar{width:44px;height:44px;padding:0}
 <script src="assets/analytics-pdf.js" defer></script>
 <script src="assets/coordinator-report.js" defer></script>
 <script src="assets/coordinator-report-pdf.js" defer></script>
-<script src="assets/board-chat.js" defer></script>
+<script src="assets/board-chat.js?v=d1f473c3771c" defer></script>
 <script src="assets/board-import.js" defer></script>
 <script type="module">
 // Configuração pública do app Firebase (não é uma chave administrativa).
@@ -1036,7 +1036,7 @@ const ICON_PATHS={
 };
 const icon=name=>`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name==='minhasavaliacoes'?'avaliar':name]||ICON_PATHS.bancas}</svg>`;
 const ROSTER_PROTEGIDO = JSON.parse(document.getElementById('roster-criptografado').textContent);
-const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', analyticsBoard:'', reportCharts:true, notesFilters:{course:'todas',className:'todas',date:'',status:'todas',search:''}, notesSearchDraft:'', notesChartBoard:'', notesChartsOpen:false, coordinatorExportBusy:false, notesExpanded:new Set(), chatRoom:'geral', chatMessages:{}, chatPresence:{}, chatDrafts:new Map(), chatLoading:false, chatError:'', chatPresenceError:'', chatSending:false, chatHasMore:false, chatLoadingOlder:false, unsubs:[], teacherSubs:new Map() };
+const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', analyticsBoard:'', reportCharts:true, notesFilters:{course:'todas',className:'todas',date:'',status:'todas',search:''}, notesSearchDraft:'', notesChartBoard:'', notesChartsOpen:false, coordinatorExportBusy:false, notesExpanded:new Set(), chatRoom:'geral', chatMessages:{}, chatPresence:{}, chatDrafts:new Map(), chatLoading:false, chatError:'', chatPresenceError:'', chatSendError:'', chatSendCode:'', chatPendingIds:new Set(), chatSending:false, chatHasMore:false, chatLoadingOlder:false, unsubs:[], teacherSubs:new Map() };
 const isActiveTeacher = profile => !!profile && ['coordinator','teacher'].includes(profile.role) && profile.active !== false;
 const activeTeachers = () => Object.entries(state.users).filter(([,profile])=>isActiveTeacher(profile));
 const isCoord = () => state.profile?.role === 'coordinator' && state.profile.active !== false;
@@ -1066,7 +1066,22 @@ const stats = (label,n,code)=>`<div class="stat"><div class="stat-label"><span>$
 
 let accessRevision=0;
 // Chat: salas e presença isoladas das avaliações e dos relatórios.
-const chatRuntime={epoch:0,room:'',messagesOff:null,presenceOff:null,connection:null,presenceStarting:false,retryTicket:null,retryAttempt:0};
+const chatRuntime={epoch:0,room:'',messagesOff:null,presenceOff:null,connection:null,presenceStarting:false,retryTicket:null,retryAttempt:0,messageScope:'',liveMessages:{},history:{},pendingWrites:new Map(),watchTicket:null};
+function rebuildChatMessages(){
+ const pending=[...chatRuntime.pendingWrites].filter(([,item])=>item.uid===state.user?.uid&&item.revision===accessRevision&&item.room===state.chatRoom);
+ state.chatPendingIds=new Set(pending.map(([id])=>id));
+ state.chatMessages={...chatRuntime.history,...chatRuntime.liveMessages,...Object.fromEntries(pending.map(([id,item])=>[id,item.message]))};
+}
+function clearChatWatch(){if(chatRuntime.watchTicket)clearTimeout(chatRuntime.watchTicket.handle);chatRuntime.watchTicket=null;}
+function watchChatLoad(epoch,uid,revision,room){
+ clearChatWatch();const ticket={handle:null};chatRuntime.watchTicket=ticket;
+ ticket.handle=setTimeout(()=>{
+  if(chatRuntime.watchTicket!==ticket)return;chatRuntime.watchTicket=null;
+  if(epoch!==chatRuntime.epoch||uid!==state.user?.uid||revision!==accessRevision||state.route!=='chat'||state.chatRoom!==room||!state.chatLoading)return;
+  state.chatLoading=false;state.chatError='As mensagens ainda não foram recebidas. A conversa será atualizada automaticamente; você também pode usar Atualizar conversa.';scheduleChatReconnect();render();
+ },10000);
+}
+function scrollChatToLatest(){const list=document.querySelector('#chat-message-list');if(list)list.scrollTop=list.scrollHeight;}
 function chatRooms(){
  if(!state.user||!isActiveTeacher(state.profile))return [];
  return [{id:'geral',label:'Sala dos professores',description:'Conversa geral entre os professores e a coordenação.'},...activeBoards().filter(([bid,b])=>bid!=='geral'&&(isCoord()||b.members?.[state.user.uid]===true)).sort((a,b)=>(a[1].startAt||0)-(b[1].startAt||0)).map(([id,b])=>({id,label:`${groupOf(b)?.name||b.groupId||id} · ${dateStr(b.startAt)}`,description:'Conversa da banca, acessível aos avaliadores participantes e à coordenação.'}))];
@@ -1098,14 +1113,14 @@ function onlineChatPeople(){
 }
 function chatView(){
  const rooms=chatRooms();if(!rooms.length)return empty('Acesso restrito aos professores');
- if(!rooms.some(room=>room.id===state.chatRoom)){state.chatRoom='geral';state.chatMessages={};state.chatLoading=true;state.chatError='';state.chatHasMore=false;}
+ if(!rooms.some(room=>room.id===state.chatRoom)){state.chatRoom='geral';state.chatMessages={};state.chatPendingIds=new Set();state.chatSendError='';state.chatSendCode='';state.chatLoading=true;state.chatError='';state.chatHasMore=false;}
  if(typeof BancaChat==='undefined')return empty('O chat não carregou','Reabra a página para carregar a conversa.');
  const room=rooms.find(item=>item.id===state.chatRoom);
- return (state.chatPresenceError?`<div class="notice"><p>${esc(state.chatPresenceError)}</p><button type="button" class="btn soft" data-chat-retry="1">Reconectar chat</button></div>`:'')+BancaChat.renderChat({rooms,roomId:room.id,title:room.id==='geral'?'Sala dos professores':`Chat da banca · ${groupOf(state.boards[room.id])?.name||room.label}`,roomDescription:room.description,messages:state.chatMessages,people:onlineChatPeople(),uid:state.user.uid,loading:state.chatLoading,connected:state.connected,error:state.chatError,draft:state.chatDrafts.get(room.id)||'',sending:state.chatSending,hasMore:state.chatHasMore,loadingOlder:state.chatLoadingOlder});
+ return (state.chatPresenceError?`<div class="notice"><p>${esc(state.chatPresenceError)}</p><button type="button" class="btn soft" data-chat-retry="1">Reconectar chat</button></div>`:'')+BancaChat.renderChat({rooms,roomId:room.id,title:room.id==='geral'?'Sala dos professores':`Chat da banca · ${groupOf(state.boards[room.id])?.name||room.label}`,roomDescription:room.description,messages:state.chatMessages,people:onlineChatPeople(),uid:state.user.uid,loading:state.chatLoading,connected:state.connected,error:state.chatError,sendError:state.chatSendError,canCopyAccessPolicy:isCoord()&&/permission.?denied/i.test(state.chatSendCode||''),draft:state.chatDrafts.get(room.id)||'',sending:state.chatSending,pendingIds:[...(state.chatPendingIds||[])],hasMore:state.chatHasMore,loadingOlder:state.chatLoadingOlder});
 }
 function openChatRoom(room='geral'){
  assertChatAccess(room);captureChatUi();
- if(state.chatRoom!==room){clearChatReconnect(true);state.chatRoom=room;state.chatMessages={};state.chatLoading=true;state.chatError='';state.chatHasMore=false;state.chatLoadingOlder=false;}
+ if(state.chatRoom!==room){clearChatReconnect(true);clearChatWatch();state.chatRoom=room;state.chatMessages={};state.chatPendingIds=new Set();state.chatSendError='';state.chatSendCode='';state.chatLoading=true;state.chatError='';state.chatHasMore=false;state.chatLoadingOlder=false;}
  go('chat');
 }
 function openGeneralChat(){
@@ -1129,13 +1144,13 @@ function scheduleChatReconnect(){
   if(chatRuntime.retryTicket!==ticket)return;chatRuntime.retryTicket=null;
   if(state.user?.uid!==ticket.uid||accessRevision!==ticket.revision||state.chatRoom!==ticket.room||state.route!=='chat'||!state.connected||!isActiveTeacher(state.profile)||!chatRooms().some(room=>room.id===ticket.room))return;
   if(!(state.chatError||state.chatPresenceError)){if(!state.chatLoading)chatRuntime.retryAttempt=0;return;}
-  retryChat({automatic:true});
+  retryChat({automatic:true,messages:!!state.chatError,presence:!!state.chatPresenceError});
  },delay);
 }
 function syncChat(){
  if(!state.user||!isActiveTeacher(state.profile))return;
  if(state.route!=='chat'){
-  clearChatReconnect(true);
+  clearChatReconnect(true);clearChatWatch();
   if(chatRuntime.messagesOff){chatRuntime.messagesOff();chatRuntime.messagesOff=null;chatRuntime.room='';++chatRuntime.epoch;}
   return;
  }
@@ -1149,28 +1164,36 @@ function syncChat(){
  }
  if(state.connected)void startChatPresence();
  const room=state.chatRoom;assertChatAccess(room);
- if(chatRuntime.room===room&&chatRuntime.messagesOff){scheduleChatReconnect();return;}
+ if(chatRuntime.room===room&&chatRuntime.messagesOff){if(state.chatLoading&&state.connected&&!chatRuntime.watchTicket)watchChatLoad(chatRuntime.epoch,state.user.uid,accessRevision,room);scheduleChatReconnect();return;}
  chatRuntime.messagesOff?.();const epoch=++chatRuntime.epoch,uid=state.user.uid,revision=accessRevision;
- chatRuntime.room=room;state.chatMessages={};state.chatLoading=true;state.chatLoadingOlder=false;state.chatError='';state.chatHasMore=false;
+ if(chatRuntime.messageScope!==room){chatRuntime.messageScope=room;chatRuntime.liveMessages={};chatRuntime.history={};}
+ chatRuntime.room=room;rebuildChatMessages();state.chatLoading=true;state.chatLoadingOlder=false;state.chatError='';state.chatHasMore=false;
+ watchChatLoad(epoch,uid,revision,room);
  chatRuntime.messagesOff=()=>{};
  let first=true;
  chatRuntime.messagesOff=onValue(query(ref(db,`chatMessages/${room}`),orderByChild('at'),limitToLast(100)),snapshot=>{
   if(epoch!==chatRuntime.epoch||uid!==state.user?.uid||revision!==accessRevision||state.chatRoom!==room)return;
   if(!chatRooms().some(item=>item.id===room))return;
-  const messages=snapshot.val()||{};
-  state.chatMessages={...state.chatMessages,...messages};state.chatLoading=false;state.chatError='';
+  clearChatWatch();const messages=snapshot.val()||{},count=Object.keys(messages).length,oldest=BancaChat.sortedMessages(messages)[0];
+  for(const [id,previous]of Object.entries(chatRuntime.liveMessages)){
+   if(Object.hasOwn(messages,id))continue;
+   const evicted=count>=100&&oldest&&(previous.at<oldest.at||(previous.at===oldest.at&&id<oldest.id));
+   if(!evicted)delete chatRuntime.history[id];
+  }
+  chatRuntime.liveMessages=messages;rebuildChatMessages();state.chatLoading=false;state.chatError='';
   if(!state.chatPresenceError)clearChatReconnect(true);
-  if(first){state.chatHasMore=Object.keys(messages).length===100;first=false;}
+  if(first){state.chatHasMore=count===100;first=false;}
   if(state.route==='chat')render();
  },error=>{
   if(epoch!==chatRuntime.epoch||uid!==state.user?.uid||revision!==accessRevision)return;
-  ++chatRuntime.epoch;state.chatMessages={};state.chatLoading=false;state.chatLoadingOlder=false;state.chatHasMore=false;state.chatError=chatAccessError(error);scheduleChatReconnect();if(state.route==='chat')render();
+  clearChatWatch();++chatRuntime.epoch;chatRuntime.liveMessages={};chatRuntime.history={};state.chatMessages={};state.chatLoading=false;state.chatLoadingOlder=false;state.chatHasMore=false;state.chatError=chatAccessError(error);scheduleChatReconnect();if(state.route==='chat')render();
  });
 }
-function retryChat({automatic=false}={}){
+function retryChat({automatic=false,messages=!!state.chatError||!state.chatPresenceError,presence=!!state.chatPresenceError||!state.chatError}={}){
  assertChatAccess(state.chatRoom);
  clearChatReconnect(!automatic);
- chatRuntime.messagesOff?.();chatRuntime.messagesOff=null;chatRuntime.room='';chatRuntime.presenceOff?.();chatRuntime.presenceOff=null;
+ if(messages){clearChatWatch();chatRuntime.messagesOff?.();chatRuntime.messagesOff=null;chatRuntime.room='';}
+ if(presence){chatRuntime.presenceOff?.();chatRuntime.presenceOff=null;}
  syncChat();render();
 }
 async function loadOlderChat(){
@@ -1185,7 +1208,8 @@ async function loadOlderChat(){
   assertCurrentSession(uid,revision);assertChatAccess(room);
   if(state.chatRoom!==room||epoch!==chatRuntime.epoch)return;
   const previous=document.querySelector('#chat-message-list'),height=previous?.scrollHeight||0,top=previous?.scrollTop||0,messages=snapshot.val()||{};
-  state.chatMessages={...messages,...state.chatMessages};state.chatHasMore=Object.keys(messages).length===100;state.chatLoadingOlder=false;render();
+  const confirmed=Object.fromEntries(Object.entries(state.chatMessages).filter(([id])=>!chatRuntime.pendingWrites.has(id)));
+  chatRuntime.history={...chatRuntime.history,...messages,...confirmed};rebuildChatMessages();state.chatHasMore=Object.keys(messages).length===100;state.chatLoadingOlder=false;render();
   const list=document.querySelector('#chat-message-list');if(list)list.scrollTop=top+(list.scrollHeight-height);
  }finally{if(state.user?.uid===uid&&accessRevision===revision&&state.chatRoom===room&&epoch===chatRuntime.epoch){state.chatLoadingOlder=false;render();}}
 }
@@ -1196,15 +1220,38 @@ async function sendChatMessage(form){
  if(state.chatLoading||state.chatError)throw Error('Aguarde a conversa carregar ou tente reconectar o chat.');
  if(state.chatSending)return;
  const raw=String(new FormData(form).get('message')??''),text=BancaChat.validateMessage(raw),uid=state.user.uid,revision=accessRevision;
- state.chatDrafts.set(room,raw);state.chatSending=true;
- const button=form.querySelector?.('button[type="submit"]');if(button)button.disabled=true;
+ state.chatDrafts.set(room,raw);state.chatSending=true;state.chatSendError='';state.chatSendCode='';
+ const id=push(ref(db,`chatMessages/${room}`)).key;
+ const pending={uid,revision,room,message:{uid,name:state.profile.name,text,at:Date.now()+state.serverOffset}};
+ if(id)chatRuntime.pendingWrites.set(id,pending);
+ if(chatRuntime.messageScope!==room){chatRuntime.messageScope=room;chatRuntime.liveMessages={};chatRuntime.history={};}
+ rebuildChatMessages();if(state.route==='chat'){render();scrollChatToLatest();}
  try{
-  const id=push(ref(db,`chatMessages/${room}`)).key;
   if(!id)throw Error('Não foi possível preparar a mensagem. Tente novamente.');
-  await set(ref(db,`chatMessages/${room}/${id}`),{uid,name:state.profile.name,text,at:serverTimestamp()});
+  const profile=(await get(ref(db,`users/${uid}`))).val();
+  assertCurrentSession(uid,revision);assertChatAccess(room);
+  if(!isActiveTeacher(profile)||typeof profile.name!=='string'||!profile.name.trim())throw Error('Seu cadastro foi atualizado. Entre novamente para conferir o acesso ao chat.');
+  pending.message.name=profile.name;
+  await set(ref(db,`chatMessages/${room}/${id}`),{uid,name:profile.name,text,at:serverTimestamp()});
   assertCurrentSession(uid,revision);
+  chatRuntime.pendingWrites.delete(id);
+  if(state.chatRoom===room&&chatRooms().some(item=>item.id===room)&&!state.chatError){
+   const saved=chatRuntime.liveMessages[id];chatRuntime.history[id]=saved&&typeof saved.at==='number'?saved:pending.message;
+   rebuildChatMessages();
+  }
   if(state.chatDrafts.get(room)===raw){state.chatDrafts.delete(room);const input=document.querySelector('#chat-message');if(state.chatRoom===room&&input?.value===raw)input.value='';}
- }finally{if(state.user?.uid===uid&&accessRevision===revision){state.chatSending=false;if(state.route==='chat')render();}}
+ }catch(error){
+  if(state.user?.uid===uid&&accessRevision===revision){
+   chatRuntime.pendingWrites.delete(id);
+   if(state.chatRoom===room){
+    delete chatRuntime.liveMessages[id];delete chatRuntime.history[id];rebuildChatMessages();
+    state.chatSendCode=String(error?.code||'');state.chatSendError=/permission.?denied/i.test(String(error?.code||error?.message||''))
+     ?`A mensagem não foi enviada aos outros professores. ${isCoord()?'Confira as permissões de gravação do chat na política de acesso do Firebase.':'Peça à coordenação para conferir a liberação do envio.'} Seu texto foi mantido para tentar novamente.`
+     :'A mensagem não foi confirmada pelo servidor. Seu texto foi mantido; confira a conexão e tente enviar novamente.';
+   }
+  }
+  throw error;
+ }finally{if(state.user?.uid===uid&&accessRevision===revision){state.chatSending=false;if(state.route==='chat'){render();if(state.chatRoom===room&&!state.chatSendError)scrollChatToLatest();}}}
 }
 async function startChatPresence(){
  if(!state.user||!isActiveTeacher(state.profile)||!state.connected||chatRuntime.connection||chatRuntime.presenceStarting)return;
@@ -1229,10 +1276,10 @@ async function stopChatPresence(){
  try{await remove(connection.entry);await connection.disconnect.cancel();}catch{/* A limpeza no servidor continua registrada em caso de queda. */}
 }
 function stopChat(){
- clearChatReconnect(true);
+ clearChatReconnect(true);clearChatWatch();chatRuntime.pendingWrites.clear();chatRuntime.messageScope='';chatRuntime.liveMessages={};chatRuntime.history={};
  ++chatRuntime.epoch;chatRuntime.messagesOff?.();chatRuntime.messagesOff=null;chatRuntime.room='';chatRuntime.presenceOff?.();chatRuntime.presenceOff=null;
  void stopChatPresence();
- state.chatRoom='geral';state.chatMessages={};state.chatPresence={};state.chatDrafts.clear();state.chatLoading=false;state.chatError='';state.chatPresenceError='';state.chatSending=false;state.chatHasMore=false;state.chatLoadingOlder=false;
+ state.chatRoom='geral';state.chatMessages={};state.chatPendingIds=new Set();state.chatSendError='';state.chatSendCode='';state.chatPresence={};state.chatDrafts.clear();state.chatLoading=false;state.chatError='';state.chatPresenceError='';state.chatSending=false;state.chatHasMore=false;state.chatLoadingOlder=false;
 }
 async function logoutAccount(){
  try{await Promise.race([stopChatPresence(),new Promise(resolve=>setTimeout(resolve,1500))]);}
@@ -3141,7 +3188,7 @@ async function refreshReportData(ids){
 }
 
 onValue(ref(db,'.info/serverTimeOffset'),snap=>{state.serverOffset=snap.val()||0;});
-onValue(ref(db,'.info/connected'),snap=>{state.connected=!!snap.val();if(state.connected&&state.user){void startChatPresence();if(state.route==='chat'&&isActiveTeacher(state.profile)&&(state.chatError||state.chatPresenceError))retryChat({automatic:true});}else if(!state.connected){clearChatReconnect();void stopChatPresence();if(typeof closeBoardImport==='function')closeBoardImport(true);}if(state.route==='chat'&&state.user)render();if(state.selectedBoard)refreshTimerUi(state.selectedBoard);});
+onValue(ref(db,'.info/connected'),snap=>{state.connected=!!snap.val();if(state.connected&&state.user){void startChatPresence();if(state.route==='chat'&&isActiveTeacher(state.profile)&&(state.chatError||state.chatPresenceError))retryChat({automatic:true,messages:!!state.chatError,presence:!!state.chatPresenceError});}else if(!state.connected){clearChatReconnect();clearChatWatch();void stopChatPresence();if(typeof closeBoardImport==='function')closeBoardImport(true);}if(state.route==='chat'&&state.user)render();if(state.selectedBoard)refreshTimerUi(state.selectedBoard);});
 setInterval(()=>{if(!document.hidden)updateTimerDisplays();},10);
 
 function assertCurrentSession(uid,revision){
@@ -3451,6 +3498,8 @@ $('#view').addEventListener('click',e=>{
  if(el.dataset.pdfPlan)return handle(()=>exportSchedulePdf(true));
  if(el.dataset.pdfAgenda)return handle(()=>exportSchedulePdf(false));
  if(el.dataset.chatBoard)return handle(()=>openChatRoom(el.dataset.chatBoard));
+ if(el.dataset.chatRefresh)return handle(()=>retryChat({messages:true,presence:!!state.chatPresenceError}));
+ if(el.dataset.chatLatest)return scrollChatToLatest();
  if(el.dataset.chatOlder)return handle(loadOlderChat);
  if(el.dataset.chatRetry)return handle(retryChat);
  if(el.dataset.myGrades)return go('minhasavaliacoes',el.dataset.myGrades);
