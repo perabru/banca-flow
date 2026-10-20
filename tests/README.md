@@ -23,7 +23,7 @@ A coordenação também é testada como avaliadora: **Minhas avaliações** cons
 O parser local do Excel tem uma suíte própria, sem dependências adicionais:
 
 ```bash
-node --test tests/import.test.cjs
+node --test tests/import.test.cjs tests/board-import.test.cjs
 ```
 
 Ela lê arquivos XLSX, XLS e CSV reais com a biblioteca local, verifica cabeçalhos e orientadores, agrupamento e identidades estáveis, importações repetidas, cursos distintos, fórmulas e limites de arquivo.
@@ -67,8 +67,35 @@ Para usar um pacote Chromium de servidor, `BANCAFLOW_CHROMIUM_MODULE` pode apont
 As suítes da aplicação, importação, gráficos e navegador podem rodar juntas:
 
 ```bash
-BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/app.test.cjs tests/import.test.cjs tests/analytics.test.cjs tests/analytics-pdf.test.cjs tests/coordinator-report.test.cjs tests/coordinator-report-pdf.test.cjs tests/browser.test.cjs
+BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/app.test.cjs tests/import.test.cjs tests/board-import.test.cjs tests/analytics.test.cjs tests/analytics-pdf.test.cjs tests/coordinator-report.test.cjs tests/coordinator-report-pdf.test.cjs tests/browser.test.cjs
 ```
+
+## Chat dos professores
+
+O chat possui testes próprios da interface e regressões nos testes da aplicação e do navegador:
+
+```bash
+node --test tests/chat-ui.test.cjs tests/app.test.cjs
+BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test --test-name-pattern=chat tests/browser.test.cjs
+```
+
+A aplicação verifica a sala geral de professores ativos e as salas de bancas restritas aos participantes e à coordenação. As regressões cobrem autoria canônica, horário do servidor, texto simples, mensagens vazias ou acima de 2.000 caracteres, falta de conexão, mudança de sala/sessão, duplo envio, falhas de gravação, preservação de novos rascunhos e paginação de 130 mensagens por horário e identificador. Uma regressão com 200 mensagens no mesmo horário confirma a ordenação de chaves do Firebase; outra impede que uma leitura atrasada de histórico restaure mensagens após a revogação de acesso. A presença registra a limpeza no desconectar, considera uma pessoa apenas uma vez mesmo com várias abas, ignora conexões antigas e limpa os dados da sessão anterior. Uma confirmação atrasada de presença também é removida sem afetar uma conexão nova.
+
+O teste de navegador abre duas abas como professores diferentes. Um adaptador de Firebase em memória compartilha somente os caminhos do chat por `BroadcastChannel`, permitindo conferir envio, recebimento e resposta em tempo real sem acesso a contas ou dados de produção. Verifica Enter para enviar e Shift + Enter para quebrar linha, escape de HTML, rascunho e cursor durante mensagens recebidas, erro de envio, reconexão sem envio automático, presença online, troca de sala, acesso do coordenador e ausência de acesso à banca por um professor de fora. As notas e entregas dos alunos são comparadas antes e depois da conversa.
+
+A interface é conferida em 320, 390, 768 e 1440 px. Capturas do chat ficam em `BANCAFLOW_SCREENSHOT_DIR` ou `/tmp/bancaflow-chat-qa`. Outro cenário percorre o histórico e confere que uma falha de leitura do chat não bloqueia a avaliação da banca. A abertura do HTML sem alterações também valida os novos arquivos locais e os imports do SDK sob a política CSP.
+
+Os testes modificam apenas dados fictícios locais. Não publicam o site, não atualizam regras no projeto real e não enviam mensagens para professores reais.
+
+## Coordenadores, bancas por Excel e alerta de tempo
+
+Os testes verificam que somente Alberson pode criar professores ou coordenadores, inclusive usando uma conta secundária para preservar sua sessão. Conferem função inválida, vínculo a conta existente, reversão de cadastro incompleto, edição de contato, remoção e reativação de outros coordenadores sem alterar a função, o login ou o histórico. O próprio Alberson e os identificadores reservados permanecem protegidos.
+
+Coordenadores adicionais podem cadastrar grupos, importar a lista de alunos e criar bancas manualmente ou por uma planilha de agenda. As regressões usam uma planilha XLSX real e conferem a prévia, o cancelamento sem gravação, o modelo Excel, a confirmação, as reservas atômicas de professores e salas, a rejeição de conflito e de reimportação, a troca de sessão e a revogação de permissão durante a leitura. A importação de grupos permanece separada da importação de bancas agendadas; os dados anteriores são comparados antes e depois.
+
+O cronômetro é verificado em `15:00,00` sem alerta e a partir de `15:00,01` com exibição e painel vermelhos. São testados a passagem do limite pelo relógio real, a pausa, o encerramento, a reabertura e o retorno à cor normal após zerar. A atualização do tempo não recria os formulários de avaliação. Capturas das bancas, da prévia Excel e do cronômetro ficam em `BANCAFLOW_SCREENSHOT_DIR` ou `/tmp/bancaflow-coordinators-qa`.
+
+A suíte completa conserva os testes do chat entre duas abas, avaliações individuais, monografia, gráficos, PDFs e importação de grupos. Os cenários usam adaptadores e dados fictícios; não autenticam contas reais nem alteram o banco de produção.
 
 ## Regras do Firebase
 

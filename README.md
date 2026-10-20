@@ -32,13 +32,31 @@ Somente professores ativos que participam da banca podem controlar essa banca. O
 
 O encerramento pode ocorrer antes de todos os lançamentos. O relatório e o resultado oficial só ficam disponíveis com a banca encerrada e todas as notas completas, incluindo as entregas. Campos em edição devem ser salvos antes do encerramento. Rascunhos são preservados durante atualizações da tela e salvamentos pendentes; a troca de conta limpa os campos e qualquer prévia de compartilhamento da sessão anterior.
 
+## Chat dos professores e das bancas
+
+O chat integra a mesma aplicação de avaliações, com acesso pelas contas já cadastradas.
+
+Todos os professores ativos e a coordenação podem abrir **Chat dos professores** no menu ou pelo ícone de conversa no cabeçalho. No celular, o professor também tem **Chat** na navegação inferior; para a coordenação, a opção fica em **Mais**. O botão **Chat da banca** abre diretamente a conversa daquela banca.
+
+- **Sala dos professores** reúne todos os professores e a coordenação, inclusive quando não estão na mesma banca.
+- **Sala da banca** é restrita aos avaliadores participantes e à coordenação. O encerramento das notas não encerra a conversa.
+- As mensagens mostram nome, data e horário, aceitam até 2.000 caracteres e ficam salvas no histórico. Não há envio automático nem edição de mensagens antigas.
+- **Enter** envia e **Shift + Enter** insere uma nova linha. No celular, o botão **Enviar** também está disponível.
+- Os rascunhos de cada sala permanecem durante a navegação e as atualizações da conversa. Sair da conta limpa os rascunhos e os dados da sessão.
+- A lista **Professores online** considera as conexões ativas. Cada aba ou dispositivo tem sua própria presença; fechar uma aba não desconecta as demais. A conexão é removida ao sair ou desconectar e registros sem atualização recente deixam de aparecer.
+- O chat abre as 100 mensagens mais recentes. **Carregar mensagens anteriores** recupera o histórico sem perder a posição da leitura. Campos em edição e o cursor são preservados quando novas mensagens chegam.
+
+Os caminhos novos são `chatMessages/SALA/MENSAGEM` e `chatPresence/UID/CONEXAO`. A sala geral usa `geral`; as salas de banca usam o identificador da banca. As regras validam o autor pela conta autenticada, bloqueiam professores desativados e impedem alterações e exclusões do histórico. As notas, monografias e relatórios não são incluídos nas mensagens nem alterados pelo chat.
+
+Para ativar a comunicação entre dispositivos, aplique a versão atualizada de `database.rules.json`. Os HTMLs precisam ser publicados com `assets/board-chat.js` e `assets/board-chat.css`. Publicar no GitHub não atualiza as regras do Firebase. Os testes usam somente contas fictícias e um Firebase em memória ou o emulador local.
+
 ## Todas as notas — coordenação
 
 O Alberson pode consultar **Todas as notas** pelo menu lateral, pelo atalho da visão geral ou por **Notas** na navegação inferior do celular. A consulta inclui todas as bancas, abertas ou encerradas, com notas completas ou pendentes, inclusive o histórico de grupos removidos. Há filtros independentes por curso, turma, data e situação, além da busca por grupo, aluno ou professor. **Expandir todas** mostra os detalhes das bancas selecionadas.
 
 Cada aluno tem suas notas separadas por avaliador e critério, média do avaliador, média da banca, entregas e parcelas de 60%/40%. Uma nota ausente aparece como **Pendente**; zero continua sendo uma nota válida. A média da banca é exibida quando todos os avaliadores concluíram os quatro critérios, mesmo sem entregas. A nota final só é calculada com todas as notas necessárias e fica identificada como provisória enquanto a banca estiver aberta.
 
-O mesmo detalhamento fica disponível em **Bancas → Ver detalhes** e **Relatórios → Consultar notas**, mesmo quando o coordenador não participa da banca. Os critérios de cada professor permanecem somente para consulta. Alberson pode preencher **Monografia e entregas · 40%** na própria ficha de cada aluno. Reabra a banca para corrigir uma nota bloqueada; grupos removidos precisam ser restaurados antes da edição. Os valores acompanham os lançamentos salvos no Firebase. Não há alteração nos dados, nas regras ou nas exigências dos PDFs oficiais.
+O mesmo detalhamento fica disponível em **Bancas → Ver detalhes** e **Relatórios → Consultar notas**, mesmo quando o coordenador não participa da banca. Os critérios de cada professor permanecem somente para consulta. Alberson pode preencher **Monografia e entregas · 40%** na própria ficha de cada aluno. Reabra a banca para corrigir uma nota bloqueada; grupos removidos precisam ser restaurados antes da edição. Os valores acompanham os lançamentos salvos no Firebase. A consulta não altera os lançamentos nem as exigências dos PDFs oficiais.
 
 ## Consolidado completo e monografia
 
@@ -64,17 +82,31 @@ O formulário **Minha avaliação** aparece antes da consulta geral. Alberson re
 
 Ao criar uma banca manualmente, o coordenador aparece na lista como **coordenador e avaliador**; ele também integra o conjunto de professores disponíveis para o sorteio. As bancas existentes mantêm sua composição e suas notas. Em uma banca não atribuída ao Alberson, ele conserva o acesso de consulta da coordenação. Bancas encerradas exigem reabertura com confirmação para alterar notas.
 
+## Montagem manual e importação de bancas por Excel
+
+Qualquer coordenador ativo pode usar **Bancas → Nova banca** ou **Sorteio → Montagem manual**. Selecione um grupo já cadastrado, data e horário, sala e dois ou três avaliadores ativos. A lista inclui professores e coordenadores. O sistema confere os dados atuais e reserva professores e salas em uma única gravação; conflitos impedem todo o cadastro.
+
+Para importar a agenda, use **Importar bancas** em Bancas ou **Importar bancas do Excel** em Sorteio. **Baixar modelo Excel** gera um `.xlsx` com uma aba de exemplos e outra de instruções. São aceitos `.xlsx`, `.xls` e `.csv`, até 5 MB e 500 bancas por arquivo.
+
+1. Cadastre ou importe primeiro os grupos e os professores.
+2. Preencha uma linha por banca: **Curso, Turma, Grupo, Data, Hora, Duração, Sala, Avaliador 1, Avaliador 2** e, se necessário, **Avaliador 3**. **ID do grupo** é uma coluna opcional que evita ambiguidades.
+3. Use datas `dd/mm/aaaa` ou `aaaa-mm-dd`, horários `HH:mm` a cada 15 minutos e durações de 30, 45, 60 ou 90 minutos. Datas e horas nativas do Excel também são aceitas. Os horários usam o fuso do navegador.
+4. Identifique os avaliadores por e-mail, identificador, UID ou nome completo exclusivo. Nomes ambíguos, professores desativados, fórmulas, grupos removidos ou já agendados e conflitos de professor/sala bloqueiam o lote.
+5. Escolha a aba, confira a prévia e confirme a importação. O sistema consulta novamente os dados antes de salvar. Mudanças na prévia exigem nova confirmação.
+
+A importação acrescenta apenas bancas novas. Ela não substitui grupos, alunos, notas, monografias, cronômetros ou conversas existentes. Publique também `assets/board-import.js` junto dos recursos locais de Excel.
+
 ## Filtrar bancas por data
 
 Em **Bancas**, selecione **Data da banca** para ver os grupos daquele dia, combinando o filtro com curso e turma. **Hoje** escolhe o dia atual e **Todas as datas** limpa somente a data. Os professores continuam vendo apenas as bancas às quais estão atribuídos. O PDF da agenda inclui exatamente os resultados dessa seleção.
 
 Em **Relatórios**, a data também restringe a lista, o PDF consolidado e o CSV de bancas concluídas. Com uma data escolhida, grupos sem agendamento não pertencem à seleção daquele dia; todas as bancas selecionadas ainda precisam estar encerradas e com notas completas para o PDF consolidado. Sem data, a verificação de conclusão de todos os grupos do curso/turma permanece.
 
-O filtro considera o dia no fuso do dispositivo, o mesmo utilizado na apresentação da agenda. Ele é limpo ao trocar de conta. A atualização não altera dados nem exige novas regras no Firebase.
+O filtro considera o dia no fuso do dispositivo, o mesmo utilizado na apresentação da agenda. Ele é limpo ao trocar de conta. Os filtros não alteram os dados das bancas.
 
 ## Cronômetro com centésimos
 
-O tempo aparece em **minutos:segundos,centésimos**, por exemplo `12:34,56`. Ele é compartilhado entre os avaliadores e a coordenação pelo Firebase e continua contando após trocar de tela ou recarregar a página. Apenas os controles de iniciar, pausar, continuar e zerar gravam no banco; os centésimos são calculados na tela usando o relógio ajustado ao servidor.
+O tempo aparece em **minutos:segundos,centésimos**, por exemplo `12:34,56`. Ao ultrapassar **15 minutos**, os números ficam vermelhos e aparece um aviso. Em `15:00,00` o alerta ainda não está ativo; a partir de `15:00,01`, ele fica visível. A contagem continua normalmente. O alerta acompanha o tempo salvo, inclusive pausado ou encerrado, e some ao zerar o cronômetro. Ele é compartilhado entre os avaliadores e a coordenação pelo Firebase e continua contando após trocar de tela ou recarregar a página. Apenas os controles de iniciar, pausar, continuar e zerar gravam no banco; os centésimos são calculados na tela usando o relógio ajustado ao servidor.
 
 Os controles exigem conexão. Durante uma interrupção, o tempo já iniciado continua sendo contado; ao reconectar, o site recebe o registro compartilhado. Zerar pede confirmação. Encerramento e pausa são gravados juntos; revisões impedem que uma ação antiga sobrescreva um controle mais recente.
 
@@ -130,15 +162,17 @@ Nada é enviado automaticamente. A prévia é preparada antes do clique que abre
 Compatibilidade: [Web Share](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/share), [canShare](https://developer.mozilla.org/en-US/docs/Web/API/Navigator/canShare) e [WhatsApp click to chat](https://faq.whatsapp.com/425247423114725/).
 
 
-## Professores: administração do Alberson
+## Professores e novos coordenadores
 
-Em **Professores**, o coordenador com perfil `role: "coordinator"` e `key: "alberson"` pode criar uma conta de professor ou vincular um UID existente, editar nome/e-mail de contato, remover e reativar acessos. A sessão do Alberson permanece aberta durante o cadastro. O acesso da coordenação não pode ser removido ou promovido por essa tela.
+Em **Professores**, Alberson pode selecionar **Professor avaliador** ou **Coordenador e avaliador** em **Função no sistema**, criar uma conta ou vincular um UID ainda sem perfil. O cadastro usa uma sessão secundária e mantém a conta principal aberta. Se a criação do perfil falhar, a conta nova criada pela operação é desfeita; contas existentes não são apagadas.
+
+Somente a conta ativa com `role: "coordinator"` e `key: "alberson"` gerencia os acessos. Alberson também pode editar nome/contato, remover e reativar coordenadores adicionais, preservando suas notas e bancas. A própria conta e qualquer perfil com identificador `alberson` ficam protegidos. E-mail de acesso, identificador e função de perfis existentes permanecem imutáveis; a edição de contato não promove um professor. Coordenadores adicionais gerenciam as bancas e os grupos, mas não criam outros coordenadores nem administram perfis.
 
 O **e-mail de contato** pode ser alterado sem afetar o login. O e-mail de acesso e o identificador nas planilhas permanecem vinculados à conta existente; a alteração de login é administrada no Firebase Authentication. Os nomes já registrados nas bancas não são reescritos ao editar o professor. A remoção bloqueia o acesso ao aplicativo, conserva o perfil e as avaliações e exige concluir as bancas em aberto.
 
 ## Grupos, cursos e planilhas
 
-Em **Grupos e cursos**, o Alberson pode:
+Em **Grupos e cursos**, qualquer coordenador ativo pode:
 
 - Cadastrar um grupo com curso, turma, título, orientador ativo e de 1 a 20 alunos.
 - Editar grupos antes de agendar uma banca, preservando os identificadores dos alunos.

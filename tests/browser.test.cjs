@@ -34,24 +34,32 @@ function adapter() {
   return `
     const mock=globalThis.firebaseMock={data:${JSON.stringify(fixture)},uid:'t1',listeners:new Map(),writes:[],reads:[],listens:[],pushCount:0,
       clone(v){return v===undefined?undefined:JSON.parse(JSON.stringify(v));},
-      read(path){if(path==='.info/connected')return true;if(path==='.info/serverTimeOffset')return 0;return path?path.split('/').reduce((v,k)=>v?.[k],this.data):this.data;},
-      snapshot(path){const v=this.clone(this.read(path)??null);return {val:()=>v,exists:()=>v!==null};},
+      path(target){return typeof target==='string'?target:(target?.path||'');},
+      queryValue(target){const path=this.path(target),value=this.read(path);if(typeof target==='string'||!target?.constraints)return value;const child=target.constraints.find(c=>c.kind==='order')?.key;let rows=Object.entries(value||{}).sort(([ak,a],[bk,b])=>{const av=child?a?.[child]:ak,bv=child?b?.[child]:bk;return av===bv?(ak<bk?-1:ak>bk?1:0):av<bv?-1:1;});for(const c of target.constraints){if(c.kind==='before')rows=rows.filter(([key,item])=>{const v=child?item?.[child]:key;return v<c.value||(v===c.value&&c.key!==undefined&&key<c.key);});if(c.kind==='last')rows=rows.slice(-c.count);}return Object.fromEntries(rows);},
+      read(path){if(path==='.info/connected')return this.connected!==false;if(path==='.info/serverTimeOffset')return this.serverOffset||0;return path?path.split('/').reduce((v,k)=>v?.[k],this.data):this.data;},
+      snapshot(target){const v=this.clone(this.queryValue(target)??null),snap=(value,key=null)=>({key,val:()=>this.clone(value),exists:()=>value!==null&&value!==undefined,forEach(cb){for(const[k,item]of Object.entries(value||{}))if(cb(snap(item,k))===true)return true;return false;}});return snap(v);},
       resolved(v){if(v&&typeof v==='object'){if(v['.sv']==='timestamp')return Date.now();return Object.fromEntries(Object.entries(v).map(([k,x])=>[k,this.resolved(x)]));}return v;},
       write(path,v){const keys=path.split('/'),last=keys.pop(),parent=keys.reduce((x,k)=>x[k]||={},this.data);if(v===null)delete parent[last];else parent[last]=this.clone(this.resolved(v));},
-      emit(path){for(const [registered,cbs]of this.listeners)if(registered===path||registered.startsWith(path+'/')||path.startsWith(registered+'/'))for(const cb of cbs)cb(this.snapshot(registered));}
+      emit(path){for(const [registered,cbs]of this.listeners){const p=this.path(registered);if(p===path||p.startsWith(path+'/')||path.startsWith(p+'/'))for(const cb of cbs)cb(this.snapshot(registered));}}
     };
     const initializeApp=()=>({}),getAuth=()=>({currentUser:{uid:'t1'}}),getDatabase=()=>({}),onAuthStateChanged=()=>()=>{},ref=(_db,path='')=>path;
-    const onValue=(path,cb)=>{mock.listens.push(path);if(!mock.listeners.has(path))mock.listeners.set(path,new Set());mock.listeners.get(path).add(cb);cb(mock.snapshot(path));return()=>mock.listeners.get(path)?.delete(cb);};
-    const get=async path=>{mock.reads.push(path);return mock.snapshot(path);},serverTimestamp=()=>({'.sv':'timestamp'});
-    const set=async(path,value)=>{
+    const onValue=(target,cb,error)=>{const path=mock.path(target);mock.listens.push(path);if(!mock.listeners.has(target))mock.listeners.set(target,new Set());mock.listeners.get(target).add(cb);if(mock.chatReadError&&path.startsWith('chat'))error?.(Object.assign(Error('chat permission denied'),{code:'PERMISSION_DENIED'}));else cb(mock.snapshot(target));return()=>mock.listeners.get(target)?.delete(cb);};
+    const query=(target,...constraints)=>({path:mock.path(target),constraints}),orderByChild=key=>({kind:'order',key}),limitToLast=count=>({kind:'last',count}),endBefore=(value,key)=>({kind:'before',value,key});
+    const onDisconnect=target=>({remove:async()=>{mock.disconnects||=[];mock.disconnects.push({kind:'remove',path:mock.path(target)});},cancel:async()=>{mock.disconnects||=[];mock.disconnects.push({kind:'cancel',path:mock.path(target)});}});
+    const chatChannel=new BroadcastChannel('bancaflow-chat-test');chatChannel.onmessage=event=>{const{path,value}=event.data||{};if(typeof path==='string'&&path.startsWith('chat')){mock.write(path,value);mock.emit(path);}};
+    const remove=async target=>{const path=mock.path(target);mock.write(path,null);mock.writes.push({path,value:null});mock.emit(path);if(path.startsWith('chat'))chatChannel.postMessage({path,value:null});};
+    const get=async target=>{mock.reads.push(mock.path(target));return mock.snapshot(target);},serverTimestamp=()=>({'.sv':'timestamp'});
+    const set=async(target,value)=>{
+      const path=mock.path(target);
       mock.writes.push({path,value:mock.clone(value)});
       if(mock.deferSets)await new Promise(resolve=>mock.releaseSet=resolve);
-      mock.write(path,value);mock.emit(path);
+      if(mock.setError)throw Error(mock.setError);
+      mock.write(path,value);mock.emit(path);if(path.startsWith('chat'))chatChannel.postMessage({path,value:mock.read(path)});
     };
     const update=async(base,changes)=>{mock.writes.push({changes:mock.clone(changes)});Object.entries(changes).forEach(([path,v])=>mock.write(base?base+'/'+path:path,v));Object.keys(changes).forEach(path=>mock.emit(base?base+'/'+path:path));};
     const runTransaction=async(path,updater)=>{const next=updater(mock.clone(mock.read(path)??null));if(next===undefined)return{committed:false,snapshot:mock.snapshot(path)};mock.write(path,next);mock.writes.push({path,value:mock.clone(next)});mock.emit(path);return{committed:true,snapshot:mock.snapshot(path)};};
     const signOut=async()=>{},signInWithEmailAndPassword=async()=>{},sendPasswordResetEmail=async()=>{};
-    const initializeAuth=()=>({secondary:true}),inMemoryPersistence={},createUserWithEmailAndPassword=async()=>({user:{uid:'new-teacher'}}),deleteUser=async()=>{},deleteApp=async()=>{},push=()=>({key:'new-group-'+(++mock.pushCount)});
+    const initializeAuth=()=>({secondary:true}),inMemoryPersistence={},createUserWithEmailAndPassword=async()=>({user:{uid:'new-teacher'}}),deleteUser=async()=>{},deleteApp=async()=>{},push=target=>{const path=mock.path(target),key=path.startsWith('chat')?'chat-'+mock.uid+'-'+(++mock.pushCount):'new-group-'+(++mock.pushCount);return{key,path:path?path+'/'+key:key};};
   `;
 }
 
@@ -60,21 +68,23 @@ async function openApp(t,{timezoneId='UTC'}={}) {
   const args = process.env.BANCAFLOW_CHROMIUM_MODULE ? (await import(process.env.BANCAFLOW_CHROMIUM_MODULE)).default.args : ['--no-sandbox', '--disable-dev-shm-usage'];
   const browser = await chromium.launch({ headless: true, executablePath: binary, args, env: process.env });
   t.after(() => browser.close());
-  const page = await browser.newPage({ viewport: { width: 390, height: 844 },timezoneId });
+  const context=await browser.newContext({viewport:{width:390,height:844},timezoneId});
+  const page=await context.newPage();
   const errors = [], requests = [], downloads = [], cspErrors=[];
   page.on('pageerror', error => errors.push(error.message));
   page.on('console',message=>{if(message.type()==='error'&&/Content Security Policy|violates.*directive|Refused to execute/i.test(message.text()))cspErrors.push(message.text());});
   page.on('download', file => downloads.push(file.suggestedFilename()));
   let servedMarkup;
-  const assets=new Map(['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js'].map(path=>[path,readFileSync(join(__dirname,'..',path.slice(1)),'utf8')]));
-  await page.route('**/*', route => {
+  const assets=new Map(['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js','/assets/board-chat.js','/assets/board-chat.css','/assets/board-import.js'].map(path=>[path,readFileSync(join(__dirname,'..',path.slice(1)),'utf8')]));
+  const requestHandler=route => {
     requests.push(route.request().url());
     const url=new URL(route.request().url());
     if(url.origin==='https://bancaflow.example.test'&&assets.has(url.pathname))return route.fulfill({contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:assets.get(url.pathname)});
     return route.request().url() === 'https://bancaflow.example.test/' ? route.fulfill({ contentType: 'text/html', body: servedMarkup }) : route.abort();
-  });
+  };
+  await page.route('**/*',requestHandler);
   const bootstrap = adapter() + source + `
-    globalThis.appTest={state,go,render,resetAppData,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
+    globalThis.appTest={state,go,render,resetAppData,createBoards,makeBoard,openBoardImport,closeBoardImport,confirmBoardImport,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,chatRooms,chatView,openChatRoom,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
       mount(uid){clearListeners();resetAppData();mock.uid=uid;state.user={uid,email:uid+'@example.test'};state.profile=mock.clone(mock.data.users[uid]);for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])state[key]=mock.clone(mock.data[key]||{});state.connected=true;document.querySelector('#login-view').classList.add('hidden');document.querySelector('#app-view').classList.remove('hidden');if(isCoord())for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])listen(key,key);else syncTeacherSubs();syncTimerSubs();go('avaliar','b1');}
     };appTest.mount('t1');
   `;
@@ -82,7 +92,8 @@ async function openApp(t,{timezoneId='UTC'}={}) {
   servedMarkup=markup.replace(/(script-src[^;]*?)'sha256-[^']+'/,(all,prefix)=>prefix+`'sha256-${fixtureHash}'`).replace('</body>',`<script type="module">${bootstrap}</script></body>`);
   const reload = async () => { await page.goto('https://bancaflow.example.test/');await page.waitForFunction(()=>!!globalThis.appTest?.state.user);assert.deepEqual(cspErrors,[]); };
   await reload();
-  return { page, errors, requests, downloads, cspErrors, reload };
+  const createPeer=async uid=>{const peer=await page.context().newPage();peer.on('pageerror',e=>errors.push(e.message));await peer.route('**/*',requestHandler);await peer.goto('https://bancaflow.example.test/');await peer.waitForFunction(()=>!!globalThis.appTest?.state.user);const data=await page.evaluate(()=>firebaseMock.data);await peer.evaluate(({data,uid})=>{firebaseMock.data=data;appTest.mount(uid);},{data,uid});return peer;};
+  return { page, errors, requests, downloads, cspErrors, reload, createPeer };
 }
 
 test('actual mobile grading, shared timer and teacher/coordinator close/reopen preserve data and weighted PDF', {skip}, async t=>{
@@ -292,18 +303,18 @@ test('unmodified production HTML loads local Excel and analytics assets and Fire
   const modules={
     'firebase-app.js':`export const initializeApp=()=>({}),deleteApp=async()=>{};`,
     'firebase-auth.js':`export const getAuth=()=>({currentUser:null}),initializeAuth=()=>({}),inMemoryPersistence={},onAuthStateChanged=(_auth,callback)=>{queueMicrotask(()=>callback(null));return()=>{};},signOut=async()=>{},sendPasswordResetEmail=async()=>{},createUserWithEmailAndPassword=async()=>({user:{uid:'fixture'}}),deleteUser=async()=>{},signInWithEmailAndPassword=async()=>{const e=Error('Fixture credentials rejected');e.code='auth/invalid-credential';throw e;};`,
-    'firebase-database.js':`export const getDatabase=()=>({}),ref=(_db,path='')=>path,get=async()=>({val:()=>null,exists:()=>false}),set=async()=>{},update=async()=>{},onValue=()=>()=>{},push=()=>({key:'fixture'}),serverTimestamp=()=>({'.sv':'timestamp'}),runTransaction=async()=>({committed:false,snapshot:{val:()=>null}});`
+    'firebase-database.js':`export const query=(target,...constraints)=>({path:target,constraints}),orderByChild=key=>({key}),limitToLast=count=>({count}),endBefore=(value,key)=>({value,key}),onDisconnect=()=>({remove:async()=>{},cancel:async()=>{}}),remove=async()=>{},getDatabase=()=>({}),ref=(_db,path='')=>path,get=async()=>({val:()=>null,exists:()=>false}),set=async()=>{},update=async()=>{},onValue=()=>()=>{},push=()=>({key:'fixture'}),serverTimestamp=()=>({'.sv':'timestamp'}),runTransaction=async()=>({committed:false,snapshot:{val:()=>null}});`
   };
   await page.route('**/*',route=>{
     const url=new URL(route.request().url());
     if(url.href==='https://bancaflow.production.test/')return route.fulfill({contentType:'text/html',body:html});
-    if(url.origin==='https://bancaflow.production.test'&&['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js'].includes(url.pathname))return route.fulfill({contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:readFileSync(join(__dirname,'..',url.pathname.slice(1)),'utf8')});
+    if(url.origin==='https://bancaflow.production.test'&&['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js','/assets/board-chat.js','/assets/board-chat.css','/assets/board-import.js'].includes(url.pathname))return route.fulfill({contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:readFileSync(join(__dirname,'..',url.pathname.slice(1)),'utf8')});
     if(url.origin==='https://bancaflow-csp-fixture.firebaseio.com'&&url.pathname==='/.lp')return route.fulfill({contentType:'text/javascript',body:'parent.__fixtureLongPollLoaded=true;'});
     const name=url.pathname.split('/').at(-1);if(url.origin==='https://www.gstatic.com'&&modules[name])return route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:modules[name]});
     return route.abort();
   });
   await page.goto('https://bancaflow.production.test/');
-  await page.waitForFunction(()=>globalThis.XLSX?.version==='0.20.3'&&!!globalThis.BancaFlowImport&&!!globalThis.BancaAnalytics&&!!globalThis.BancaAnalyticsPdf&&!!globalThis.BancaCoordinatorReport&&!!globalThis.BancaCoordinatorPdf);
+  await page.waitForFunction(()=>globalThis.XLSX?.version==='0.20.3'&&!!globalThis.BancaFlowImport&&!!globalThis.BancaAnalytics&&!!globalThis.BancaAnalyticsPdf&&!!globalThis.BancaCoordinatorReport&&!!globalThis.BancaCoordinatorPdf&&!!globalThis.BancaChat&&!!globalThis.BancaBoardImport);
   await page.locator('#email').fill('fixture@example.test');await page.locator('#password').fill('password123');await page.locator('#toggle-password').click();
   assert.equal(await page.locator('#password').getAttribute('type'),'text');
   await page.locator('#login-button').click();await page.waitForFunction(()=>document.querySelector('#login-status').textContent.includes('E-mail ou senha incorretos'));
@@ -644,4 +655,141 @@ test('coordinator completes monograph notes inline and exports all students, inc
   await page.evaluate(()=>{appTest.mount('t1');appTest.go('notas');});
   assert.equal(await page.locator('[data-coordinator-export],[data-coordinator-charts]').count(),0,'complete export and global notes stay coordinator-only');
   assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('two professors exchange live bank chat messages, preserve drafts, online presence and evaluation privacy', {skip}, async t=>{
+  const{page,errors,cspErrors,createPeer}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-chat-qa';mkdirSync(qa,{recursive:true});
+  const before=await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries}));
+  await page.locator('[data-chat-board="b1"]').first().click();
+  await page.waitForFunction(()=>appTest.state.route==='chat'&&!appTest.state.chatLoading);
+  assert.equal(await page.locator('#chat-room-select').inputValue(),'b1');
+  const peer=await createPeer('t2');await peer.evaluate(()=>appTest.openChatRoom('b1'));
+  await page.waitForFunction(()=>document.querySelectorAll('[data-chat-person]').length===2);
+  await peer.waitForFunction(()=>document.querySelectorAll('[data-chat-person]').length===2);
+  assert.equal(await page.locator('[data-chat-person="t1"]').count(),1);assert.equal(await page.locator('[data-chat-person="t2"]').count(),1);
+  const input=page.locator('#chat-message');await input.fill('Podemos iniciar?');await input.press('Shift+Enter');await input.type('Cronômetro preparado.');
+  assert.equal(await peer.locator('[data-chat-message]').count(),0,'Shift+Enter adds a line without sending');
+  await input.press('Enter');await peer.waitForFunction(()=>document.querySelectorAll('[data-chat-message]').length===1);
+  assert.match(await peer.locator('[data-chat-message]').textContent(),/Professor Um/);assert.match(await peer.locator('[data-chat-message] p').textContent(),/iniciar\?\nCronômetro/);
+  assert.equal(await input.inputValue(),'');
+  const attack='<img src=x onerror="globalThis.chatXss=true"> <script>globalThis.chatXss=true</script>';
+  await peer.locator('#chat-message').fill(attack);await peer.locator('#chat-message').press('Enter');
+  await page.waitForFunction(()=>document.querySelectorAll('[data-chat-message]').length===2);
+  assert.equal(await page.locator('[data-chat-message] p').last().textContent(),attack);assert.equal(await page.locator('[data-chat-message] img,[data-chat-message] script').count(),0);assert.equal(await page.evaluate(()=>globalThis.chatXss),undefined);
+  await input.fill('Minha próxima pergunta');await input.focus();await input.evaluate(el=>el.setSelectionRange(3,8));
+  await peer.locator('#chat-message').fill('A banca pode continuar.');await peer.locator('#chat-message').press('Enter');
+  await page.waitForFunction(()=>document.querySelectorAll('[data-chat-message]').length===3);
+  assert.equal(await input.inputValue(),'Minha próxima pergunta');assert.equal(await input.evaluate(el=>document.activeElement===el),true);assert.deepEqual(await input.evaluate(el=>[el.selectionStart,el.selectionEnd]),[3,8]);
+  await page.locator('#chat-room-select').selectOption('geral');assert.equal(await page.locator('[data-chat-message]').count(),0,'bank messages do not leak into the common room');
+  await input.fill('Rascunho da sala geral');await page.locator('#chat-room-select').selectOption('b1');assert.equal(await input.inputValue(),'Minha próxima pergunta');
+  await page.evaluate(()=>{firebaseMock.setError='Falha temporária de envio';});await input.fill('Mensagem que deve permanecer');await input.press('Enter');await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('Falha temporária'));
+  assert.equal(await input.inputValue(),'Mensagem que deve permanecer');assert.equal(await peer.locator('[data-chat-message]').count(),3);
+  await page.evaluate(()=>{firebaseMock.setError=null;firebaseMock.connected=false;firebaseMock.emit('.info/connected');});
+  await page.waitForFunction(()=>!appTest.state.connected);await input.fill('Rascunho offline');assert.equal(await page.locator('#chat-form button[type="submit"]').isDisabled(),true);
+  await page.evaluate(()=>{firebaseMock.connected=true;firebaseMock.emit('.info/connected');});await page.waitForFunction(()=>appTest.state.connected);
+  assert.equal(await peer.locator('[data-chat-message]').count(),3,'reconnection never sends a draft automatically');assert.equal(await input.inputValue(),'Rascunho offline');
+  await input.fill('');await page.locator('#chat-room-select').selectOption('geral');assert.equal(await input.inputValue(),'Rascunho da sala geral');await page.locator('#chat-room-select').selectOption('b1');
+  for(const width of [320,390,768,1440]){
+    await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true,`chat overflow at ${width}px`);
+    if(width!==768)await page.screenshot({path:join(qa,`chat-bank-${width}.png`),fullPage:true});
+  }
+  const disconnects=await page.evaluate(()=>firebaseMock.disconnects||[]);assert.ok(disconnects.some(item=>item.kind==='remove'&&item.path.startsWith('chatPresence/t1/')),'disconnect cleanup registered before use');
+  assert.equal(await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries})),before);
+  await page.evaluate(()=>{firebaseMock.data.users.outsider={name:'Outro Professor',role:'teacher',active:true};appTest.mount('outsider');appTest.go('chat');});
+  assert.deepEqual(await page.locator('#chat-room-select option').evaluateAll(nodes=>nodes.map(n=>n.value)),['geral']);assert.equal(await page.locator('[data-chat-message]').count(),0);
+  await page.evaluate(()=>appTest.mount('coord'));await page.locator('#open-chat').click();await page.locator('#chat-room-select').selectOption('b1');assert.equal(await page.locator('[data-chat-message]').count(),3,'coordinator can consult bank chat without being an evaluator');
+  await page.evaluate(()=>{appTest.state.chatDrafts.set('b1','Rascunho anterior');appTest.mount('t2');appTest.go('chat');});
+  assert.equal(await input.inputValue(),'');assert.equal(await page.evaluate(()=>appTest.state.chatDrafts.has('b1')),false,'changing account clears old drafts');
+  assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('chat paginates saved history and keeps a read-access failure separate from grading', {skip}, async t=>{
+  const{page,errors}=await openApp(t);
+  await page.evaluate(()=>{
+    firebaseMock.data.chatMessages={geral:Object.fromEntries(Array.from({length:130},(_,i)=>['m'+String(i).padStart(3,'0'),{uid:'t2',name:'Professora Dois',text:'Histórico '+i,at:Date.now()-200000+i}]))};appTest.openChatRoom('geral');
+  });
+  assert.equal(await page.locator('[data-chat-message]').count(),100);await page.locator('[data-chat-older]').click();await page.waitForFunction(()=>document.querySelectorAll('[data-chat-message]').length===130);
+  assert.match(await page.locator('[data-chat-message]').first().textContent(),/Histórico 0/);assert.equal(await page.locator('[data-chat-older]').count(),0);
+  await page.evaluate(()=>{appTest.stopChat();firebaseMock.chatReadError=true;appTest.openChatRoom('b1');});
+  assert.match(await page.locator('[data-chat-panel]').textContent(),/Não foi possível abrir o chat/);assert.equal(await page.locator('#chat-form button[type="submit"]').isDisabled(),true);
+  await page.evaluate(()=>{firebaseMock.chatReadError=false;});await page.locator('[data-chat-retry]').click();await page.waitForFunction(()=>!appTest.state.chatError&&!appTest.state.chatLoading);
+  await page.locator('#mobile-nav [data-route="avaliar"]').click();assert.equal(await page.locator('[data-grade-form="b1"]').count(),2);assert.equal(await page.locator('[data-grade-form="b1"][data-student="s1"] input[name="presentation"]').inputValue(),'10');
+  assert.deepEqual(errors,[]);
+});
+
+test('Alberson creates a coordinator who manages groups and schedules a bank manually with chat integrated', {skip}, async t=>{
+  const{page,errors,cspErrors}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-coordinators-qa';mkdirSync(qa,{recursive:true});
+  const before=await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries}));
+  await page.evaluate(()=>{appTest.mount('coord');appTest.go('professores');});await page.setViewportSize({width:390,height:920});
+  await page.locator('#teacher-name').fill('Coordenadora Nova');await page.locator('#teacher-email').fill('coord2@example.test');await page.locator('#teacher-key').fill('coord-nova');
+  await page.locator('#teacher-role').selectOption('coordinator');await page.locator('#teacher-password').fill('strongpass');
+  await page.locator('#teacher-form button[type="submit"]').click();await page.waitForFunction(()=>firebaseMock.data.users['new-teacher']?.role==='coordinator');
+  assert.equal(await page.evaluate(()=>appTest.state.user.uid),'coord','creating access keeps Alberson logged in');
+  await page.locator('[data-edit-teacher="new-teacher"]').click();await page.locator('#teacher-edit-dialog').waitFor({state:'visible'});
+  assert.match(await page.locator('#teacher-edit-role').inputValue(),/Coordenador/);await page.locator('#teacher-edit-name').fill('Coordenadora Atualizada');await page.locator('#teacher-edit-form button[type="submit"]').click();
+  await page.waitForFunction(()=>firebaseMock.data.users['new-teacher'].name==='Coordenadora Atualizada');
+  await page.evaluate(()=>{appTest.mount('new-teacher');appTest.go('professores');});assert.equal(await page.locator('#teacher-form').count(),0,'new coordinator cannot mint other accounts');
+  await page.evaluate(()=>appTest.go('grupos'));
+  await page.locator('#group-name').fill('Grupo da nova coordenação');await page.locator('#group-course').fill('ADS');await page.locator('#group-class').fill('3A');await page.locator('#group-title').fill('Banca organizada por outra coordenação');await page.locator('#group-advisor').selectOption('t1');
+  await page.locator('[data-remove-group-student="s3"]').click();await page.locator('[data-group-student="s1"] input').fill('Carla');await page.locator('[data-group-student="s2"] input').fill('Daniel');
+  await page.locator('#group-form button[type="submit"]').click();await page.waitForFunction(()=>Object.values(firebaseMock.data.groups).some(g=>g.name==='Grupo da nova coordenação'));
+  const gid=await page.evaluate(()=>Object.keys(firebaseMock.data.groups).find(id=>firebaseMock.data.groups[id].name==='Grupo da nova coordenação'));
+  await page.evaluate(()=>appTest.go('sortear'));await page.locator('#manual-group').selectOption(gid);await page.locator('#manual-size').selectOption('2');await page.locator('#manual-duration').selectOption('30');
+  const datetime=await page.evaluate(()=>{const d=new Date();d.setDate(d.getDate()+2);d.setHours(10,0,0,0);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'T10:00';});
+  await page.locator('#manual-date').fill(datetime);await page.locator('#manual-room').fill('Sala Coordenação');await page.locator('#manual-members input[value="new-teacher"]').check();
+  await page.locator('#manual-form button[type="submit"]').click();await page.waitForFunction(gid=>!!firebaseMock.data.groupBoards[gid],gid);
+  const bid=await page.evaluate(gid=>firebaseMock.data.groupBoards[gid],gid),record=await page.evaluate(bid=>firebaseMock.data.boards[bid],bid);
+  assert.equal(record.createdBy,'new-teacher');assert.equal(record.members['new-teacher'],true);assert.equal(record.members.t1,true);
+  assert.ok(await page.evaluate(bid=>Object.values(firebaseMock.data.locks||{}).some(slice=>slice['new-teacher']===bid),bid));assert.ok(await page.evaluate(bid=>Object.values(firebaseMock.data.roomLocks||{}).some(slice=>Object.values(slice).includes(bid)),bid));
+  await page.evaluate(bid=>appTest.go('minhasavaliacoes',bid),bid);assert.equal(await page.locator('[data-grade-form]').count(),2);
+  await page.locator(`[data-chat-board="${bid}"]`).click();await page.locator('#chat-message').fill('Banca manual pronta.');await page.locator('#chat-message').press('Enter');
+  await page.waitForFunction(bid=>Object.values(firebaseMock.data.chatMessages?.[bid]||{}).some(m=>m.text==='Banca manual pronta.'),bid);
+  for(const width of [320,390,1440]){await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:join(qa,`new-coordinator-chat-${width}.png`),fullPage:true});}
+  assert.equal(await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries})),before);assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('additional coordinator imports real scheduled-bank Excel only after preview and rejects conflicts and reimport', {skip}, async t=>{
+  const{page,errors,cspErrors}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-coordinators-qa';mkdirSync(qa,{recursive:true});
+  const info=await page.evaluate(()=>{
+    firebaseMock.data.users.coord2={name:'Coordenadora Planilha',email:'coord2@example.test',key:'coord-planilha',role:'coordinator',active:true};
+    firebaseMock.data.groups.g2={id:'g2',name:'Grupo Excel Banca',courseName:'Engenharia',className:'1E',title:'Agenda importada',advisorUid:'t1',active:true,students:{s3:'Eva',s4:'Fabio'}};
+    appTest.mount('coord2');appTest.go('bancas');const d=new Date();d.setDate(d.getDate()+3);d.setHours(10,0,0,0);return{date:d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'),before:JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries})};
+  });
+  const rows=[['Curso','Turma','Grupo','Data','Hora','Duração','Sala','Avaliador 1','Avaliador 2'],['Engenharia','1E','Grupo Excel Banca',info.date,'10:00',30,'Sala Excel','one@example.test','coord2@example.test']];
+  const workbook=XLSX.utils.book_new();XLSX.utils.book_append_sheet(workbook,XLSX.utils.aoa_to_sheet(rows),'Bancas');const bytes=Buffer.from(XLSX.write(workbook,{type:'array',bookType:'xlsx'}));
+  const upload=()=>page.locator('#board-import-file').setInputFiles({name:'bancas-agendadas.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:bytes});
+  await page.locator('[data-open-board-import]').first().click();await upload();await page.waitForFunction(()=>!document.querySelector('#board-import-confirm').disabled);
+  assert.match(await page.locator('#board-import-preview').textContent(),/Grupo Excel Banca/);assert.match(await page.locator('#board-import-preview').textContent(),/Coordenadora Planilha/);assert.equal(await page.evaluate(()=>!!firebaseMock.data.groupBoards.g2),false);
+  for(const width of [320,390,1440]){await page.setViewportSize({width,height:920});const shape=await page.locator('#board-import-dialog').evaluate(el=>({width:el.getBoundingClientRect().width,scroll:el.scrollWidth,client:el.clientWidth}));assert.ok(shape.width<=width);assert.ok(shape.scroll<=shape.client+1);await page.screenshot({path:join(qa,`bank-excel-preview-${width}.png`),fullPage:true});}
+  await page.locator('#board-import-cancel').click();assert.equal(await page.evaluate(()=>!!firebaseMock.data.groupBoards.g2),false);
+  await page.locator('[data-open-board-import]').first().click();await upload();await page.waitForFunction(()=>!document.querySelector('#board-import-confirm').disabled);
+  const model=page.waitForEvent('download');await page.locator('.excel-import-help > summary').click();await page.locator('#board-import-model').click();const modelFile=await model;assert.match(modelFile.suggestedFilename(),/\.xlsx$/);
+  const modelWorkbook=XLSX.read(readFileSync(await modelFile.path()),{type:'buffer'});assert.ok(modelWorkbook.SheetNames.includes('Bancas'));assert.ok(modelWorkbook.SheetNames.includes('Instruções'));
+  page.once('dialog',dialog=>dialog.accept());await page.locator('#board-import-confirm').click();await page.waitForFunction(()=>!!firebaseMock.data.groupBoards.g2);
+  const bid=await page.evaluate(()=>firebaseMock.data.groupBoards.g2);assert.equal(await page.evaluate(bid=>firebaseMock.data.boards[bid].createdBy,bid),'coord2');assert.equal(await page.evaluate(bid=>firebaseMock.data.boards[bid].members.coord2,bid),true);
+  await page.locator('[data-open-board-import]').first().click();await upload();await page.waitForFunction(()=>document.querySelector('#board-import-confirm').disabled&&document.querySelector('#board-import-preview').textContent.includes('agend'));
+  assert.equal(await page.evaluate(()=>Object.keys(firebaseMock.data.boards).length),2,'reimport does not overwrite or duplicate banks');await page.locator('#board-import-cancel').click();
+  await page.evaluate(()=>{firebaseMock.data.groups.g3={...firebaseMock.clone(firebaseMock.data.groups.g2),id:'g3',name:'Grupo Excel Conflito'};firebaseMock.emit('groups');});
+  const conflictRows=rows.map(row=>row.slice());conflictRows[1][2]='Grupo Excel Conflito';const badBook=XLSX.utils.book_new();XLSX.utils.book_append_sheet(badBook,XLSX.utils.aoa_to_sheet(conflictRows),'Bancas');
+  await page.locator('[data-open-board-import]').first().click();await page.locator('#board-import-file').setInputFiles({name:'conflito.xlsx',mimeType:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',buffer:Buffer.from(XLSX.write(badBook,{type:'array',bookType:'xlsx'}))});
+  await page.waitForFunction(()=>document.querySelector('#board-import-preview').textContent.includes('conflit')||document.querySelector('#board-import-preview').textContent.includes('ocupad')||document.querySelector('#board-import-preview').textContent.includes('sobrep'));
+  assert.equal(await page.locator('#board-import-confirm').isDisabled(),true);assert.equal(await page.evaluate(()=>!!firebaseMock.data.groupBoards.g3),false);
+  assert.equal(await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries})),info.before);assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('timer warning becomes red after fifteen minutes, survives pause and closure, and resets without losing grades', {skip}, async t=>{
+  const{page,errors}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-coordinators-qa';mkdirSync(qa,{recursive:true});
+  const before=await page.evaluate(()=>JSON.stringify(firebaseMock.data.grades)),display=page.locator('[data-timer-display="b1"]'),panel=page.locator('[data-timer-panel="b1"]');
+  await page.evaluate(()=>{firebaseMock.write('timers/b1',{elapsedMs:900000,startedAt:0,updatedAt:Date.now(),updatedBy:'t1',revision:2});firebaseMock.emit('timers/b1');});
+  assert.equal(await display.textContent(),'15:00,00');assert.equal(await display.evaluate(el=>el.classList.contains('timer-overrun')),false);assert.equal(await panel.locator('[data-timer-warning]').isVisible(),false);
+  await page.evaluate(()=>{firebaseMock.write('timers/b1',{elapsedMs:899990,startedAt:Date.now(),updatedAt:Date.now(),updatedBy:'t1',revision:3});firebaseMock.emit('timers/b1');});
+  await page.waitForFunction(()=>document.querySelector('[data-timer-display="b1"]').classList.contains('timer-overrun'));
+  assert.equal(await display.evaluate(el=>getComputedStyle(el).color),'rgb(179, 18, 45)');assert.equal(await panel.locator('[data-timer-warning]').isVisible(),true);
+  await page.locator('[data-timer-action="pause"]').click();assert.equal(await display.evaluate(el=>el.classList.contains('timer-overrun')),true);
+  page.once('dialog',dialog=>dialog.accept());await page.locator('[data-seal="b1"]').click();await page.waitForFunction(()=>!!firebaseMock.data.seals.b1);assert.equal(await panel.evaluate(el=>el.classList.contains('timer-overrun')),true);
+  page.once('dialog',dialog=>dialog.accept());await page.locator('[data-reopen="b1"]').click();await page.waitForFunction(()=>!firebaseMock.data.seals.b1);
+  for(const width of [320,390,1440]){await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await panel.screenshot({path:join(qa,`timer-overrun-${width}.png`)});}
+  page.once('dialog',dialog=>dialog.accept());await page.locator('[data-timer-action="reset"]').click();await page.waitForFunction(()=>firebaseMock.data.timers.b1.elapsedMs===0);
+  assert.equal(await display.textContent(),'00:00,00');assert.equal(await display.evaluate(el=>el.classList.contains('timer-overrun')),false);assert.equal(await panel.locator('[data-timer-warning]').isVisible(),false);
+  assert.equal(await page.evaluate(()=>JSON.stringify(firebaseMock.data.grades)),before);assert.deepEqual(errors,[]);
 });

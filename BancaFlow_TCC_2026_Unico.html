@@ -5,10 +5,11 @@
 <meta name="color-scheme" content="light">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <link rel="stylesheet" href="assets/analytics.css">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-nMNeWrmfUcJDH1eb4MxOz+ym+53/sLMYYBTvtVecrgw='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<link rel="stylesheet" href="assets/board-chat.css">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-+cteUwpORC0+VUUWAV969frkHYto1j+LMJDzUWy3PjU='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>BancaFlow · Gestão de bancas | Univap</title><style>
-/* Mobile first. Cores institucionais Univap; todos os recursos ficam neste HTML. */
+/* Mobile first. Cores institucionais Univap; recursos locais em assets/. */
 :root{
   --azul:#014996;--azul-escuro:#073b78;--azul-profundo:#092c58;
   --azul-claro:#eaf3fb;--vermelho:#e0001a;--borda:#dce5ef;
@@ -215,6 +216,10 @@ button.avatar{width:44px;height:44px;padding:0}
 .timer-head h3{margin:0;font-size:1.05rem;line-height:1.4;color:var(--azul-profundo);overflow-wrap:anywhere}
 .timer-display{display:block;font-variant-numeric:tabular-nums;font-size:clamp(1.9rem,9.4vw,3.5rem);font-weight:750;line-height:1.25;letter-spacing:-.025em;color:var(--azul-profundo);margin:20px 0 16px;white-space:nowrap}
 .timer-controls{display:grid;grid-template-columns:minmax(0,1fr);gap:10px}
+.board-timer.timer-overrun{border-color:#d59aa4;background:#fff5f6}
+.timer-display.timer-overrun{color:#b3122d}
+.timer-overrun-warning{margin:0 0 12px;color:#a50f27;font-size:.83rem;font-weight:700}
+.timer-overrun-warning[hidden]{display:none}
 .timer-status{font-size:.78rem;line-height:1.65;color:var(--cinza);overflow-wrap:anywhere;margin:14px 0 0}
 .step-list{display:grid;gap:12px}
 .step-row{display:flex;gap:12px;align-items:center;padding:14px;border:1px solid var(--borda);border-radius:12px;font-size:.86rem;min-width:0;overflow-wrap:anywhere}
@@ -613,7 +618,7 @@ button.avatar{width:44px;height:44px;padding:0}
 </section>
 <div id="app-view" class="app-shell hidden">
   <aside class="sidebar"><div class="logo"><span>TCC</span><div>BancaFlow<small>Bancas de TCC · Univap</small></div></div><p class="side-heading">SISTEMA DE AVALIAÇÃO</p><nav id="desktop-nav" aria-label="Navegação principal"></nav><div class="side-foot"><div class="avatar" id="side-avatar">P</div><div><strong id="side-name">Professor</strong><small id="side-role">Avaliador</small></div><button type="button" id="logout" class="icon-btn" title="Sair" aria-label="Sair"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M9 12h12m-4-4 4 4-4 4"/></svg></button></div></aside>
-  <div class="main-column"><header class="topbar"><div><p class="eyebrow" id="page-eyebrow">PAINEL</p><h1 id="page-title">Visão geral</h1></div><div class="top-right"><span class="live-dot"></span><span class="online-label">BancaFlow · Univap</span><button type="button" id="top-initials" class="avatar" aria-label="Abrir menu da conta" aria-haspopup="dialog" aria-controls="mobile-menu">P</button></div></header>
+  <div class="main-column"><header class="topbar"><div><p class="eyebrow" id="page-eyebrow">PAINEL</p><h1 id="page-title">Visão geral</h1></div><div class="top-right"><span class="live-dot"></span><span class="online-label">BancaFlow · Univap</span><button type="button" id="open-chat" class="icon-btn" aria-label="Abrir chat dos professores"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8 10h8M8 14h5"/></svg></button><button type="button" id="top-initials" class="avatar" aria-label="Abrir menu da conta" aria-haspopup="dialog" aria-controls="mobile-menu">P</button></div></header>
     <main id="view" tabindex="-1"></main><footer class="app-identity">BancaFlow · Professores da Univap · Coordenação: Alberson <a href="privacidade.html">Sobre e privacidade</a></footer>
   </div><nav id="mobile-nav" class="mobile-nav" aria-label="Navegação mobile"></nav>
 </div>
@@ -628,8 +633,8 @@ button.avatar{width:44px;height:44px;padding:0}
       ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator'",
       "$uid": {
         ".read": "auth !== null && auth.uid === $uid",
-        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('key').val() === 'alberson' && auth.uid !== $uid && (!data.exists() || data.child('role').val() === 'teacher') && newData.exists() && newData.child('role').val() === 'teacher' && (!data.exists() || (newData.child('email').val() === data.child('email').val() && newData.child('key').val() === data.child('key').val()))",
-        ".validate": "newData.hasChildren(['name','email','role','key','active']) && newData.child('role').val() === 'teacher' && newData.child('key').val() !== 'alberson'",
+        ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('key').val() === 'alberson' && auth.uid !== $uid && (!data.exists() || ((data.child('role').val() === 'teacher' || data.child('role').val() === 'coordinator') && data.child('key').val() !== 'alberson')) && newData.exists() && (newData.child('role').val() === 'teacher' || newData.child('role').val() === 'coordinator') && newData.child('key').val() !== 'alberson' && (!data.exists() || (newData.child('email').val() === data.child('email').val() && newData.child('key').val() === data.child('key').val() && newData.child('role').val() === data.child('role').val()))",
+        ".validate": "newData.hasChildren(['name','email','role','key','active']) && (newData.child('role').val() === 'teacher' || newData.child('role').val() === 'coordinator') && newData.child('key').val() !== 'alberson'",
         "name": {
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 120"
         },
@@ -640,7 +645,7 @@ button.avatar{width:44px;height:44px;padding:0}
           ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 60"
         },
         "role": {
-          ".validate": "newData.val() === 'teacher'"
+          ".validate": "newData.val() === 'teacher' || newData.val() === 'coordinator'"
         },
         "active": {
           ".validate": "newData.isBoolean()"
@@ -668,7 +673,7 @@ button.avatar{width:44px;height:44px;padding:0}
     "groups": {
       ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && root.child('users').child(auth.uid).exists()",
       "$groupId": {
-        ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('key').val() === 'alberson' && newData.exists() && !root.child('groupBoards').child($groupId).exists() && !newData.parent().parent().child('groupBoards').child($groupId).exists()",
+        ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && newData.exists() && !root.child('groupBoards').child($groupId).exists() && !newData.parent().parent().child('groupBoards').child($groupId).exists()",
         ".validate": "newData.hasChildren(['id','name','className','title','advisorUid','students']) && newData.child('id').val() === $groupId && root.child('users').child(newData.child('advisorUid').val()).exists() && newData.child('students').hasChildren() && (!data.child('createdBy').exists() || newData.child('createdBy').val() === data.child('createdBy').val()) && (!data.child('createdAt').exists() || newData.child('createdAt').val() === data.child('createdAt').val())",
         "id": {
           ".validate": "newData.isString()"
@@ -697,7 +702,7 @@ button.avatar{width:44px;height:44px;padding:0}
           ".validate": "newData.isString() && newData.val().length <= 120"
         },
         "active": {
-          ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('key').val() === 'alberson' && data.parent().exists() && newData.exists()",
+          ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && data.parent().exists() && newData.exists()",
           ".validate": "newData.isBoolean() && (newData.val() !== false || !newData.parent().parent().parent().child('groupBoards').child($groupId).exists() || newData.parent().parent().parent().child('seals').child(newData.parent().parent().parent().child('groupBoards').child($groupId).val()).exists())"
         },
         "createdBy": {
@@ -707,19 +712,19 @@ button.avatar{width:44px;height:44px;padding:0}
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 60000 && newData.val() % 1 === 0 && (!data.exists() || newData.val() === data.val())"
         },
         "updatedBy": {
-          ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('key').val() === 'alberson' && data.parent().exists()",
+          ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && data.parent().exists()",
           ".validate": "newData.isString() && newData.val() === auth.uid"
         },
         "archivedBy": {
-          ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('key').val() === 'alberson' && data.parent().exists()",
+          ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && data.parent().exists()",
           ".validate": "newData.isString() && newData.val() === auth.uid"
         },
         "updatedAt": {
-          ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('key').val() === 'alberson' && data.parent().exists()",
+          ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && data.parent().exists()",
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 60000 && newData.val() % 1 === 0"
         },
         "archivedAt": {
-          ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && root.child('users').child(auth.uid).child('key').val() === 'alberson' && data.parent().exists()",
+          ".write": "auth !== null && root.child('users').child(auth.uid).child('active').val() !== false && root.child('users').child(auth.uid).child('role').val() === 'coordinator' && data.parent().exists()",
           ".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() <= now + 60000 && newData.val() % 1 === 0"
         }
       }
@@ -871,6 +876,54 @@ button.avatar{width:44px;height:44px;padding:0}
           ".validate": false
         }
       }
+    },
+    "chatMessages": {
+      "$room": {
+        ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && ($room === 'geral' || (root.child('boards').child($room).exists() && (root.child('users').child(auth.uid).child('role').val() === 'coordinator' || root.child('boards').child($room).child('members').child(auth.uid).val() === true)))",
+        ".indexOn": [
+          "at"
+        ],
+        "$mid": {
+          ".write": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator') && ($room === 'geral' || (root.child('boards').child($room).exists() && (root.child('users').child(auth.uid).child('role').val() === 'coordinator' || root.child('boards').child($room).child('members').child(auth.uid).val() === true))) && !data.exists() && newData.exists()",
+          ".validate": "newData.hasChildren(['uid','name','text','at'])",
+          "uid": {
+            ".validate": "newData.isString() && newData.val() === auth.uid"
+          },
+          "name": {
+            ".validate": "newData.isString() && newData.val() === root.child('users').child(auth.uid).child('name').val()"
+          },
+          "text": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 2000 && newData.val().replace(\" \", '').replace(\"\\t\", '').replace(\"\\n\", '').replace(\"\\r\", '').replace(\"\\u000b\", '').replace(\"\\f\", '').replace(\"\\u00a0\", '').replace(\"\\u1680\", '').replace(\"\\u2000\", '').replace(\"\\u2001\", '').replace(\"\\u2002\", '').replace(\"\\u2003\", '').replace(\"\\u2004\", '').replace(\"\\u2005\", '').replace(\"\\u2006\", '').replace(\"\\u2007\", '').replace(\"\\u2008\", '').replace(\"\\u2009\", '').replace(\"\\u200a\", '').replace(\"\\u2028\", '').replace(\"\\u2029\", '').replace(\"\\u202f\", '').replace(\"\\u205f\", '').replace(\"\\u3000\", '').replace(\"\\ufeff\", '').length > 0"
+          },
+          "at": {
+            ".validate": "newData.isNumber() && newData.val() >= now - 60000 && newData.val() <= now + 60000 && newData.val() % 1 === 0"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
+    },
+    "chatPresence": {
+      ".read": "auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator')",
+      "$uid": {
+        "$cid": {
+          ".write": "auth !== null && auth.uid === $uid && (!newData.exists() || (auth !== null && root.child('users').child(auth.uid).exists() && root.child('users').child(auth.uid).child('active').val() !== false && (root.child('users').child(auth.uid).child('role').val() === 'teacher' || root.child('users').child(auth.uid).child('role').val() === 'coordinator')))",
+          ".validate": "newData.hasChildren(['name','role','at'])",
+          "name": {
+            ".validate": "newData.isString() && newData.val() === root.child('users').child($uid).child('name').val()"
+          },
+          "role": {
+            ".validate": "newData.isString() && newData.val() === root.child('users').child($uid).child('role').val()"
+          },
+          "at": {
+            ".validate": "newData.isNumber() && newData.val() >= now - 60000 && newData.val() <= now + 60000 && newData.val() % 1 === 0"
+          },
+          "$other": {
+            ".validate": false
+          }
+        }
+      }
     }
   }
 }</script>
@@ -880,6 +933,8 @@ button.avatar{width:44px;height:44px;padding:0}
 <script src="assets/analytics-pdf.js" defer></script>
 <script src="assets/coordinator-report.js" defer></script>
 <script src="assets/coordinator-report-pdf.js" defer></script>
+<script src="assets/board-chat.js" defer></script>
+<script src="assets/board-import.js" defer></script>
 <script type="module">
 // Configuração pública do app Firebase (não é uma chave administrativa).
 // A segurança das notas depende das regras do Realtime Database.
@@ -951,7 +1006,7 @@ const fmt = value => Number(value).toLocaleString('pt-BR', { minimumFractionDigi
 
 import { initializeApp, deleteApp } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js';
 import { getAuth, initializeAuth, inMemoryPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, createUserWithEmailAndPassword, deleteUser } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js';
-import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, runTransaction } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
+import { getDatabase, ref, get, set, update, onValue, push, serverTimestamp, runTransaction, query, orderByChild, limitToLast, endBefore, onDisconnect, remove } from 'https://www.gstatic.com/firebasejs/12.19.0/firebase-database.js';
 
 
 
@@ -965,6 +1020,7 @@ const ICON_PATHS={
  bancas:'<rect x="3" y="5" width="18" height="16" rx="3"/><path d="M7 3v4m10-4v4M3 11h18m-13 4h2m4 0h2"/>',
  sortear:'<path d="M3 7h3c5 0 7 10 12 10h3m-4-4 4 4-4 4M3 17h3c2 0 4-2 5-4m2-2c1-2 3-4 5-4h3m-4-4 4 4-4 4"/>',
  professores:'<circle cx="9" cy="7" r="3"/><path d="M3 21v-2a6 6 0 0 1 12 0v2m1-17a3 3 0 0 1 0 6m2 4a5 5 0 0 1 3 5v2"/>',
+ chat:'<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8 10h8M8 14h5"/>',
  entregas:'<rect x="5" y="5" width="14" height="16" rx="2"/><rect x="9" y="3" width="6" height="4" rx="1"/><path d="m8 14 3 3 5-6"/>',
  notas:'<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 7h8M8 11h8M8 15h3m3 3 2 2 4-5"/>',
  relatorios:'<path d="M4 3v18h17M8 16v-4m5 4V7m5 9v-6"/>',
@@ -980,11 +1036,12 @@ const ICON_PATHS={
 };
 const icon=name=>`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name==='minhasavaliacoes'?'avaliar':name]||ICON_PATHS.bancas}</svg>`;
 const ROSTER_PROTEGIDO = JSON.parse(document.getElementById('roster-criptografado').textContent);
-const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', analyticsBoard:'', reportCharts:true, notesFilters:{course:'todas',className:'todas',date:'',status:'todas',search:''}, notesSearchDraft:'', notesChartBoard:'', notesChartsOpen:false, coordinatorExportBusy:false, notesExpanded:new Set(), unsubs:[], teacherSubs:new Map() };
+const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', analyticsBoard:'', reportCharts:true, notesFilters:{course:'todas',className:'todas',date:'',status:'todas',search:''}, notesSearchDraft:'', notesChartBoard:'', notesChartsOpen:false, coordinatorExportBusy:false, notesExpanded:new Set(), chatRoom:'geral', chatMessages:{}, chatPresence:{}, chatDrafts:new Map(), chatLoading:false, chatError:'', chatPresenceError:'', chatSending:false, chatHasMore:false, chatLoadingOlder:false, unsubs:[], teacherSubs:new Map() };
 const isActiveTeacher = profile => !!profile && ['coordinator','teacher'].includes(profile.role) && profile.active !== false;
 const activeTeachers = () => Object.entries(state.users).filter(([,profile])=>isActiveTeacher(profile));
 const isCoord = () => state.profile?.role === 'coordinator' && state.profile.active !== false;
-const canManageTeachers = () => isCoord() && state.profile.key === 'alberson';
+const canManageTeachers = () => !!state.user && isCoord() && state.profile.key === 'alberson';
+const canManageGroups = () => !!state.user && isCoord();
 const groupOf = board => state.groups[board?.groupId];
 const availableGroups = () => Object.values(state.groups).filter(g=>g.active!==false);
 const courseLabel = group => group?.courseName || 'Curso não informado';
@@ -1008,6 +1065,158 @@ const heading=(title,sub,action='')=>`<div class="section-heading"><div><h3>${es
 const stats = (label,n,code)=>`<div class="stat"><div class="stat-label"><span>${esc(label)}</span><span class="stat-icon">${icon(({'01':'entregas','02':'bancas','03':'relatorios','04':'professores','05':'professores','06':'sair'})[code])}</span></div><strong>${esc(n)}</strong></div>`;
 
 let accessRevision=0;
+// Chat: salas e presença isoladas das avaliações e dos relatórios.
+const chatRuntime={epoch:0,room:'',messagesOff:null,presenceOff:null,connection:null,presenceStarting:false};
+function chatRooms(){
+ if(!state.user||!isActiveTeacher(state.profile))return [];
+ return [{id:'geral',label:'Sala dos professores',description:'Conversa geral entre os professores e a coordenação.'},...activeBoards().filter(([bid,b])=>bid!=='geral'&&(isCoord()||b.members?.[state.user.uid]===true)).sort((a,b)=>(a[1].startAt||0)-(b[1].startAt||0)).map(([id,b])=>({id,label:`${groupOf(b)?.name||b.groupId||id} · ${dateStr(b.startAt)}`,description:'Conversa da banca, acessível aos avaliadores participantes e à coordenação.'}))];
+}
+function assertChatAccess(room){
+ if(!chatRooms().some(item=>item.id===room))throw Error('Você não tem acesso a esta sala de conversa.');
+}
+function captureChatUi(){
+ const input=document.querySelector('#chat-message'),panel=document.querySelector('[data-chat-panel]'),list=document.querySelector('#chat-message-list');
+ if(!input||panel?.dataset.chatPanel!==state.chatRoom)return null;
+ if(typeof input.value==='string')state.chatDrafts.set(state.chatRoom,input.value);
+ return {room:state.chatRoom,focus:document.activeElement===input,start:input.selectionStart,end:input.selectionEnd,scrollTop:list?.scrollTop||0,nearBottom:!list||(list.scrollHeight-list.clientHeight-list.scrollTop<70)};
+}
+function restoreChatUi(previous){
+ if(state.route!=='chat')return;
+ const input=document.querySelector('#chat-message'),list=document.querySelector('#chat-message-list');
+ if(previous?.room===state.chatRoom&&previous.focus){input?.focus({preventScroll:true});input?.setSelectionRange?.(previous.start,previous.end);}
+ if(list)list.scrollTop=!previous||previous.room!==state.chatRoom||previous.nearBottom?list.scrollHeight:previous.scrollTop;
+}
+function onlineChatPeople(){
+ if(!state.connected)return [];
+ const room=state.chatRoom,board=state.boards[room],now=Date.now()+state.serverOffset;
+ return Object.entries(state.chatPresence).flatMap(([uid,connections])=>{
+  const records=Object.values(connections||{}).filter(item=>item&&typeof item.at==='number'&&item.at>=now-120000&&item.at<=now+60000&&['teacher','coordinator'].includes(item.role));
+  const current=records.sort((a,b)=>b.at-a.at)[0];
+  if(!current||state.users[uid]?.active===false||(room!=='geral'&&board?.members?.[uid]!==true&&current.role!=='coordinator'))return [];
+  return [{uid,name:current.name,role:current.role}];
+ });
+}
+function chatView(){
+ const rooms=chatRooms();if(!rooms.length)return empty('Acesso restrito aos professores');
+ if(!rooms.some(room=>room.id===state.chatRoom)){state.chatRoom='geral';state.chatMessages={};state.chatLoading=true;state.chatError='';state.chatHasMore=false;}
+ if(typeof BancaChat==='undefined')return empty('O chat não carregou','Reabra a página para carregar a conversa.');
+ const room=rooms.find(item=>item.id===state.chatRoom);
+ return (state.chatPresenceError?`<div class="notice"><p>${esc(state.chatPresenceError)}</p><button type="button" class="btn soft" data-chat-retry="1">Reconectar chat</button></div>`:'')+BancaChat.renderChat({rooms,roomId:room.id,title:room.id==='geral'?'Sala dos professores':`Chat da banca · ${groupOf(state.boards[room.id])?.name||room.label}`,roomDescription:room.description,messages:state.chatMessages,people:onlineChatPeople(),uid:state.user.uid,loading:state.chatLoading,connected:state.connected,error:state.chatError,draft:state.chatDrafts.get(room.id)||'',sending:state.chatSending,hasMore:state.chatHasMore,loadingOlder:state.chatLoadingOlder});
+}
+function openChatRoom(room='geral'){
+ assertChatAccess(room);captureChatUi();
+ if(state.chatRoom!==room){state.chatRoom=room;state.chatMessages={};state.chatLoading=true;state.chatError='';state.chatHasMore=false;state.chatLoadingOlder=false;}
+ go('chat');
+}
+function chatAccessError(){return 'Não foi possível abrir o chat. Peça à coordenação para conferir o acesso e tente novamente.';}
+function syncChat(){
+ if(!state.user||!isActiveTeacher(state.profile))return;
+ if(state.route!=='chat'){
+  if(chatRuntime.messagesOff){chatRuntime.messagesOff();chatRuntime.messagesOff=null;chatRuntime.room='';++chatRuntime.epoch;}
+  return;
+ }
+ if(!chatRuntime.presenceOff){
+  const uid=state.user.uid,revision=accessRevision;
+  chatRuntime.presenceOff=()=>{};
+  chatRuntime.presenceOff=onValue(ref(db,'chatPresence'),snapshot=>{
+   if(state.user?.uid!==uid||revision!==accessRevision)return;
+   state.chatPresence=snapshot.val()||{};state.chatPresenceError='';if(state.route==='chat')render();
+  },()=>{if(state.user?.uid===uid&&revision===accessRevision){state.chatPresence={};state.chatPresenceError='Não foi possível atualizar os professores online. Reconecte o chat para tentar novamente.';if(state.route==='chat')render();}});
+ }
+ if(state.connected)void startChatPresence();
+ const room=state.chatRoom;assertChatAccess(room);
+ if(chatRuntime.room===room&&chatRuntime.messagesOff)return;
+ chatRuntime.messagesOff?.();const epoch=++chatRuntime.epoch,uid=state.user.uid,revision=accessRevision;
+ chatRuntime.room=room;state.chatMessages={};state.chatLoading=true;state.chatError='';state.chatHasMore=false;
+ chatRuntime.messagesOff=()=>{};
+ let first=true;
+ chatRuntime.messagesOff=onValue(query(ref(db,`chatMessages/${room}`),orderByChild('at'),limitToLast(100)),snapshot=>{
+  if(epoch!==chatRuntime.epoch||uid!==state.user?.uid||revision!==accessRevision||state.chatRoom!==room)return;
+  if(!chatRooms().some(item=>item.id===room))return;
+  const messages=snapshot.val()||{};
+  state.chatMessages={...state.chatMessages,...messages};state.chatLoading=false;state.chatError='';
+  if(first){state.chatHasMore=Object.keys(messages).length===100;first=false;}
+  if(state.route==='chat')render();
+ },()=>{
+  if(epoch!==chatRuntime.epoch||uid!==state.user?.uid||revision!==accessRevision)return;
+  ++chatRuntime.epoch;state.chatMessages={};state.chatLoading=false;state.chatLoadingOlder=false;state.chatHasMore=false;state.chatError=chatAccessError();if(state.route==='chat')render();
+ });
+}
+function retryChat(){
+ assertChatAccess(state.chatRoom);
+ chatRuntime.messagesOff?.();chatRuntime.messagesOff=null;chatRuntime.room='';chatRuntime.presenceOff?.();chatRuntime.presenceOff=null;
+ syncChat();render();
+}
+async function loadOlderChat(){
+ const room=state.chatRoom;assertChatAccess(room);
+ if(!state.connected)throw Error('Conecte-se à internet para carregar o histórico.');
+ if(state.chatLoadingOlder||!state.chatHasMore)return;
+ const oldest=BancaChat.sortedMessages(state.chatMessages)[0];if(!oldest||typeof oldest.at!=='number')return;
+ const uid=state.user.uid,revision=accessRevision,epoch=chatRuntime.epoch;
+ state.chatLoadingOlder=true;render();
+ try{
+  const snapshot=await get(query(ref(db,`chatMessages/${room}`),orderByChild('at'),endBefore(oldest.at,oldest.id),limitToLast(100)));
+  assertCurrentSession(uid,revision);assertChatAccess(room);
+  if(state.chatRoom!==room||epoch!==chatRuntime.epoch)return;
+  const previous=document.querySelector('#chat-message-list'),height=previous?.scrollHeight||0,top=previous?.scrollTop||0,messages=snapshot.val()||{};
+  state.chatMessages={...messages,...state.chatMessages};state.chatHasMore=Object.keys(messages).length===100;state.chatLoadingOlder=false;render();
+  const list=document.querySelector('#chat-message-list');if(list)list.scrollTop=top+(list.scrollHeight-height);
+ }finally{if(state.user?.uid===uid&&accessRevision===revision&&state.chatRoom===room&&epoch===chatRuntime.epoch){state.chatLoadingOlder=false;render();}}
+}
+async function sendChatMessage(form){
+ const room=String(form.dataset.chatRoom||'');assertChatAccess(room);
+ if(room!==state.chatRoom)throw Error('A sala mudou. Confira a conversa antes de enviar.');
+ if(!state.connected)throw Error('Conecte-se à internet para enviar a mensagem.');
+ if(state.chatLoading||state.chatError)throw Error('Aguarde a conversa carregar ou tente reconectar o chat.');
+ if(state.chatSending)return;
+ const raw=String(new FormData(form).get('message')??''),text=BancaChat.validateMessage(raw),uid=state.user.uid,revision=accessRevision;
+ state.chatDrafts.set(room,raw);state.chatSending=true;
+ const button=form.querySelector?.('button[type="submit"]');if(button)button.disabled=true;
+ try{
+  const id=push(ref(db,`chatMessages/${room}`)).key;
+  if(!id)throw Error('Não foi possível preparar a mensagem. Tente novamente.');
+  await set(ref(db,`chatMessages/${room}/${id}`),{uid,name:state.profile.name,text,at:serverTimestamp()});
+  assertCurrentSession(uid,revision);
+  if(state.chatDrafts.get(room)===raw){state.chatDrafts.delete(room);const input=document.querySelector('#chat-message');if(state.chatRoom===room&&input?.value===raw)input.value='';}
+ }finally{if(state.user?.uid===uid&&accessRevision===revision){state.chatSending=false;if(state.route==='chat')render();}}
+}
+async function startChatPresence(){
+ if(!state.user||!isActiveTeacher(state.profile)||!state.connected||chatRuntime.connection||chatRuntime.presenceStarting)return;
+ const uid=state.user.uid,revision=accessRevision;
+ const id=push(ref(db,`chatPresence/${uid}`)).key;if(!id)return;
+ const entry=ref(db,`chatPresence/${uid}/${id}`),connection={entry,uid,revision,disconnect:onDisconnect(entry)};
+ chatRuntime.presenceStarting=true;chatRuntime.connection=connection;
+ try{
+  await connection.disconnect.remove();
+  if(chatRuntime.connection!==connection||state.user?.uid!==uid||revision!==accessRevision||!state.connected)return;
+  await set(entry,{name:state.profile.name,role:state.profile.role,at:serverTimestamp()});
+  if(chatRuntime.connection!==connection||state.user?.uid!==uid||revision!==accessRevision||!state.connected){
+   void remove(entry).then(()=>connection.disconnect.cancel()).catch(()=>{});
+  }
+ }catch{
+  if(chatRuntime.connection===connection){chatRuntime.connection=null;}
+ }finally{chatRuntime.presenceStarting=false;}
+}
+async function stopChatPresence(){
+ const connection=chatRuntime.connection;chatRuntime.connection=null;chatRuntime.presenceStarting=false;
+ if(!connection||!state.connected)return;
+ try{await remove(connection.entry);await connection.disconnect.cancel();}catch{/* A limpeza no servidor continua registrada em caso de queda. */}
+}
+function stopChat(){
+ ++chatRuntime.epoch;chatRuntime.messagesOff?.();chatRuntime.messagesOff=null;chatRuntime.room='';chatRuntime.presenceOff?.();chatRuntime.presenceOff=null;
+ void stopChatPresence();
+ state.chatRoom='geral';state.chatMessages={};state.chatPresence={};state.chatDrafts.clear();state.chatLoading=false;state.chatError='';state.chatPresenceError='';state.chatSending=false;state.chatHasMore=false;state.chatLoadingOlder=false;
+}
+async function logoutAccount(){
+ try{await Promise.race([stopChatPresence(),new Promise(resolve=>setTimeout(resolve,1500))]);}
+ finally{await signOut(auth);}
+}
+setInterval(()=>{
+ const current=chatRuntime.connection;
+ if(current&&state.connected&&current.uid===state.user?.uid&&current.revision===accessRevision&&isActiveTeacher(state.profile))void set(current.entry,{name:state.profile.name,role:state.profile.role,at:serverTimestamp()}).catch(()=>{});
+ if(state.route==='chat'&&state.user)render();
+},45000);
+
 function showLogin(){ closeMobileMenu();$('#login-view').classList.remove('hidden');$('#app-view').classList.add('hidden'); }
 function showAccessAccount(user){
  $('#access-account').classList.toggle('hidden',!user);
@@ -1019,13 +1228,15 @@ function showAccessProblem(message,user=auth.currentUser){
  $('#access-help').open=true;notice(message,true);
 }
 function resetAppData(){
+ stopChat();
  closeMobileMenu();$('#mobile-menu').innerHTML='';
  if(typeof resetGroupAdmin==='function')resetGroupAdmin();
  if(typeof closeExcelImport==='function')closeExcelImport(true);
+ if(typeof closeBoardImport==='function')closeBoardImport(true);
  if(typeof closeTeacherEdit==='function')closeTeacherEdit(true);
  for(const key of ['users','groups','boards','groupBoards','locks','roomLocks','grades','deliveries','seals','timers','timerErrors'])state[key]={};
  state.drafts.clear();state.busyBoards.clear();if(typeof closeBoardShare==='function')closeBoardShare();$('#view').innerHTML='';
- state.plan=[];state.planMeta=null;state.planUnassigned=[];state.selectedBoard='';
+ state.plan=[];state.planMeta=null;state.planUnassigned=[];state.selectedBoard='';state.boardSaving=false;
  state.filter='todas';state.courseFilter='todas';state.reportFilter='todas';state.reportCourseFilter='todas';state.boardDateFilter='';state.reportDateFilter='';
  state.analyticsBoard='';state.reportCharts=true;state.coordinatorExportBusy=false;resetNotesFilters();state.notesExpanded.clear();
 }
@@ -1045,14 +1256,15 @@ $('#toggle-password').addEventListener('click',()=>{
  const password=$('#password'),button=$('#toggle-password'),visible=password.type==='password';
  password.type=visible?'text':'password';button.setAttribute('aria-pressed',String(visible));button.setAttribute('aria-label',visible?'Ocultar senha':'Mostrar senha');button.innerHTML=icon(visible?'ocultar':'olho');
 });
-$('#logout').addEventListener('click',()=>signOut(auth).catch(fail));
+$('#logout').addEventListener('click',()=>logoutAccount().catch(fail));
+$('#open-chat').addEventListener('click',()=>handle(()=>openChatRoom(state.chatRoom)));
 $('#top-initials').addEventListener('click',openMobileMenu);
 $('#mobile-menu').addEventListener('close',()=>document.body.classList.remove('menu-open'));
 $('#mobile-menu').addEventListener('click',e=>{
  const button=e.target.closest('button');
  if(e.target===$('#mobile-menu')||button?.dataset.closeMenu!==undefined)return closeMobileMenu();
  if(!button?.dataset.route)return;
- if(button.dataset.route==='sair'){closeMobileMenu();signOut(auth).catch(fail);}else go(button.dataset.route);
+ if(button.dataset.route==='sair'){closeMobileMenu();logoutAccount().catch(fail);}else go(button.dataset.route);
 });
 $('#copy-access-uid').addEventListener('click',async()=>{
  const uid=auth.currentUser?.uid;if(!uid)return;
@@ -1064,7 +1276,7 @@ $('#retry-access').addEventListener('click',async()=>{
  try{await verificarAcesso(auth.currentUser);}finally{button.disabled=false;}
 });
 $('#switch-access-account').addEventListener('click',()=>signOut(auth).catch(fail));
-function clearListeners(){state.unsubs.forEach(unsub=>unsub());state.unsubs=[];state.teacherSubs.forEach(unsubs=>unsubs.forEach(fn=>fn()));state.teacherSubs.clear();state.timerSubs.forEach(unsub=>unsub());state.timerSubs.clear();}
+function clearListeners(){stopChat();state.unsubs.forEach(unsub=>unsub());state.unsubs=[];state.teacherSubs.forEach(unsubs=>unsubs.forEach(fn=>fn()));state.teacherSubs.clear();state.timerSubs.forEach(unsub=>unsub());state.timerSubs.clear();}
 function listen(path, key, allow=true){if(!allow)return;const revision=accessRevision;state.unsubs.push(onValue(ref(db,path),snap=>{if(revision!==accessRevision)return;const next=snap.val()||{};if(state.plan.length && ['groups','users','boards','groupBoards','locks','roomLocks'].includes(key) && JSON.stringify(next)!==JSON.stringify(state[key])){state.plan=[];state.planMeta=null;state.planUnassigned=[];notice('A agenda foi atualizada. Gere novamente o sorteio para evitar conflitos.',true);}state[key]=next;if(key==='boards'){if(!isCoord())syncTeacherSubs();syncTimerSubs();}render();},error=>dataReadFailed(error,revision)));}
 function syncTeacherSubs(){if(!state.user||isCoord())return;const uid=state.user.uid;for(const [bid,board] of activeBoards()){
  if(state.teacherSubs.has(bid))continue;
@@ -1079,39 +1291,40 @@ async function verificarAcesso(user){
   if(!snap.exists()){showAccessProblem('E-mail e senha confirmados. Falta cadastrar o perfil em users/'+user.uid+'. Peça à administração para vincular o UID desta conta.',user);return;}
   const profile=snap.val();
   if(profile.active===false){await signOut(auth);showAccessProblem('Seu acesso foi removido. Peça à coordenação para reativar o professor.',null);return;}
-  if(!isActiveTeacher(profile)){showAccessProblem('O perfil desta conta não tem um papel válido. A administração deve conferir role no Firebase: coordinator para o Alberson ou teacher para os demais professores.',user);return;}
+  if(!isActiveTeacher(profile)){showAccessProblem('O perfil desta conta não tem um papel válido. A administração deve conferir role no Firebase: coordinator para coordenadores ou teacher para professores avaliadores.',user);return;}
   if(typeof profile.name!=='string'||!profile.name.trim()){showAccessProblem('O perfil desta conta está sem nome. Peça à administração para completar o campo name no Firebase.',user);return;}
   state.user=user;state.profile=profile;
   $('#login-view').classList.add('hidden');$('#app-view').classList.remove('hidden');state.route='inicio';
   $('#side-name').textContent=state.profile.name;$('#side-role').textContent=isCoord()?'Coordenação':'Professor avaliador';$('#side-avatar').textContent=initials(state.profile.name);$('#top-initials').textContent=initials(state.profile.name);
   state.unsubs.push(onValue(ref(db,`users/${user.uid}`),current=>{
    if(revision!==accessRevision)return;const next=current.val();
-   if(!isActiveTeacher(next)){signOut(auth).then(()=>showAccessProblem('Seu acesso foi removido pela coordenação.',null)).catch(fail);return;}
+   if(!isActiveTeacher(next)){logoutAccount().then(()=>showAccessProblem('Seu acesso foi removido pela coordenação.',null)).catch(fail);return;}
    if(next.role!==state.profile.role||next.key!==state.profile.key||typeof next.name!=='string'||!next.name.trim()){verificarAcesso(auth.currentUser);return;}
    state.profile=next;render();
   },error=>dataReadFailed(error,revision)));
-  listen('groups','groups');listen('boards','boards');listen('users','users',isCoord());listen('groupBoards','groupBoards',isCoord());listen('locks','locks',isCoord());listen('roomLocks','roomLocks',isCoord());listen('grades','grades',isCoord());listen('deliveries','deliveries',isCoord());listen('seals','seals',isCoord());render();
+  listen('groups','groups');listen('boards','boards');listen('users','users',isCoord());listen('groupBoards','groupBoards',isCoord());listen('locks','locks',isCoord());listen('roomLocks','roomLocks',isCoord());listen('grades','grades',isCoord());listen('deliveries','deliveries',isCoord());listen('seals','seals',isCoord());if(state.connected)void startChatPresence();render();
  }catch(err){if(revision!==accessRevision)return;dataReadFailed(err,revision);}
 }
 onAuthStateChanged(auth,verificarAcesso);
-const navItems=()=>isCoord()? [['inicio','01','Visão geral'],['bancas','02','Bancas'],['minhasavaliacoes','09','Minhas avaliações'],['notas','08','Todas as notas'],['sortear','03','Sorteio'],['entregas','04','Monografia'],['relatorios','05','Relatórios'],['grupos','07','Grupos e cursos'],['professores','06','Professores']] : [['inicio','01','Início'],['bancas','02','Minhas bancas'],['avaliar','03','Avaliar']];
+const navItems=()=>isCoord()? [['inicio','01','Visão geral'],['bancas','02','Bancas'],['minhasavaliacoes','09','Minhas avaliações'],['notas','08','Todas as notas'],['sortear','03','Sorteio'],['entregas','04','Monografia'],['relatorios','05','Relatórios'],['grupos','07','Grupos e cursos'],['professores','06','Professores'],['chat','10','Chat dos professores']] : [['inicio','01','Início'],['bancas','02','Minhas bancas'],['avaliar','03','Avaliar'],['chat','04','Chat']];
 function closeMobileMenu(){const menu=$('#mobile-menu');if(menu.open)menu.close();document.body.classList.remove('menu-open');}
 function openMobileMenu(){
  if(!state.user)return;const menu=$('#mobile-menu');if(menu.open)return;
- const extra=isCoord()?[['professores','Equipe','Gerenciar professores avaliadores'],['sortear','Sorteio','Agendar e distribuir bancas'],['notas','Todas as notas','Consultar notas de todas as bancas'],['grupos','Grupos e cursos','Cadastrar grupos e importar planilhas'],['entregas','Monografia e entregas','Completar a nota individual dos 40%'],['relatorios','Relatórios','Concluir bancas e emitir os PDFs']]:[];
+ const extra=isCoord()?[['chat','Chat dos professores','Conversa geral e salas das bancas'],['professores','Equipe','Gerenciar professores avaliadores'],['sortear','Sorteio','Agendar e distribuir bancas'],['notas','Todas as notas','Consultar notas de todas as bancas'],['grupos','Grupos e cursos','Cadastrar grupos e importar planilhas'],['entregas','Monografia e entregas','Completar a nota individual dos 40%'],['relatorios','Relatórios','Concluir bancas e emitir os PDFs']]:[];
  menu.innerHTML=`<div class="menu-content"><div class="menu-grip" aria-hidden="true"></div><div class="menu-header"><h2 id="mobile-menu-title">Sua conta e outras áreas</h2><button type="button" class="icon-btn" data-close-menu="1" aria-label="Fechar menu" autofocus>${icon('fechar')}</button></div><div class="menu-profile"><span class="avatar" aria-hidden="true">${esc(initials(state.profile.name))}</span><div><strong>${esc(state.profile.name)}</strong><small>${isCoord()?'Coordenação':'Professor avaliador'}</small><small>${esc(state.profile.email||state.user.email||'')}</small></div></div><nav class="menu-links" aria-label="Outras áreas">${extra.map(([route,label,description])=>`<button type="button" data-route="${route}" class="${state.route===route?'active':''}" ${state.route===route?'aria-current="page"':''}>${icon(route)}<span><b>${label}</b><small>${description}</small></span>${icon('seta')}</button>`).join('')}<button type="button" data-route="sair" class="menu-logout">${icon('sair')}<span><b>Sair da conta</b><small>Encerrar esta sessão no dispositivo</small></span></button></nav></div>`;
  menu.showModal();document.body.classList.add('menu-open');
 }
 function go(route,board=''){closeMobileMenu();if(board)state.selectedBoard=board;state.route=route;render();$('#view').focus({preventScroll:true});window.scrollTo({top:0,behavior:'instant'});}
-function render(){if(!state.user)return;const notesFocus=state.route==='notas'&&document.activeElement?.id==='notes-search'?{start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null;captureDrafts();if(typeof captureGroupAdminDrafts==='function')captureGroupAdminDrafts();const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'))state.route='inicio';
- const pageTitles={inicio:'Visão geral',bancas:'Bancas de avaliação',sortear:'Sorteio de bancas',entregas:'Monografia e entregas',relatorios:'Relatórios finais',professores:'Professores',grupos:'Grupos e cursos',avaliar:'Avaliação individual',minhasavaliacoes:'Minhas avaliações',notas:'Todas as notas'};
+function render(){if(!state.user)return;const chatUi=captureChatUi();const notesFocus=state.route==='notas'&&document.activeElement?.id==='notes-search'?{start:document.activeElement.selectionStart,end:document.activeElement.selectionEnd}:null;captureDrafts();if(typeof captureGroupAdminDrafts==='function')captureGroupAdminDrafts();const routes=navItems();if(!routes.some(([r])=>r===state.route)&&!(state.route==='avaliar'))state.route='inicio';
+ const pageTitles={inicio:'Visão geral',bancas:'Bancas de avaliação',sortear:'Sorteio de bancas',entregas:'Monografia e entregas',relatorios:'Relatórios finais',professores:'Professores',grupos:'Grupos e cursos',avaliar:'Avaliação individual',minhasavaliacoes:'Minhas avaliações',notas:'Todas as notas',chat:'Chat dos professores'};
  $('#page-title').textContent=pageTitles[state.route];$('#page-eyebrow').textContent=isCoord()?'COORDENAÇÃO • TCC 2026':'CORPO DOCENTE • TCC 2026';
  const active=route=>state.route===route||(route==='bancas'&&state.route==='avaliar'&&isCoord());
  const navButton=(route,label)=>`<button type="button" class="${active(route)?'active':''}" data-route="${route}" ${active(route)?'aria-current="page"':''}><span class="nav-ico">${icon(route)}</span><span>${label}</span></button>`;
  $('#desktop-nav').innerHTML=routes.map(([route,,label])=>navButton(route,label)).join('');
- const primary=isCoord()?[['inicio','Início'],['bancas','Bancas'],['minhasavaliacoes','Avaliar'],['notas','Notas']]:[['inicio','Início'],['bancas','Bancas'],['avaliar','Avaliar']];
- $('#mobile-nav').innerHTML=primary.map(([route,label])=>navButton(route,label)).join('')+(isCoord()?`<button type="button" data-open-menu="1" class="${['sortear','entregas','relatorios','grupos','professores'].includes(state.route)?'active':''}" aria-label="Mais áreas e opções da conta" aria-haspopup="dialog" aria-controls="mobile-menu"><span class="nav-ico">${icon('mais')}</span><span>Mais</span></button>`:navButton('sair','Sair'));
- const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,professores:teachersView,grupos:groupsView,notas:allNotesView,minhasavaliacoes:myEvaluationsView};$('#view').innerHTML=views[state.route]?.()||'';restoreDrafts();if(notesFocus){const field=$('#notes-search');field?.focus({preventScroll:true});field?.setSelectionRange(notesFocus.start,notesFocus.end);}
+ const primary=isCoord()?[['inicio','Início'],['bancas','Bancas'],['minhasavaliacoes','Avaliar'],['notas','Notas']]:[['inicio','Início'],['bancas','Bancas'],['avaliar','Avaliar'],['chat','Chat']];
+ $('#mobile-nav').innerHTML=primary.map(([route,label])=>navButton(route,label)).join('')+(isCoord()?`<button type="button" data-open-menu="1" class="${['sortear','entregas','relatorios','grupos','professores','chat'].includes(state.route)?'active':''}" aria-label="Mais áreas e opções da conta" aria-haspopup="dialog" aria-controls="mobile-menu"><span class="nav-ico">${icon('mais')}</span><span>Mais</span></button>`:navButton('sair','Sair'));
+ const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,professores:teachersView,grupos:groupsView,notas:allNotesView,minhasavaliacoes:myEvaluationsView,chat:chatView};$('#view').innerHTML=views[state.route]?.()||'';restoreDrafts();if(notesFocus){const field=$('#notes-search');field?.focus({preventScroll:true});field?.setSelectionRange(notesFocus.start,notesFocus.end);}
+ restoreChatUi(chatUi);syncChat();
 }
 function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,b])=>{const g=groupOf(b);return g&&isCoord()&&situacao(b,g,boardGrades(id),state.deliveries[id]).pronta;});
  const completed=isCoord()?ready.length:boards.filter(([id,b])=>{const g=groupOf(b);return g&&studentsOf(g).every(([sid])=>mediaAvaliador(state.grades[id]?.[state.user.uid]?.[sid])!==null);}).length;
@@ -1140,7 +1353,7 @@ function bancaDateFilterHtml(report=false){
  return `<div class="banca-date-field"><label for="${id}">Data da banca</label><input id="${id}" class="filter" type="date" lang="pt-BR" value="${esc(day)}" aria-describedby="${id}-help"><small id="${id}-help">${day?'Somente '+esc(day.split('-').reverse().join('/')):'Todas as datas'}</small></div><div class="banca-date-actions"><button class="btn soft" type="button" data-date-today="${scope}">Hoje</button><button class="btn soft" type="button" data-date-clear="${scope}" ${!day?'disabled':''}>Todas as datas</button></div>`;
 }
 function boardsView(){const arr=filteredBoards();
- const all=Object.values(state.groups);return `${heading(isCoord()?'Agenda de bancas':'Bancas atribuídas',`${arr.length} banca(s) encontrada(s)${state.boardDateFilter?' em '+state.boardDateFilter.split('-').reverse().join('/'):''}.`,isCoord()?'<button class="btn primary" data-route="sortear">+ Nova banca</button>':'')}
+ const all=Object.values(state.groups);return `${heading(isCoord()?'Agenda de bancas':'Bancas atribuídas',`${arr.length} banca(s) encontrada(s)${state.boardDateFilter?' em '+state.boardDateFilter.split('-').reverse().join('/'):''}.`,isCoord()?'<div class="row"><button class="btn soft" data-open-board-import="1">Importar bancas</button><button class="btn primary" data-route="sortear">+ Nova banca</button></div>':'')}
  <div class="toolbar banca-filter-toolbar"><select id="filter-course" class="filter" aria-label="Filtrar bancas por curso">${opts([['todas','Todos os cursos'],...[...new Set(all.map(courseLabel))].sort().map(c=>[c,c])],state.courseFilter)}</select><select id="filter-class" class="filter" aria-label="Filtrar bancas por turma"><option value="todas">Todas as turmas</option>${[...new Set(all.map(g=>g.className))].sort().map(c=>`<option ${state.filter===c?'selected':''} value="${esc(c)}">Turma ${esc(c)}</option>`).join('')}</select>${bancaDateFilterHtml()}${isCoord()?`<button class="btn soft" data-pdf-agenda="1" ${!arr.length?'disabled':''}>Baixar PDF da agenda</button>`:''}</div>${arr.length?boardList(arr):empty('Nenhuma banca encontrada','Escolha outra data, curso ou turma para ajustar a busca.')}`;
 }
 const opts=(items,selected='')=>items.map(([v,text])=>`<option value="${esc(v)}" ${v===selected?'selected':''}>${esc(text)}</option>`).join('');
@@ -1154,7 +1367,7 @@ function lotteryView(){
  const meta=state.planMeta, unassigned=state.planUnassigned;
  const days=state.plan.length?Object.entries(state.plan.reduce((acc,b)=>{const k=localDayKey(b.startAt);acc[k]=(acc[k]||0)+1;return acc;},{})).sort(([a],[b])=>a.localeCompare(b)):[];
  const advisorCount=state.plan.filter(b=>!!b.members[b.advisorUid]).length;
- return `<div class="notice">O orientador tem prioridade na composição, mas a participação não é obrigatória. As bancas podem ocorrer simultaneamente sem conflito de professores ou salas. O limite diário inclui as bancas já agendadas.</div>
+ return `${renderBoardImportCard()}<div class="notice">O orientador tem prioridade na composição, mas a participação não é obrigatória. As bancas podem ocorrer simultaneamente sem conflito de professores ou salas. O limite diário inclui as bancas já agendadas.</div>
  <div class="card">${heading('Montagem manual','Escolha o grupo, a data, a sala e 2 ou 3 professores.')}<form id="manual-form" class="form-grid">
  <div class="field wide"><label for="manual-group">Grupo / projeto</label><select id="manual-group" name="groupId" required><option value="">Selecione um grupo</option>${opts(pending.map(g=>[g.id,`${courseLabel(g)} · ${g.className} · ${g.name} — ${g.title}`]))}</select></div>
  <div class="field"><label for="manual-date">Data e horário</label><input id="manual-date" type="datetime-local" name="date" step="900" required></div><div class="field"><label for="manual-room">Sala / link</label><input id="manual-room" name="room" maxlength="80" placeholder="Sala 01" required></div>
@@ -1431,27 +1644,29 @@ function teachersView(){
  const active=activeTeachers().sort(([,a],[,b])=>a.name.localeCompare(b.name,'pt-BR'));
  const removed=Object.entries(state.users).filter(([,u])=>u.active===false).sort(([,a],[,b])=>a.name.localeCompare(b.name,'pt-BR'));
  const manager=canManageTeachers();
- const teacherRow=([uid,u])=>`<article class="group-card"><div><h4>${esc(u.name)}</h4><p>${esc(u.email||'')} · ${u.role==='coordinator'?'Coordenador e avaliador':'Professor avaliador'}</p>${u.contactEmail?`<p class="tiny">Contato: ${esc(u.contactEmail)}</p>`:''}<p class="tiny">${openTeacherBoards(uid).length} banca(s) em aberto · Identificador: ${esc(u.key||'—')}</p></div><div class="row teacher-card-actions">${badge(u.active===false?'Acesso removido':u.role==='coordinator'?'Coordenação':'Avaliador',u.active===false?'orange':u.role==='coordinator'?'blue':'gray')}${manager&&u.role==='teacher'&&uid!==state.user.uid?`<button class="btn soft" type="button" data-edit-teacher="${esc(uid)}" ${state.teacherBusy?'disabled':''}>Editar professor</button><button class="btn ${u.active===false?'soft':'danger'}" type="button" data-${u.active===false?'restore':'remove'}-teacher="${esc(uid)}" ${state.teacherBusy?'disabled':''}>${u.active===false?'Reativar professor':'Remover professor'}</button>`:''}</div></article>`;
- return `${heading('Equipe de professores','Professores autorizados a participar das bancas e registrar avaliações.')}
+ const teacherRow=([uid,u])=>`<article class="group-card"><div><h4>${esc(u.name)}</h4><p>${esc(u.email||'')} · ${u.role==='coordinator'?'Coordenador e avaliador':'Professor avaliador'}</p>${u.contactEmail?`<p class="tiny">Contato: ${esc(u.contactEmail)}</p>`:''}<p class="tiny">${openTeacherBoards(uid).length} banca(s) em aberto · Identificador: ${esc(u.key||'—')}</p></div><div class="row teacher-card-actions">${badge(u.active===false?'Acesso removido':u.role==='coordinator'?'Coordenação':'Avaliador',u.active===false?'orange':u.role==='coordinator'?'blue':'gray')}${manager&&canAdministerProfile(uid,u)?`<button class="btn soft" type="button" data-edit-teacher="${esc(uid)}" ${state.teacherBusy?'disabled':''}>Editar ${u.role==='coordinator'?'coordenador':'professor'}</button><button class="btn ${u.active===false?'soft':'danger'}" type="button" data-${u.active===false?'restore':'remove'}-teacher="${esc(uid)}" ${state.teacherBusy?'disabled':''}>${u.active===false?'Reativar':'Remover'} ${u.role==='coordinator'?'coordenador':'professor'}</button>`:''}</div></article>`;
+ return `${heading('Professores e coordenadores','Equipe autorizada a organizar bancas e registrar avaliações.')}
  <div class="grid three">${stats('Docentes ativos',active.length,'04')}${stats('Coordenação',active.filter(([,u])=>u.role==='coordinator').length,'05')}${stats('Acessos removidos',removed.length,'06')}</div>
- ${manager?`<section class="card">${heading('Adicionar professor','Cadastre uma nova conta ou vincule um acesso já existente.')}
+ ${manager?`<section class="card">${heading('Adicionar professor ou coordenador','Escolha a função e cadastre uma nova conta ou vincule um acesso existente.')}
  <form id="teacher-form" class="form-grid" autocomplete="off">
- <div class="field"><label for="teacher-name">Nome do professor</label><input id="teacher-name" name="name" maxlength="120" placeholder="Nome completo" required></div>
+ <div class="field"><label for="teacher-name">Nome completo</label><input id="teacher-name" name="name" maxlength="120" placeholder="Nome completo" required></div>
  <div class="field"><label for="teacher-email">E-mail de acesso</label><input id="teacher-email" name="email" type="email" maxlength="254" placeholder="professor@univap.br" required></div>
- <div class="field"><label for="teacher-key">Identificador do professor</label><input id="teacher-key" name="key" pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="60" placeholder="Ex.: bruno, helio, jose-eduardo" required><small>Use o identificador da planilha para associar o orientador.</small></div>
+ <div class="field"><label for="teacher-key">Identificador nas planilhas</label><input id="teacher-key" name="key" pattern="[a-z0-9]+(-[a-z0-9]+)*" maxlength="60" placeholder="Ex.: bruno, helio, jose-eduardo" required><small>Use o identificador da planilha para associar o orientador.</small></div>
+ <div class="field"><label for="teacher-role">Função de acesso</label><select id="teacher-role" name="role"><option value="teacher">Professor avaliador</option><option value="coordinator">Coordenador e avaliador</option></select><small>Coordenadores organizam bancas, importam planilhas e consultam todas as notas. A gestão de acessos permanece com o Alberson.</small></div>
  <div class="field"><label for="teacher-method">Tipo de cadastro</label><select id="teacher-method" name="method"><option value="new">Criar nova conta</option><option value="existing">Vincular conta existente</option></select></div>
  <div class="field wide" id="teacher-password-field"><label for="teacher-password">Senha inicial</label><input id="teacher-password" name="password" type="password" minlength="8" maxlength="128" autocomplete="new-password" placeholder="Pelo menos 8 caracteres" required><small>Informe a senha ao professor. Ela não será gravada na lista de perfis.</small></div>
  <div class="field wide hidden" id="teacher-uid-field"><label for="teacher-uid">UID da conta existente</label><input id="teacher-uid" name="uid" maxlength="128" disabled placeholder="Copie de Firebase Authentication → Usuários"><small>Use o UID da conta do mesmo e-mail acima.</small></div>
- <div class="wide row"><button class="btn primary" type="submit" ${state.teacherBusy?'disabled':''}>Adicionar professor</button><span class="tiny">A sessão do Alberson permanece aberta durante o cadastro.</span></div>
- </form></section>`:'<div class="notice">O cadastro e a remoção de professores são exclusivos do coordenador Alberson.</div>'}
- <section class="card">${heading('Professores ativos','Apenas os docentes ativos entram nos próximos sorteios.')}<p class="teacher-admin-note">A remoção encerra o acesso e preserva os registros anteriores. Professores com bancas em aberto precisam concluir as avaliações antes da remoção.</p><div class="teacher-list">${active.map(teacherRow).join('')||empty('Nenhum professor ativo')}</div>
- ${removed.length?`<details class="teacher-archive"><summary>Professores removidos (${removed.length})</summary><div class="teacher-list">${removed.map(teacherRow).join('')}</div></details>`:''}</section>
+ <div class="wide row"><button class="btn primary" type="submit" ${state.teacherBusy?'disabled':''}>Cadastrar acesso</button><span class="tiny">A sessão do Alberson permanece aberta durante o cadastro.</span></div>
+ </form></section>`:'<div class="notice">O cadastro, a edição e a remoção de acessos são exclusivos do Alberson. A coordenação pode gerenciar grupos e bancas, importar planilhas e acompanhar as avaliações.</div>'}
+ <section class="card">${heading('Equipe ativa','Professores e coordenadores ativos podem participar das próximas bancas.')}<p class="teacher-admin-note">A remoção encerra o acesso e preserva os registros anteriores. Avaliadores com bancas em aberto precisam concluir as avaliações antes da remoção.</p><div class="teacher-list">${active.map(teacherRow).join('')||empty('Nenhum acesso ativo')}</div>
+ ${removed.length?`<details class="teacher-archive"><summary>Acessos removidos (${removed.length})</summary><div class="teacher-list">${removed.map(teacherRow).join('')}</div></details>`:''}</section>
  <div class="card">${heading('Grupos e cursos','Cadastro de grupos e importação de planilhas.')}<button class="btn primary" data-route="grupos">Gerenciar grupos e cursos →</button></div>
- <div class="card">${heading('Configuração de permissões','Publique a política desta versão para ativar a edição de contato e a gestão de grupos e cursos, mantendo as avaliações protegidas.')}
+ <div class="card">${heading('Configuração de permissões','A política desta versão contempla novos coordenadores, gestão de bancas e o chat dos professores, mantendo as avaliações protegidas.')}
  <button class="btn soft" data-copy-policy="1" type="button">Copiar política de acesso</button>
  <details class="policy-guide"><summary>Como aplicar no Firebase</summary><ol><li>No projeto <code>avaliadortcc</code>, abra <b>Realtime Database → Regras</b>.</li><li>Cole a política copiada acima e clique em <b>Publicar</b>.</li><li>Em <b>Dados → users → UID do Alberson</b>, confirme <code>role: "coordinator"</code> e <code>key: "alberson"</code>.</li><li>Em <b>Authentication → Método de login</b>, mantenha <b>E-mail/senha</b> habilitado.</li></ol><p>A política está incluída neste mesmo index.html. Não é necessário criar outro arquivo.</p></details></div>`;
 }
 function openTeacherBoards(uid){return Object.entries(state.boards).filter(([id,b])=>b.members?.[uid]&&!state.seals[id]);}
+function canAdministerProfile(uid,profile){return !!profile&&['teacher','coordinator'].includes(profile.role)&&profile.key!=='alberson'&&uid!==state.user?.uid;}
 function teacherRegistrationMethod(){
  const existing=$('#teacher-method')?.value==='existing';
  $('#teacher-password-field')?.classList.toggle('hidden',existing);$('#teacher-uid-field')?.classList.toggle('hidden',!existing);
@@ -1461,15 +1676,16 @@ function teacherRegistrationMethod(){
 }
 function teacherIdentity(data){
  const name=String(data.get('name')||'').trim(),email=String(data.get('email')||'').trim().toLowerCase(),key=String(data.get('key')||'').trim();
+ const role=String(data.get('role')??'teacher');
  if(!name||name.length>120)throw Error('Informe um nome de até 120 caracteres.');
  if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)||email.length>254)throw Error('Informe um e-mail válido.');
  if(!/^[a-z0-9]+(-[a-z0-9]+)*$/.test(key)||key.length>60||key==='alberson')throw Error('Informe um identificador único em letras minúsculas, sem acentos ou espaços.');
+ if(!['teacher','coordinator'].includes(role))throw Error('Escolha Professor avaliador ou Coordenador e avaliador.');
  const duplicate=Object.entries(state.users).find(([,u])=>u.key===key||u.email?.toLowerCase()===email);
  if(duplicate)throw Error(duplicate[1].active===false?'Este professor foi removido. Use Reativar professor para recuperar o acesso.':'Já existe um professor com este e-mail ou identificador.');
- return {name,email,key,role:'teacher',active:true,createdBy:state.user.uid,createdAt:Date.now()};
+ return {name,email,key,role,active:true,createdBy:state.user.uid,createdAt:Date.now()};
 }
-// Replace addTeacher/changeTeacherAccess with these implementations and insert
-// the supporting helpers once, after teacherIdentity. See integration notes.
+// A gestão de acessos usa uma sessão administrativa separada da conta criada.
 let teacherAdminOperation = null;
 let teacherEditSession = null;
 
@@ -1547,7 +1763,7 @@ async function addTeacher(form){
   if(!saved)throw Error('Este UID foi cadastrado em outra janela. Atualize a lista antes de tentar novamente.');
   assertTeacherAdminSession(operation);
   state.users[uid]=result.snapshot.val();form.reset();
-  notice(`${profile.name} adicionado. O professor já pode acessar o sistema.`);
+  notice(`${profile.name} adicionado como ${profile.role==='coordinator'?'coordenador e avaliador':'professor avaliador'}. O acesso já está disponível.`);
  }catch(error){
   // Só desfaz a conta secundária que esta operação criou; nunca remove perfis
   // ou contas existentes. O bloqueio fica ativo até a limpeza terminar.
@@ -1569,7 +1785,7 @@ async function changeTeacherAccess(uid,active){
   const snapshots=await Promise.all([get(ref(db,`users/${uid}`)),get(ref(db,'boards')),get(ref(db,'seals'))]);
   assertTeacherAdminSession(operation);
   const profile=snapshots[0].val(),boards=snapshots[1].val()||{},seals=snapshots[2].val()||{};
-  if(!profile||profile.role!=='teacher'||uid===operation.uid)throw Error('O perfil da coordenação não pode ser alterado nesta operação.');
+  if(!canAdministerProfile(uid,profile))throw Error('O acesso principal do Alberson e a própria conta não podem ser alterados nesta operação.');
   if(!active&&Object.entries(boards).some(([bid,board])=>board.members?.[uid]&&!seals[bid]))throw Error(`${profile.name} possui bancas em aberto. Conclua as bancas antes de remover o acesso.`);
   if((profile.active!==false)===active)return;
   if(!active&&!confirm(`Remover ${profile.name}? O acesso será encerrado, mas todas as notas e bancas anteriores serão preservadas.`))return;
@@ -1583,7 +1799,7 @@ async function changeTeacherAccess(uid,active){
   },{applyLocally:false});
   if(!result.committed)throw Error('O cadastro foi alterado em outra janela. Atualize a lista e confira o professor novamente.');
   assertTeacherAdminSession(operation);state.users[uid]=result.snapshot.val();
-  notice(`${profile.name}: ${active?'acesso reativado':'professor removido'}.`);
+  notice(`${profile.name}: ${active?'acesso reativado':'acesso removido'}.`);
  }finally{finishTeacherAdminOperation(operation);}
 }
 function closeTeacherEdit(force=false){
@@ -1599,12 +1815,12 @@ async function editTeacher(uid){
  try{
   const snapshot=await get(ref(db,`users/${uid}`));assertTeacherAdminSession(operation);
   const profile=snapshot.val();
-  if(!profile||profile.role!=='teacher'||uid===operation.uid)throw Error('Selecione um professor avaliador para editar.');
+  if(!canAdministerProfile(uid,profile))throw Error('Selecione um professor ou coordenador para editar. O acesso principal do Alberson é protegido.');
   closeTeacherEdit(true);
   const dialog=document.createElement('dialog');dialog.id='teacher-edit-dialog';dialog.className='share-dialog teacher-edit-dialog';dialog.setAttribute('aria-labelledby','teacher-edit-title');
   const session={uid,ownerUid:operation.uid,revision:operation.revision,profileFingerprint:teacherProfileFingerprint(profile),dialog,returnFocus:document.activeElement,saving:false};
   teacherEditSession=session;
-  dialog.innerHTML=`<div class="share-panel"><div class="row space"><div><p class="eyebrow">EQUIPE DE AVALIAÇÃO</p><h3 id="teacher-edit-title">Editar professor</h3></div><button class="btn soft" type="button" data-teacher-edit-close aria-label="Fechar edição do professor">${icon('fechar')}</button></div><p class="share-description">Atualize os dados de contato. As avaliações e os nomes registrados nas bancas anteriores serão preservados.</p><form id="teacher-edit-form" data-teacher-uid="${esc(uid)}" class="form-grid"><div class="field wide"><label for="teacher-edit-name">Nome do professor</label><input id="teacher-edit-name" name="name" maxlength="120" value="${esc(profile.name)}" autocomplete="name" required></div><div class="field wide"><label for="teacher-edit-contact">E-mail de contato <span class="muted">(opcional)</span></label><input id="teacher-edit-contact" name="contactEmail" type="email" maxlength="254" value="${esc(profile.contactEmail||'')}" autocomplete="email" placeholder="Contato profissional"><small>Este endereço serve para contato e não altera o login.</small></div><div class="field"><label for="teacher-edit-login">E-mail de acesso</label><input id="teacher-edit-login" type="email" value="${esc(profile.email||'')}" readonly aria-describedby="teacher-login-explanation"></div><div class="field"><label for="teacher-edit-key">Identificador nas planilhas</label><input id="teacher-edit-key" value="${esc(profile.key||'')}" readonly></div><p id="teacher-login-explanation" class="tiny wide">O e-mail de acesso e o identificador permanecem vinculados à conta existente. Alterações no login precisam ser realizadas no Firebase Authentication pela administração.</p><p class="teacher-edit-status tiny wide" role="status" aria-live="polite"></p><div class="wide row"><button class="btn primary" type="submit">Salvar alterações</button><button class="btn soft" type="button" data-teacher-edit-close>Cancelar</button></div></form></div>`;
+  dialog.innerHTML=`<div class="share-panel"><div class="row space"><div><p class="eyebrow">EQUIPE DE AVALIAÇÃO</p><h3 id="teacher-edit-title">Editar ${profile.role==='coordinator'?'coordenador':'professor'}</h3></div><button class="btn soft" type="button" data-teacher-edit-close aria-label="Fechar edição do acesso">${icon('fechar')}</button></div><p class="share-description">Atualize os dados de contato. As avaliações e os nomes registrados nas bancas anteriores serão preservados.</p><form id="teacher-edit-form" data-teacher-uid="${esc(uid)}" class="form-grid"><div class="field wide"><label for="teacher-edit-name">Nome completo</label><input id="teacher-edit-name" name="name" maxlength="120" value="${esc(profile.name)}" autocomplete="name" required></div><div class="field wide"><label for="teacher-edit-contact">E-mail de contato <span class="muted">(opcional)</span></label><input id="teacher-edit-contact" name="contactEmail" type="email" maxlength="254" value="${esc(profile.contactEmail||'')}" autocomplete="email" placeholder="Contato profissional"><small>Este endereço serve para contato e não altera o login.</small></div><div class="field"><label for="teacher-edit-login">E-mail de acesso</label><input id="teacher-edit-login" type="email" value="${esc(profile.email||'')}" readonly aria-describedby="teacher-login-explanation"></div><div class="field"><label for="teacher-edit-key">Identificador nas planilhas</label><input id="teacher-edit-key" value="${esc(profile.key||'')}" readonly></div><div class="field wide"><label for="teacher-edit-role">Função de acesso</label><input id="teacher-edit-role" value="${profile.role==='coordinator'?'Coordenador e avaliador':'Professor avaliador'}" readonly></div><p id="teacher-login-explanation" class="tiny wide">O e-mail de acesso, o identificador e a função permanecem vinculados à conta existente. Alterações no login precisam ser realizadas no Firebase Authentication pela administração.</p><p class="teacher-edit-status tiny wide" role="status" aria-live="polite"></p><div class="wide row"><button class="btn primary" type="submit">Salvar alterações</button><button class="btn soft" type="button" data-teacher-edit-close>Cancelar</button></div></form></div>`;
   for(const button of dialog.querySelectorAll('[data-teacher-edit-close]'))button.addEventListener('click',()=>closeTeacherEdit());
   dialog.addEventListener('cancel',event=>{event.preventDefault();closeTeacherEdit();});
   dialog.addEventListener('close',()=>{if(teacherEditSession===session)closeTeacherEdit(true);});
@@ -1624,7 +1840,7 @@ async function saveTeacherEdit(form){
  try{
   const profile=(await get(ref(db,`users/${session.uid}`))).val();assertTeacherAdminSession(operation);
   if(teacherEditSession!==session)throw Error('A edição foi encerrada. Abra o professor novamente.');
-  if(!profile||profile.role!=='teacher'||session.uid===operation.uid)throw Error('Este cadastro não está disponível para edição.');
+  if(!canAdministerProfile(session.uid,profile))throw Error('Este cadastro não está disponível para edição.');
   if(teacherProfileFingerprint(profile)!==session.profileFingerprint)throw Error('O cadastro foi alterado em outra janela. Feche a edição e abra o professor novamente.');
   const changes=teacherEditIdentity(new FormData(form),profile),next={...profile,name:changes.name};
   if(changes.contactEmail)next.contactEmail=changes.contactEmail;else delete next.contactEmail;
@@ -1634,7 +1850,7 @@ async function saveTeacherEdit(form){
   },{applyLocally:false});
   if(!result.committed)throw Error('O cadastro foi alterado em outra janela. Feche a edição e abra o professor novamente.');
   assertTeacherAdminSession(operation);
-  state.users[session.uid]=result.snapshot.val();closeTeacherEdit(true);notice('Dados do professor atualizados.');
+  state.users[session.uid]=result.snapshot.val();closeTeacherEdit(true);notice('Dados do acesso atualizados.');
  }finally{
   if(teacherEditSession===session){session.saving=false;for(const button of session.dialog.querySelectorAll('button'))button.disabled=false;}
   finishTeacherAdminOperation(operation);
@@ -1674,7 +1890,7 @@ function groupStudentFields(students,disabled=false){
  return students.map((student,index)=>`<div class="group-student-row" data-group-student="${esc(student.sid)}"><span class="group-student-number" aria-hidden="true">${String(index+1).padStart(2,'0')}</span><div class="field"><label for="group-student-${esc(student.sid)}">Aluno ${index+1}</label><input id="group-student-${esc(student.sid)}" name="student-${esc(student.sid)}" maxlength="180" value="${esc(student.name)}" placeholder="Nome completo do aluno" required ${disabled?'disabled':''}></div><button class="btn soft" type="button" data-remove-group-student="${esc(student.sid)}" aria-label="Remover aluno ${index+1} do formulário" ${disabled||students.length===1?'disabled':''}>Remover</button></div>`).join('');
 }
 function groupsView(){
- if(!canManageTeachers())return empty('Gestão exclusiva do Alberson','O cadastro de grupos e a importação de planilhas são administrados pela coordenação.');
+ if(!canManageGroups())return empty('Acesso exclusivo da coordenação','O cadastro de grupos e a importação de planilhas são administrados pela coordenação.');
  ensureGroupAdmin();const draft=state.groupFormDraft,busy=!!state.groupBusy,editId=state.groupEditId||'';
  const all=Object.entries(state.groups),active=all.filter(([,group])=>group.active!==false),archived=all.filter(([,group])=>group.active===false);
  const courses=[...new Set(all.map(([,group])=>group.courseName||'').filter(Boolean))].sort((a,b)=>a.localeCompare(b,'pt-BR'));
@@ -1700,7 +1916,7 @@ function groupsView(){
  <section class="card">${heading('Grupos cadastrados',`${shown.length} grupo(s) na seleção.`)}<div class="group-admin-filters"><div class="field"><label for="group-course-filter">Curso</label><select id="group-course-filter">${opts([['','Todos os cursos'],...courses.map(course=>[course,course])],state.groupFilterCourse)}</select></div><div class="field"><label for="group-class-filter">Turma</label><select id="group-class-filter">${opts([['','Todas as turmas'],...classes.map(className=>[className,className])],state.groupFilterClass)}</select></div><div class="field group-search-field"><label for="group-search">Buscar grupo ou aluno</label><input id="group-search" type="search" maxlength="180" value="${esc(state.groupSearch)}" placeholder="Nome, projeto ou integrante"></div><label class="group-archive-toggle"><input id="group-show-archived" type="checkbox" ${state.groupShowArchived?'checked':''}> Mostrar removidos</label></div><div class="group-admin-list">${shown.length?shown.map(card).join(''):empty('Nenhum grupo encontrado','Cadastre um novo grupo ou ajuste os filtros.')}</div></section>`;
 }
 function editGroup(id){
- if(!canManageTeachers())throw Error('Somente o Alberson pode editar grupos.');if(state.groupBusy)return;
+ if(!canManageGroups())throw Error('Somente a coordenação pode editar grupos.');if(state.groupBusy)return;
  const group=state.groups[id];if(!group||group.active===false)throw Error('O grupo não está disponível para edição.');
  if(groupRelatedBoards(id).length)throw Error('Este grupo já possui uma banca. Seus dados estão protegidos para preservar as avaliações e os relatórios.');
  state.groupEditId=id;state.groupEditBaseline=groupAdminFingerprint(group);state.groupFormVersion=(state.groupFormVersion||0)+1;
@@ -1711,7 +1927,7 @@ function cancelGroupEdit(){
  if(state.groupBusy)return;state.groupEditId='';state.groupEditBaseline='';state.groupFormDraft=groupAdminNewDraft();state.groupFormVersion=(state.groupFormVersion||0)+1;render();
 }
 function addGroupStudentRow(){
- if(!canManageTeachers()||state.groupBusy)return;captureGroupAdminDrafts();ensureGroupAdmin();
+ if(!canManageGroups()||state.groupBusy)return;captureGroupAdminDrafts();ensureGroupAdmin();
  if(state.groupFormDraft.students.length>=20)throw Error('O limite é de 20 alunos por grupo.');
  const used=new Set(state.groupFormDraft.students.map(student=>student.sid));
  // Include removed original IDs so an added student never inherits a previous identity.
@@ -1720,7 +1936,7 @@ function addGroupStudentRow(){
  state.groupFormDraft.students.push({sid:`s${number}`,name:''});state.groupFormVersion++;render();$(`#group-student-s${number}`)?.focus({preventScroll:true});
 }
 function removeGroupStudentRow(button){
- if(!canManageTeachers()||state.groupBusy)return;captureGroupAdminDrafts();ensureGroupAdmin();
+ if(!canManageGroups()||state.groupBusy)return;captureGroupAdminDrafts();ensureGroupAdmin();
  const sid=typeof button==='string'?button:button.dataset.removeGroupStudent;if(state.groupFormDraft.students.length<=1)throw Error('Mantenha pelo menos um aluno no grupo.');
  state.groupFormDraft.students=state.groupFormDraft.students.filter(student=>student.sid!==sid);state.groupFormVersion++;render();
 }
@@ -1752,12 +1968,12 @@ function validatedGroupDraft(draft,users=state.users){
 async function readGroupAdminContext(uid,revision){
  const paths=['groups','boards','groupBoards','seals','users'];
  const snapshots=await Promise.all(paths.map(path=>get(ref(db,path))));assertCurrentSession(uid,revision);
- if(!canManageTeachers())throw Error('Somente o Alberson pode gerenciar grupos.');
+ if(!canManageGroups()||!isActiveTeacher(snapshots[4].val()?.[uid])||snapshots[4].val()?.[uid]?.role!=='coordinator')throw Error('A permissão da coordenação mudou. Entre novamente.');
  if(!state.connected)throw Error('Conecte-se à internet para gerenciar os grupos.');
  return Object.fromEntries(paths.map((path,index)=>[path,snapshots[index].val()||{}]));
 }
 async function saveGroup(form){
- if(!canManageTeachers())throw Error('Somente o Alberson pode cadastrar e editar grupos.');
+ if(!canManageGroups())throw Error('Somente a coordenação pode cadastrar e editar grupos.');
  if(!state.connected)throw Error('Conecte-se à internet para salvar o grupo.');
  if(state.groupBusy)throw Error('Aguarde a operação em andamento.');
  const uid=state.user.uid,revision=accessRevision,editId=state.groupEditId||'',baseline=state.groupEditBaseline,version=state.groupFormVersion;
@@ -1772,13 +1988,13 @@ async function saveGroup(form){
    if(groupRelatedBoards(editId,context.boards,context.groupBoards).length)throw Error('O grupo recebeu uma banca e não pode mais ser editado. As avaliações e os relatórios foram preservados.');
    if(groupAdminFingerprint(previous)!==baseline)throw Error('O grupo foi atualizado em outra sessão. Cancele a edição e abra os dados atuais antes de salvar.');
   }else{id=push(ref(db,'groups')).key;if(!id)throw Error('Não foi possível criar o identificador do grupo. Tente novamente.');}
-  assertCurrentSession(uid,revision);if(!canManageTeachers()||!state.connected)throw Error('A sessão ou conexão mudou. Entre novamente antes de salvar.');
+  assertCurrentSession(uid,revision);if(!canManageGroups()||!state.connected)throw Error('A sessão ou conexão mudou. Entre novamente antes de salvar.');
   const timestamp=serverTimestamp(),changes={...fields,updatedBy:uid,updatedAt:timestamp};let savedGroup;
   if(!fields.courseName)changes.courseName=null;
   if(editId){
    const next={...previous,...changes};for(const key of Object.keys(next))if(next[key]===null)delete next[key];
    const result=await runTransaction(ref(db,`groups/${id}`),current=>{
-    assertCurrentSession(uid,revision);if(!canManageTeachers()||!state.connected)throw Error('A sessão ou conexão mudou.');
+    assertCurrentSession(uid,revision);if(!canManageGroups()||!state.connected)throw Error('A sessão ou conexão mudou.');
     return current&&groupAdminFingerprint(current)===baseline?next:undefined;
    },{applyLocally:false});
    if(!result.committed)throw Error('O grupo foi alterado em outra sessão. Cancele a edição e abra os dados atuais.');
@@ -1795,7 +2011,7 @@ async function saveGroup(form){
  }finally{if(state.user?.uid===uid&&accessRevision===revision){state.groupBusy=false;render();}}
 }
 async function changeGroupAccess(id,active){
- if(!canManageTeachers())throw Error('Somente o Alberson pode remover ou restaurar grupos.');
+ if(!canManageGroups())throw Error('Somente a coordenação pode remover ou restaurar grupos.');
  if(!state.connected)throw Error('Conecte-se à internet para gerenciar o grupo.');
  if(state.groupBusy)throw Error('Aguarde a operação em andamento.');
  const existing=state.groups[id];if(!existing)throw Error('Grupo não encontrado.');
@@ -1821,11 +2037,11 @@ async function changeGroupAccess(id,active){
 // Root route: append renderExcelImportCard(); delegate [data-open-excel-import] to openExcelImport().
 let excelImportState = null;
 function renderExcelImportCard(){
- if(!canManageTeachers())return '';
+ if(!canManageGroups())return '';
  return `<section class="card excel-import-card">${heading('Importar grupos de outro curso','Use Excel ou CSV, confira os dados e confirme antes de cadastrar.', '<span class="badge blue">Excel / CSV</span>')}<p class="muted">A importação acrescenta grupos e preserva os já cadastrados. Uma linha por aluno ou colunas Aluno 1, Aluno 2…</p><div class="row"><button class="btn primary" type="button" data-open-excel-import="1">Selecionar planilha</button><button class="btn soft" type="button" data-download-excel-model="1">Baixar modelo CSV</button></div></section>`;
 }
 function downloadExcelImportModel(){
- if(!canManageTeachers())throw Error('Somente o Alberson pode importar grupos.');
+ if(!canManageGroups())throw Error('Somente a coordenação pode importar grupos.');
  if(!globalThis.BancaFlowImport)throw Error('A importação não carregou. Recarregue a página.');
  downloadBlob(new Blob([BancaFlowImport.templateCsv(state.profile.email || 'email-do-orientador@univap.br')],{type:'text/csv;charset=utf-8'}),'modelo-grupos-bancas.csv');
 }
@@ -1837,7 +2053,7 @@ function closeExcelImport(force=false){
 }
 function assertExcelImportSession(session){
  assertCurrentSession(session.uid,session.revision);
- if(!canManageTeachers())throw Error('Somente o Alberson pode importar grupos.');
+ if(!canManageGroups())throw Error('Somente a coordenação pode importar grupos.');
  if(!state.connected)throw Error('Conecte-se à internet antes de importar.');
  if(excelImportState!==session)throw Error('A prévia foi encerrada. Abra a importação novamente.');
 }
@@ -1846,7 +2062,7 @@ async function readExcelCatalog(session){
  const [groups,users]=await Promise.all([get(ref(db,'groups')),get(ref(db,'users'))]);
  assertExcelImportSession(session);
  const allUsers=users.val()||{},profile=allUsers[session.uid];
- if(!profile||profile.active===false||profile.role!=='coordinator'||profile.key!=='alberson')throw Error('Sua permissão de importação mudou. Entre novamente.');
+ if(!profile||profile.active===false||profile.role!=='coordinator')throw Error('Sua permissão de importação mudou. Entre novamente.');
  return {existingGroups:groups.val()||{},users:allUsers};
 }
 function excelPreviewFingerprint(preview){
@@ -1916,7 +2132,7 @@ async function confirmExcelImport(session){
  }finally{setExcelImportBusy(session,false);}
 }
 function openExcelImport(){
- if(!canManageTeachers())throw Error('Somente o Alberson pode importar grupos.');
+ if(!canManageGroups())throw Error('Somente a coordenação pode importar grupos.');
  if(!state.connected)throw Error('Conecte-se à internet antes de importar.');
  if(!globalThis.BancaFlowImport||!globalThis.XLSX)throw Error('A biblioteca de Excel não carregou. Recarregue a página.');
  closeExcelImport();
@@ -1951,14 +2167,164 @@ function openExcelImport(){
  paintExcelImportPreview(session);dialog.showModal();document.getElementById('excel-import-file').focus();
 }
 
-function validScheduleStart(start){return Number.isFinite(start)&&start>Date.now()-60000&&new Date(start).getMinutes()%15===0&&new Date(start).getSeconds()===0;}
+function renderBoardImportCard(){
+ if(!state.user||!isCoord())return '';
+ return `<section class="card excel-import-card">${heading('Importar bancas agendadas','Cadastre várias bancas a partir de uma planilha Excel ou CSV.',badge('Excel / CSV','blue'))}<p class="muted">Informe grupo, data, horário, sala e 2 ou 3 avaliadores por banca. A prévia verifica os professores e as salas para evitar conflitos.</p><div class="row"><button class="btn primary" type="button" data-open-board-import="1">Importar bancas do Excel</button><button class="btn soft" type="button" data-download-board-model="1">Baixar modelo Excel</button><button class="btn soft" type="button" data-route="grupos">Cadastrar ou importar grupos</button></div></section>`;
+}
+
+// Importação de bancas agendadas: prévia local, revisão recente e confirmação explícita.
+let boardImportState=null;
+function closeBoardImport(force=false){
+ if(boardImportState?.busy&&!force)return false;
+ const session=boardImportState;boardImportState=null;
+ const dialog=document.getElementById('board-import-dialog');
+ if(dialog){if(dialog.open)dialog.close();dialog.remove();}
+ if(!force&&session?.returnFocus?.isConnected)session.returnFocus.focus();
+ return true;
+}
+function assertBoardImportSession(session){
+ assertCurrentSession(session?.uid,session?.revision);
+ if(!isCoord())throw Error('A importação de bancas é exclusiva da coordenação.');
+ if(!state.connected)throw Error('Conecte-se à internet para importar as bancas.');
+ if(boardImportState!==session)throw Error('A prévia foi encerrada. Abra a importação novamente.');
+}
+async function readBoardImportCatalog(session){
+ assertBoardImportSession(session);
+ const paths=['users','groups','boards','groupBoards','locks','roomLocks'];
+ const snapshots=await Promise.all(paths.map(path=>get(ref(db,path))));
+ assertBoardImportSession(session);
+ const catalog=Object.fromEntries(paths.map((path,index)=>[path,snapshots[index].val()||{}]));
+ const actor=catalog.users[session.uid];
+ if(!isActiveTeacher(actor)||actor.role!=='coordinator')throw Error('A conta não possui mais permissão de coordenação. Entre novamente.');
+ return catalog;
+}
+function boardImportFingerprint(preview,catalog={groups:state.groups}){
+ return JSON.stringify({boards:preview.boards,errors:preview.errors,warnings:preview.warnings,groups:(preview.boards||[]).map(board=>[board.groupId,groupAdminFingerprint(catalog.groups?.[board.groupId])])});
+}
+function paintBoardImportPreview(session){
+ if(boardImportState!==session)return;
+ const target=document.getElementById('board-import-preview'),commit=document.getElementById('board-import-confirm');
+ if(!target||!commit)return;
+ const preview=session.preview;
+ if(!preview){target.innerHTML='<div class="empty"><strong>Selecione o arquivo e a aba</strong><div>Nenhuma banca será criada antes da revisão e da confirmação.</div></div>';commit.disabled=true;commit.textContent='Confirmar importação';return;}
+ const errors=(preview.errors||[]).slice(0,30),warnings=preview.warnings||[],boards=preview.boards||[];
+ const describe=board=>{const group=session.catalog?.groups?.[board.groupId]||state.groups[board.groupId]||{};return `<article class="excel-preview-group"><div class="row space"><h4>${esc(group.name||board.groupId)}</h4>${badge(group.className||'Turma não informada','blue')}</div><p>${esc(courseLabel(group))} · ${esc(group.title||'')}</p><p><b>Data e horário:</b> ${dateStr(board.startAt)} · ${board.durationMin} min · <b>Sala:</b> ${esc(board.room)}</p><p><b>Orientador:</b> ${esc(board.advisorName||session.catalog?.users?.[board.advisorUid]?.name||board.advisorUid)}</p><p><b>Avaliadores:</b> ${Object.keys(board.members||{}).map(uid=>esc(board.memberNames?.[uid]||session.catalog?.users?.[uid]?.name||uid)).join(' · ')}</p></article>`;};
+ target.innerHTML=`<div class="grid three excel-import-stats">${stats('Bancas para criar',boards.length,'02')}${stats('Linhas conferidas',preview.rowCount||0,'01')}${stats('Erros encontrados',(preview.errors||[]).length,'03')}</div>${errors.length?`<div class="notice error" role="alert"><b>Corrija a planilha antes de importar.</b><ul>${errors.map(error=>`<li>${esc(error)}</li>`).join('')}</ul>${preview.errors.length>errors.length?`<p>Há mais ${preview.errors.length-errors.length} erro(s). Corrija estes e carregue novamente.</p>`:''}</div>`:''}${warnings.map(warning=>`<p class="notice">${esc(warning)}</p>`).join('')}<div class="excel-preview-list">${boards.slice(0,50).map(describe).join('')||(!errors.length?'<p class="notice">Nenhuma banca disponível para criar nesta planilha.</p>':'')}${boards.length>50?`<p class="muted tiny">Exibindo as primeiras 50 de ${boards.length} bancas. Todas as bancas válidas serão criadas na confirmação.</p>`:''}</div>`;
+ commit.textContent=`Confirmar ${boards.length} banca(s)`;commit.disabled=session.busy||!!preview.errors?.length||!boards.length;
+}
+function setBoardImportBusy(session,busy,message=''){
+ if(boardImportState!==session)return;
+ session.busy=busy;
+ const dialog=document.getElementById('board-import-dialog');if(!dialog)return;
+ for(const element of dialog.querySelectorAll('input,select,button'))element.disabled=busy;
+ const status=document.getElementById('board-import-status');if(status)status.textContent=message;
+ if(!busy)paintBoardImportPreview(session);
+}
+async function prepareBoardImport(session){
+ assertBoardImportSession(session);if(session.busy||!session.workbook)return;
+ const sheetName=document.getElementById('board-import-sheet')?.value||session.sheetName||session.workbook.SheetNames[0];
+ setBoardImportBusy(session,true,'Conferindo grupos, professores, horários e salas…');
+ try{
+  const rows=BancaBoardImport.readSheet(session.workbook,sheetName,globalThis.XLSX);
+  const catalog=await readBoardImportCatalog(session);assertBoardImportSession(session);
+  const preview=BancaBoardImport.parseRows(rows,{...catalog,now:Date.now()});
+  session.rows=rows;session.sheetName=sheetName;session.catalog=catalog;session.preview=preview;session.fingerprint=boardImportFingerprint(preview,catalog);
+ }finally{setBoardImportBusy(session,false);}
+}
+async function confirmBoardImport(session){
+ assertBoardImportSession(session);if(session.busy)return;
+ if(!session.preview||session.preview.errors?.length||!session.preview.boards?.length)throw Error('Selecione uma planilha válida e confira a prévia antes de confirmar.');
+ if(!confirm(`Criar ${session.preview.boards.length} banca(s) da planilha? Os grupos, as notas e as bancas existentes serão preservados.`))return;
+ setBoardImportBusy(session,true,'Conferindo novamente a agenda antes de criar as bancas…');
+ try{
+  const catalog=await readBoardImportCatalog(session);assertBoardImportSession(session);
+  const checked=BancaBoardImport.parseRows(session.rows,{...catalog,now:Date.now()});
+  if(checked.errors?.length||boardImportFingerprint(checked,catalog)!==session.fingerprint){
+   session.catalog=catalog;session.preview=checked;session.fingerprint=boardImportFingerprint(checked,catalog);
+   throw Error('A agenda ou os cadastros mudaram. Confira a prévia atualizada e confirme novamente.');
+  }
+  Object.assign(state,catalog);state.profile=catalog.users[session.uid];
+  const createdAt=Date.now(),plan=checked.boards.map(board=>{const {lines,...data}=board;return {...data,createdBy:session.uid,createdAt};});
+  assertBoardImportSession(session);
+  await createBoards(plan);
+  assertCurrentSession(session.uid,session.revision);
+  if(boardImportState===session){session.busy=false;closeBoardImport(true);}
+ }finally{setBoardImportBusy(session,false);}
+}
+function downloadBoardImportModel(){
+ if(!state.user||!isCoord())throw Error('O modelo de bancas é exclusivo da coordenação.');
+ if(typeof BancaBoardImport==='undefined')throw Error('A importação não carregou. Recarregue a página.');
+ const library=globalThis.XLSX,options={now:Date.now()};
+ if(library?.utils?.book_new&&library?.utils?.aoa_to_sheet&&typeof library.write==='function'){
+  const workbook=library.utils.book_new(),rows=BancaBoardImport.templateRows(options),sheet=library.utils.aoa_to_sheet(rows);
+  sheet['!cols']=rows[0].map(header=>({wch:/avaliador/i.test(header)?28:/grupo|curso/i.test(header)?25:15}));
+  library.utils.book_append_sheet(workbook,sheet,'Bancas');
+  const help=library.utils.aoa_to_sheet([
+   ['Como preencher'],
+   ['Uma linha por banca. Cadastre ou importe os grupos antes de importar a agenda.'],
+   ['Informe Grupo, Curso e Turma. Pode incluir a coluna ID do grupo para identificar sem ambiguidade.'],
+   ['Data: dd/mm/aaaa ou aaaa-mm-dd. Hora: HH:mm, em intervalos de 15 minutos.'],
+   ['Duração: 30, 45, 60 ou 90 minutos. Sala: nome, sala ou link da reunião.'],
+   ['Informe 2 ou 3 avaliadores ativos, pelo e-mail, identificador, UID ou nome completo exclusivo.'],
+   ['Professores, grupos e salas com conflito de horário impedem a importação.'],
+   ['Substitua a linha de exemplo. Use somente valores, sem fórmulas.'],
+   ['A prévia será exibida antes da confirmação. Os dados existentes não são substituídos.']
+  ]);help['!cols']=[{wch:115}];library.utils.book_append_sheet(workbook,help,'Instruções');
+  const bytes=library.write(workbook,{bookType:'xlsx',type:'array',compression:true});
+  downloadBlob(new Blob([bytes],{type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'}),'modelo-bancas-agendadas.xlsx');
+ }else downloadBlob(new Blob([BancaBoardImport.templateCsv(options)],{type:'text/csv;charset=utf-8'}),'modelo-bancas-agendadas.csv');
+}
+function openBoardImport(){
+ if(!state.user||!isCoord())throw Error('A importação de bancas é exclusiva da coordenação.');
+ if(!state.connected)throw Error('Conecte-se à internet para importar as bancas.');
+ if(typeof BancaBoardImport==='undefined'||typeof BancaFlowImport==='undefined'||!globalThis.XLSX)throw Error('A biblioteca de Excel não carregou. Recarregue a página.');
+ closeBoardImport();if(boardImportState)return;
+ const session={uid:state.user.uid,revision:accessRevision,busy:false,workbook:null,preview:null,returnFocus:document.activeElement};boardImportState=session;
+ const dialog=document.createElement('dialog');dialog.id='board-import-dialog';dialog.className='share-dialog excel-import-dialog';dialog.setAttribute('aria-labelledby','board-import-title');
+ dialog.innerHTML=`<div class="row space"><div><p class="eyebrow">Agenda de bancas</p><h3 id="board-import-title">Importar bancas do Excel</h3></div><button class="btn soft" id="board-import-close" type="button" aria-label="Fechar importação de bancas">Fechar</button></div><p class="muted">Uma linha por banca, com grupo, data, horário, sala e avaliadores. Os grupos precisam estar cadastrados. As bancas e avaliações existentes serão preservadas.</p><div class="form-grid"><div class="field wide"><label for="board-import-file">Arquivo Excel ou CSV</label><input id="board-import-file" type="file" accept=".xlsx,.xls,.csv"><small>Até 5 MB. O arquivo é lido neste navegador; os dados só são gravados após a confirmação.</small></div><div class="field wide"><label for="board-import-sheet">Aba da planilha</label><select id="board-import-sheet"><option value="">Selecione um arquivo</option></select></div></div><details class="excel-import-help"><summary>Colunas aceitas e modelo</summary><p>Use <b>Curso, Turma, Grupo, Data, Hora, Duração, Sala, Avaliador 1, Avaliador 2</b> e, se necessário, <b>Avaliador 3</b>. A coluna opcional <b>ID do grupo</b> evita ambiguidades entre grupos de mesmo nome.</p><p>Datas em <b>dd/mm/aaaa</b> ou <b>aaaa-mm-dd</b>, horários <b>HH:mm</b> a cada 15 minutos e duração de <b>30, 45, 60 ou 90 minutos</b>. Para cada avaliador, use e-mail, identificador, UID ou nome completo exclusivo de um professor ou coordenador ativo. Fórmulas não são aceitas.</p><button class="btn soft" id="board-import-model" type="button">Baixar modelo Excel</button></details><p class="muted tiny" id="board-import-status" role="status" aria-live="polite"></p><div id="board-import-preview"></div><div class="excel-import-footer"><button class="btn primary" id="board-import-confirm" type="button" disabled>Confirmar importação</button><button class="btn soft" id="board-import-cancel" type="button">Cancelar</button></div>`;
+ document.body.appendChild(dialog);
+ dialog.addEventListener('cancel',event=>{if(session.busy)event.preventDefault();else closeBoardImport();});
+ for(const id of ['board-import-close','board-import-cancel'])document.getElementById(id).addEventListener('click',()=>closeBoardImport());
+ document.getElementById('board-import-model').addEventListener('click',()=>{try{downloadBoardImportModel();}catch(error){fail(error);}});
+ document.getElementById('board-import-confirm').addEventListener('click',()=>confirmBoardImport(session).catch(fail));
+ document.getElementById('board-import-sheet').addEventListener('change',()=>prepareBoardImport(session).catch(error=>{if(boardImportState===session){session.preview=null;paintBoardImportPreview(session);}fail(error);}));
+ document.getElementById('board-import-file').addEventListener('change',async event=>{
+  if(session.busy)return;
+  session.preview=null;session.workbook=null;paintBoardImportPreview(session);
+  const select=document.getElementById('board-import-sheet');select.replaceChildren();
+  const file=event.target.files?.[0];if(!file)return;
+  try{
+   assertBoardImportSession(session);BancaFlowImport.validateFile(file);setBoardImportBusy(session,true,'Lendo a planilha de bancas…');
+   const bytes=await file.arrayBuffer();assertBoardImportSession(session);
+   session.workbook=BancaFlowImport.readWorkbook(bytes,globalThis.XLSX,file.name);
+   for(const name of session.workbook.SheetNames){const option=document.createElement('option');option.value=name;option.textContent=name;select.appendChild(option);}
+   setBoardImportBusy(session,false);await prepareBoardImport(session);
+  }catch(error){if(boardImportState===session){session.preview=null;session.workbook=null;paintBoardImportPreview(session);}fail(error);}
+  finally{setBoardImportBusy(session,false);}
+ });
+ paintBoardImportPreview(session);dialog.showModal();document.getElementById('board-import-file').focus();
+}
+
+function validScheduleStart(start){return Number.isFinite(start)&&start>Date.now()-60000&&start%900000===0;}
 function busy(uid,candidate,planned=[]){const occupied=Object.values(state.boards).filter(b=>b.members?.[uid]);return [...occupied,...planned.filter(b=>b.members?.[uid])].some(b=>intervalosConflitam(b,candidate))||chavesOcupacao(candidate,uid).some(key=>state.locks?.[key.split('/')[0]]?.[uid]);}
 function roomKey(room){return Array.from(new TextEncoder().encode(String(room).trim().toLocaleLowerCase('pt-BR'))).map(byte=>byte.toString(16).padStart(2,'0')).join('');}
 function roomLocksFor(board){return chavesOcupacao(board,roomKey(board.room));}
 function roomBusy(room,candidate,planned=[]){const normalized=String(room).trim().toLocaleLowerCase('pt-BR');return [...Object.values(state.boards),...planned].some(b=>b.room?.trim().toLocaleLowerCase('pt-BR')===normalized&&intervalosConflitam(b,candidate))||chavesOcupacao(candidate,roomKey(room)).some(key=>state.roomLocks?.[key.split('/')[0]]?.[roomKey(room)]);}
 function makeBoard(group,startAt,durationMin,room,evaluators){const members=Object.fromEntries(evaluators.map(uid=>[uid,true]));return {groupId:group.id,advisorUid:group.advisorUid,advisorName:who(group.advisorUid),members,memberNames:Object.fromEntries(Object.keys(members).map(uid=>[uid,who(uid)])),startAt,durationMin,room,createdBy:state.user.uid,createdAt:Date.now()};}
 async function createBoards(plan){
- if(!isCoord())throw Error('Apenas o coordenador pode montar bancas.');if(!plan.length)throw Error('Nenhuma banca para gravar.');
+ if(!state.user||!isCoord())throw Error('Apenas a coordenação pode montar bancas.');if(!Array.isArray(plan)||!plan.length)throw Error('Nenhuma banca para gravar.');
+ if(!state.connected)throw Error('Conecte-se à internet para cadastrar bancas.');
+ if(state.boardSaving)throw Error('Aguarde o cadastro de bancas em andamento.');
+ const uid=state.user.uid,revision=accessRevision,fromLottery=plan===state.plan,lotteryMeta=fromLottery?state.planMeta:null;
+ if(fromLottery&&state.planUnassigned.length)throw Error('Existem grupos sem encaixe. Ajuste a agenda e refaça o sorteio antes de confirmar.');
+ state.boardSaving=true;
+ try{
+ const paths=['users','groups','boards','groupBoards','locks','roomLocks'];
+ const snapshots=await Promise.all(paths.map(path=>get(ref(db,path))));assertCurrentSession(uid,revision);
+ const context=Object.fromEntries(paths.map((path,index)=>[path,snapshots[index].val()||{}]));
+ if(!isCoord()||!isActiveTeacher(context.users[uid])||context.users[uid].role!=='coordinator')throw Error('A permissão da coordenação mudou. Entre novamente.');
+ if(fromLottery&&plan!==state.plan)throw Error('A prévia do sorteio mudou. Confira a agenda e gere uma nova prévia.');
+ Object.assign(state,context);if(!state.connected)throw Error('Conecte-se à internet para cadastrar bancas.');
  if(plan===state.plan&&state.planUnassigned.length)throw Error('Existem grupos sem encaixe. Ajuste a agenda e refaça o sorteio antes de confirmar.');
  const changes={},planned=[];
  for(const b of plan){
@@ -1967,22 +2333,25 @@ async function createBoards(plan){
   if(!validScheduleStart(b.startAt))throw Error('A data deve ser futura e em intervalos de 15 minutos.');
   if(![30,45,60,90].includes(b.durationMin))throw Error('Duração não permitida.');
   const members=Object.keys(b.members);
-  if(![2,3].includes(members.length)||b.advisorUid!==state.groups[b.groupId].advisorUid||members.some(uid=>!isActiveTeacher(state.users[uid])))throw Error(`Composição inválida para ${b.groupId}.`);
+  if(![2,3].includes(members.length)||b.advisorUid!==state.groups[b.groupId].advisorUid||members.some(uid=>b.members[uid]!==true||!isActiveTeacher(state.users[uid])))throw Error(`Composição inválida para ${b.groupId}.`);
   for(const uid of members){if(busy(uid,b,planned))throw Error(`${who(uid)} tem uma banca sobreposta ao horário de ${b.groupId}.`);}
   if(roomBusy(b.room,b,planned))throw Error(`A sala ${b.room} já está ocupada nesse horário.`);
-  if(plan===state.plan&&state.planMeta){
+  if(fromLottery&&lotteryMeta){
    const count=Object.values(state.boards).filter(x=>localDayKey(x.startAt)===localDayKey(b.startAt)).length+planned.filter(x=>localDayKey(x.startAt)===localDayKey(b.startAt)).length;
-   if(count>=state.planMeta.perDay)throw Error(`Limite de ${state.planMeta.perDay} bancas excedido no dia ${localDayKey(b.startAt)}.`);
+   if(count>=lotteryMeta.perDay)throw Error(`Limite de ${lotteryMeta.perDay} bancas excedido no dia ${localDayKey(b.startAt)}.`);
   }
-  const bid=push(ref(db,'boards')).key;
-  changes[`boards/${bid}`]=b;changes[`groupBoards/${b.groupId}`]=bid;
+  if(typeof b.room!=='string'||!b.room.trim()||b.room.trim().length>80)throw Error('Informe uma sala ou link de até 80 caracteres.');
+  const bid=push(ref(db,'boards')).key;if(!bid||state.boards[bid])throw Error('Não foi possível preparar a banca. Tente novamente.');
+  changes[`boards/${bid}`]={...b,room:b.room.trim(),advisorName:who(b.advisorUid),memberNames:Object.fromEntries(members.map(id=>[id,who(id)])),createdBy:uid,createdAt:serverTimestamp()};changes[`groupBoards/${b.groupId}`]=bid;
   for(const uid of members)for(const key of chavesOcupacao(b,uid))changes[`locks/${key}`]=bid;
   for(const key of roomLocksFor(b))changes[`roomLocks/${key}`]=bid;
   planned.push(b);
  }
- await update(ref(db),changes);
+ assertCurrentSession(uid,revision);if(!isCoord())throw Error('A permissão da coordenação mudou.');
+ await update(ref(db),changes);assertCurrentSession(uid,revision);
  state.plan=[];state.planMeta=null;state.planUnassigned=[];
  notice(`${plan.length} banca(s) criada(s) com reserva atômica de professores e salas.`);go('bancas');
+ }finally{if(state.user?.uid===uid&&accessRevision===revision)state.boardSaving=false;}
 }
 function makeLottery(data){
  const className=String(data.get('className')||'todas'),courseName=String(data.get('courseName')||'todas');
@@ -2588,7 +2957,7 @@ async function lerGruposProtegidos(password) {
   return parsed;
 }
 async function importarGruposProtegidos() {
-  if (!canManageTeachers()) throw Error('A importação é exclusiva do coordenador Alberson.');
+  if (!canManageGroups()) throw Error('A importação é exclusiva da coordenação.');
   const password=prompt('Informe a senha de importação dos 44 grupos (diferente da senha de acesso):');
   if (password===null) return;
   if (!password) throw Error('Informe a senha de importação.');
@@ -2639,14 +3008,24 @@ function timerRecord(previous,elapsedMs,startedAt){
 }
 function boardActions(bid){
  const busy=state.busyBoards.has(bid);
- if(groupOf(state.boards[bid])?.active===false)return '<span class="tiny muted">Grupo removido. Restaure-o em Grupos e cursos para reabrir.</span>';
- return state.seals[bid]?`<button type="button" class="btn soft" data-reopen="${esc(bid)}" ${busy?'disabled':''}>Reabrir banca</button>`:`<button type="button" class="btn dark" data-seal="${esc(bid)}" ${busy?'disabled':''}>Encerrar avaliação da banca</button>`;
+ const chat=chatRooms().some(room=>room.id===bid)?`<button type="button" class="btn soft" data-chat-board="${esc(bid)}">Chat da banca ${icon('chat')}</button>`:'';
+ if(groupOf(state.boards[bid])?.active===false)return chat+'<span class="tiny muted">Grupo removido. Restaure-o em Grupos e cursos para reabrir.</span>';
+ return chat+(state.seals[bid]?`<button type="button" class="btn soft" data-reopen="${esc(bid)}" ${busy?'disabled':''}>Reabrir banca</button>`:`<button type="button" class="btn dark" data-seal="${esc(bid)}" ${busy?'disabled':''}>Encerrar avaliação da banca</button>`);
+}
+function timerIsOverrun(ms){return typeof ms==='number'&&Number.isFinite(ms)&&ms>15*60*1000;}
+function updateTimerDisplays(){
+ for(const el of document.querySelectorAll('[data-timer-display]')){
+  const bid=el.dataset.timerDisplay,elapsed=boardElapsed(bid),over=timerIsOverrun(elapsed);
+  el.textContent=formatElapsed(elapsed);el.classList.toggle('timer-overrun',over);
+  const panel=el.closest('[data-timer-panel]');panel?.classList.toggle('timer-overrun',over);
+  const warning=panel?.querySelector('[data-timer-warning]');if(warning)warning.hidden=!over;
+ }
 }
 function timerHtml(bid){
  const timer=state.timers[bid],sealed=!!state.seals[bid],busy=state.busyBoards.has(bid),loaded=Object.hasOwn(state.timers,bid);
- const problem=state.timerErrors[bid];
+ const problem=state.timerErrors[bid],elapsed=boardElapsed(bid),over=timerIsOverrun(elapsed);
  const disabled=sealed||busy||!loaded||!!problem||!state.connected;
- return `<section class="board-timer" data-timer-panel="${esc(bid)}" aria-labelledby="timer-heading"><div class="timer-head"><div><p class="eyebrow">TEMPO DA APRESENTAÇÃO</p><h3 id="timer-heading">Cronômetro da banca</h3></div>${badge(sealed?'Encerrado':timer?.startedAt?'Em andamento':'Pausado',timer?.startedAt&&!sealed?'green':'gray')}</div><div class="timer-display" data-timer-display="${esc(bid)}" aria-label="Tempo em minutos, segundos e centésimos">${formatElapsed(boardElapsed(bid))}</div><p class="timer-status" role="status">${esc(problem?'Não foi possível acessar o cronômetro. Publique a política de acesso atualizada no Firebase e entre novamente.':!state.connected?'Sem conexão. O tempo em andamento continua a ser contado; reconecte para usar os controles.':!loaded?'Carregando o tempo salvo…':sealed?'Tempo registrado. Reabra a banca para retomar ou corrigir a avaliação.':'Tempo compartilhado entre os avaliadores, salvo ao iniciar, pausar e zerar.')}</p><div class="timer-controls"><button type="button" class="btn primary" data-timer-action="${timer?.startedAt?'pause':'start'}" data-board="${esc(bid)}" ${disabled?'disabled':''}>${timer?.startedAt?'Pausar':timer?.elapsedMs?'Continuar':'Iniciar'}</button><button type="button" class="btn danger" data-timer-action="reset" data-board="${esc(bid)}" ${disabled||!timer?'disabled':''}>Zerar cronômetro</button></div><p class="tiny">Formato: minutos:segundos,centésimos. O tempo registrado também aparece no relatório PDF.</p></section>`;
+ return `<section class="board-timer${over?' timer-overrun':''}" data-timer-panel="${esc(bid)}" aria-labelledby="timer-heading"><div class="timer-head"><div><p class="eyebrow">TEMPO DA APRESENTAÇÃO</p><h3 id="timer-heading">Cronômetro da banca</h3></div>${badge(sealed?'Encerrado':timer?.startedAt?'Em andamento':'Pausado',timer?.startedAt&&!sealed?'green':'gray')}</div><div class="timer-display${over?' timer-overrun':''}" data-timer-display="${esc(bid)}" aria-label="Tempo em minutos, segundos e centésimos">${formatElapsed(elapsed)}</div><p class="timer-overrun-warning" data-timer-warning="1" role="status" ${over?'':'hidden'}>Tempo de apresentação acima de 15 minutos.</p><p class="timer-status" role="status">${esc(problem?'Não foi possível acessar o cronômetro. Publique a política de acesso atualizada no Firebase e entre novamente.':!state.connected?'Sem conexão. O tempo em andamento continua a ser contado; reconecte para usar os controles.':!loaded?'Carregando o tempo salvo…':sealed?'Tempo registrado. Reabra a banca para retomar ou corrigir a avaliação.':'Tempo compartilhado entre os avaliadores, salvo ao iniciar, pausar e zerar.')}</p><div class="timer-controls"><button type="button" class="btn primary" data-timer-action="${timer?.startedAt?'pause':'start'}" data-board="${esc(bid)}" ${disabled?'disabled':''}>${timer?.startedAt?'Pausar':timer?.elapsedMs?'Continuar':'Iniciar'}</button><button type="button" class="btn danger" data-timer-action="reset" data-board="${esc(bid)}" ${disabled||!timer?'disabled':''}>Zerar cronômetro</button></div><p class="tiny">Formato: minutos:segundos,centésimos. O tempo registrado também aparece no relatório PDF.</p></section>`;
 }
 function refreshTimerUi(bid){
  for(const button of document.querySelectorAll('[data-seal],[data-reopen]'))if((button.dataset.seal||button.dataset.reopen)===bid)button.disabled=state.busyBoards.has(bid);
@@ -2733,8 +3112,8 @@ async function refreshReportData(ids){
 }
 
 onValue(ref(db,'.info/serverTimeOffset'),snap=>{state.serverOffset=snap.val()||0;});
-onValue(ref(db,'.info/connected'),snap=>{state.connected=!!snap.val();if(state.selectedBoard)refreshTimerUi(state.selectedBoard);});
-setInterval(()=>{if(document.hidden)return;for(const el of document.querySelectorAll('[data-timer-display]'))el.textContent=formatElapsed(boardElapsed(el.dataset.timerDisplay));},10);
+onValue(ref(db,'.info/connected'),snap=>{state.connected=!!snap.val();if(state.connected&&state.user)void startChatPresence();else if(!state.connected){void stopChatPresence();if(typeof closeBoardImport==='function')closeBoardImport(true);}if(state.route==='chat'&&state.user)render();if(state.selectedBoard)refreshTimerUi(state.selectedBoard);});
+setInterval(()=>{if(!document.hidden)updateTimerDisplays();},10);
 
 function assertCurrentSession(uid,revision){
  if(!uid||state.user?.uid!==uid||accessRevision!==revision||!isActiveTeacher(state.profile))throw Error('A sessão mudou durante a operação. Entre novamente ou prepare os dados nesta conta.');
@@ -3010,7 +3389,7 @@ async function openBoardShare(boardId, { studentId = '' } = {}) {
 }
 
 const handle = async cb=>{try{await cb();}catch(err){fail(err);}};
-for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('click',e=>{const el=e.target.closest('button');if(!el)return;if(el.dataset.openMenu!==undefined)return openMobileMenu();if(!el.dataset.route)return;if(el.dataset.route==='sair')signOut(auth).catch(fail);else go(el.dataset.route);});
+for(const nav of [$('#desktop-nav'),$('#mobile-nav')])nav.addEventListener('click',e=>{const el=e.target.closest('button');if(!el)return;if(el.dataset.openMenu!==undefined)return openMobileMenu();if(!el.dataset.route)return;if(el.dataset.route==='sair')logoutAccount().catch(fail);else go(el.dataset.route);});
 $('#view').addEventListener('click',e=>{
  const summary=e.target.closest('summary'),notesBoard=summary?.parentElement?.dataset.notesBoard;
  // O evento toggle é assíncrono: registre a intenção antes de uma atualização ao vivo.
@@ -3033,12 +3412,17 @@ $('#view').addEventListener('click',e=>{
  if(el.dataset.removeGroupStudent)return handle(()=>removeGroupStudentRow(el));
  if(el.dataset.removeGroup)return handle(()=>changeGroupAccess(el.dataset.removeGroup,false));
  if(el.dataset.restoreGroup)return handle(()=>changeGroupAccess(el.dataset.restoreGroup,true));
+ if(el.dataset.openBoardImport)return handle(openBoardImport);
+ if(el.dataset.downloadBoardModel)return handle(downloadBoardImportModel);
  if(el.dataset.openExcelImport)return handle(openExcelImport);
  if(el.dataset.downloadExcelModel)return handle(downloadExcelImportModel);
  if(el.dataset.removeTeacher)return handle(()=>changeTeacherAccess(el.dataset.removeTeacher,false));
  if(el.dataset.restoreTeacher)return handle(()=>changeTeacherAccess(el.dataset.restoreTeacher,true));
  if(el.dataset.pdfPlan)return handle(()=>exportSchedulePdf(true));
  if(el.dataset.pdfAgenda)return handle(()=>exportSchedulePdf(false));
+ if(el.dataset.chatBoard)return handle(()=>openChatRoom(el.dataset.chatBoard));
+ if(el.dataset.chatOlder)return handle(loadOlderChat);
+ if(el.dataset.chatRetry)return handle(retryChat);
  if(el.dataset.myGrades)return go('minhasavaliacoes',el.dataset.myGrades);
  if(el.dataset.openBoard)return go('avaliar',el.dataset.openBoard);
  if(el.dataset.clearPlan){state.plan=[];state.planMeta=null;state.planUnassigned=[];render();return;}
@@ -3059,16 +3443,19 @@ $('#view').addEventListener('click',e=>{
 });
 $('#view').addEventListener('change',e=>{if(e.target.id==='filter-date'||e.target.id==='report-date-filter')return handle(()=>setBancaDateFilter(e.target.value,e.target.id==='report-date-filter'));if(['group-course-filter','group-class-filter','group-search','group-show-archived'].includes(e.target.id))return groupFiltersChanged(e);if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='teacher-method')teacherRegistrationMethod();if(e.target.id==='filter-course'){state.courseFilter=e.target.value;render();}if(e.target.id==='report-course-filter'){state.reportCourseFilter=e.target.value;state.analyticsBoard='';render();}if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;state.analyticsBoard='';render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
 $('#view').addEventListener('change',e=>{
+ if(e.target.id==='chat-room-select')return handle(()=>openChatRoom(e.target.value));
  const notesKeys={'notes-course-filter':'course','notes-class-filter':'className','notes-date-filter':'date','notes-status-filter':'status'};
  if(notesKeys[e.target.id])return handle(()=>setNotesFilter(notesKeys[e.target.id],e.target.value));
  if(e.target.id==='notes-chart-board'&&isCoord()){state.notesChartBoard=e.target.value;render();}
  if(e.target.id==='report-charts')state.reportCharts=!!e.target.checked;
  if(e.target.id==='analytics-board-filter'){state.analyticsBoard=e.target.value;render();}
 });
-$('#view').addEventListener('input',e=>{if(e.target.id==='notes-search'&&isCoord())state.notesSearchDraft=String(e.target.value||'').slice(0,180);});
+$('#view').addEventListener('input',e=>{if(e.target.id==='chat-message'){state.chatDrafts.set(state.chatRoom,e.target.value);const count=document.querySelector('#chat-character-count');if(count)count.textContent=`${e.target.value.length.toLocaleString('pt-BR')} / 2.000`;const send=document.querySelector('#chat-form button[type="submit"]');if(send)send.disabled=!e.target.value.trim()||!state.connected||state.chatSending||state.chatLoading||!!state.chatError;}if(e.target.id==='notes-search'&&isCoord())state.notesSearchDraft=String(e.target.value||'').slice(0,180);});
+$('#view').addEventListener('keydown',e=>{if(e.target.id==='chat-message'&&e.key==='Enter'&&!e.shiftKey&&!e.isComposing){e.preventDefault();e.target.form?.requestSubmit();}});
 $('#view').addEventListener('toggle',e=>{if(e.target.dataset?.coordinatorCharts&&isCoord())state.notesChartsOpen=e.target.open;const bid=e.target.dataset?.notesBoard;if(!bid||!isCoord())return;if(e.target.open)state.notesExpanded.add(bid);else state.notesExpanded.delete(bid);},true);
 $('#view').addEventListener('submit',e=>{e.preventDefault();const f=e.target;handle(async()=>{
- if(f.id==='notes-search-form'){if(!isCoord())throw Error('Consulta de notas exclusiva da coordenação.');state.notesFilters.search=String(new FormData(f).get('search')||'').trim().slice(0,180);state.notesSearchDraft=state.notesFilters.search;render();}
+ if(f.id==='chat-form')await sendChatMessage(f);
+ else if(f.id==='notes-search-form'){if(!isCoord())throw Error('Consulta de notas exclusiva da coordenação.');state.notesFilters.search=String(new FormData(f).get('search')||'').trim().slice(0,180);state.notesSearchDraft=state.notesFilters.search;render();}
  else if(f.id==='manual-form'){const d=new FormData(f);const g=state.groups[d.get('groupId')];if(!g||g.active===false||state.groupBoards[g.id])throw Error('Selecione um grupo ativo ainda não agendado.');const startAt=new Date(d.get('date')).getTime(),durationMin=Number(d.get('duration')),size=Number(d.get('size')),room=String(d.get('room')||'').trim();const evaluators=d.getAll('evaluator');if(evaluators.length!==size||new Set(evaluators).size!==evaluators.length)throw Error(`Selecione exatamente ${size} professores avaliadores.`);if(evaluators.some(uid=>!state.users[uid]))throw Error('Há um professor sem cadastro.');if(!room)throw Error('Informe a sala.');await createBoards([makeBoard(g,startAt,durationMin,room,evaluators)]);}
  else if(f.id==='lottery-form'){if(!isCoord())throw Error('Sorteio exclusivo da coordenação.');const result=makeLottery(new FormData(f));state.plan=result.plan;state.planMeta=result.config;state.planUnassigned=result.unassigned;render();notice(result.unassigned.length?`${result.plan.length} bancas encaixadas; ${result.unassigned.length} grupo(s) sem horário. Ajuste as condições antes de confirmar.`:'Sorteio completo! Baixe o PDF da prévia ou confirme as bancas.',!!result.unassigned.length);}
  else if(f.id==='group-form')await saveGroup(f);

@@ -32,7 +32,7 @@ const fixture = () => ({
 function harness(uid = 't1') {
   let now = 1_800_000_000_000;
   const data = fixture();
-  const calls = { reads: [], sets: [], updates: [], transactions: [], confirmations: [], authCreates:[], authDeletes:[], appDeletes:[] };
+  const calls = { reads: [], sets: [], updates: [], transactions: [], confirmations: [], authCreates:[], authDeletes:[], appDeletes:[], listens:[], disconnects:[], removals:[], pushCount:0 };
   const options = { confirm: true, setError: null, updateError: null, transactionError: null };
   const elements = new Map();
   const element = selector => {
@@ -44,6 +44,7 @@ function harness(uid = 't1') {
     });
     return elements.get(selector);
   };
+  const pathOf = target => typeof target==='string'?target:(target?.path||'');
   const read = path => path ? path.split('/').reduce((value, key) => value?.[key], data) : data;
   const resolveTimestamp = value => {
     if (value && typeof value === 'object') {
@@ -58,7 +59,18 @@ function harness(uid = 't1') {
     if (value === null) delete parent[key];
     else parent[key] = clone(resolveTimestamp(value));
   };
-  const snapshot = value => ({ val: () => clone(value), exists: () => value !== undefined && value !== null });
+  const snapshot = (value,key=null) => ({ key, val: () => clone(value), exists: () => value !== undefined && value !== null, forEach(callback){for(const[k,v]of Object.entries(value||{}))if(callback(snapshot(v,k))===true)return true;return false;} });
+  const queryValue = target => {
+    let value=read(pathOf(target));if(typeof target==='string'||!target?.constraints)return value;
+    const child=target.constraints.find(c=>c.kind==='order')?.key;
+    let rows=Object.entries(value||{}).sort(([ak,a],[bk,b])=>{const av=child?a?.[child]:ak,bv=child?b?.[child]:bk;return av===bv?(ak<bk?-1:ak>bk?1:0):av<bv?-1:1;});
+    for(const c of target.constraints){if(c.kind==='before')rows=rows.filter(([key,item])=>{const v=child?item?.[child]:key;return v<c.value||(v===c.value&&c.key!==undefined&&key<c.key);});if(c.kind==='last')rows=rows.slice(-c.count);}
+    return Object.fromEntries(rows);
+  };
+  const listeners=new Map(),listenerErrors=new Map();
+  const emitError=path=>{for(const[target,cb]of listenerErrors)if(pathOf(target)===path){listeners.delete(target);listenerErrors.delete(target);cb?.(Object.assign(Error('Permission denied'),{code:'PERMISSION_DENIED'}));}};
+  const emit = path => {for(const[target,cb]of listeners)if(pathOf(target)===path||pathOf(target).startsWith(path+'/')||path.startsWith(pathOf(target)+'/'))cb(snapshot(queryValue(target)));};
+
   class Clock extends Date { static now() { return now; } }
   class FormDataAdapter {
     constructor(form) { this.values = form.values || {}; }
@@ -82,15 +94,20 @@ function harness(uid = 't1') {
     createUserWithEmailAndPassword: async (_auth,email,password) => {calls.authCreates.push({email,password});if(options.authCreateError)throw options.authCreateError;return{user:{uid:options.newAuthUid||'new-teacher'}};},
     deleteUser: async user => {calls.authDeletes.push(user.uid);if(options.authDeleteError)throw options.authDeleteError;},
     deleteApp: async app => {calls.appDeletes.push(app.name);}, signOut:async()=>{},
-    onAuthStateChanged: () => () => {}, onValue: () => () => {},
+    onAuthStateChanged: () => () => {}, onValue: (target,callback,error) => {calls.listens.push(pathOf(target));listeners.set(target,callback);listenerErrors.set(target,error);if(pathOf(target).startsWith('chat'))callback(snapshot(queryValue(target)));return()=>{listeners.delete(target);listenerErrors.delete(target);};},
+    query:(target,...constraints)=>({path:pathOf(target),constraints}),orderByChild:key=>({kind:'order',key}),limitToLast:count=>({kind:'last',count}),endBefore:(value,key)=>({kind:'before',value,key}),
+    onDisconnect: target => ({remove:async()=>{calls.disconnects.push({kind:'remove',path:pathOf(target)});if(options.disconnectError)throw options.disconnectError;},cancel:async()=>calls.disconnects.push({kind:'cancel',path:pathOf(target)})}),
+    remove: async target => {const path=pathOf(target);calls.removals.push(path);write(path,null);emit(path);},
     ref: (_db, path = '') => path,
-    push: () => ({key:'new-group'}),
+    push: target => {const path=pathOf(target),key=path.startsWith('chat')?'chat-'+(++calls.pushCount):'new-group';return{key,path:path?path+'/'+key:key};},
     serverTimestamp: () => ({ '.sv': 'timestamp' }),
-    get: async path => { calls.reads.push(path); options.onRead?.(path, calls.reads); return snapshot(read(path)); },
-    set: async (path, value) => {
+    get: async target => {const path=pathOf(target);calls.reads.push(path); options.onRead?.(path, calls.reads);await options.beforeRead?.(path,target);return snapshot(queryValue(target));},
+    set: async (target, value) => {
+      const path=pathOf(target);
       calls.sets.push([path, clone(value)]);
       if (options.setError) throw options.setError;
-      write(path, value);
+      await options.beforeSet?.(path,value);
+      write(path, value);emit(path);
     },
     update: async (base, changes) => {
       calls.updates.push(clone(changes));
@@ -107,29 +124,31 @@ function harness(uid = 't1') {
       return { committed: true, snapshot: snapshot(read(path)) };
     }
   });
-  for(const asset of ['roster-import.js','analytics.js','analytics-pdf.js','coordinator-report.js','coordinator-report-pdf.js'])vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
+  for(const asset of ['roster-import.js','analytics.js','analytics-pdf.js','coordinator-report.js','coordinator-report-pdf.js','board-chat.js','board-import.js'].filter(asset=>require('node:fs').existsSync(join(__dirname,'..','assets',asset))))vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
   vm.runInContext(source + `
     render = () => {};
     refreshTimerUi = () => {};
     globalThis.testDownloads = [];
     downloadBlob = (blob, filename) => globalThis.testDownloads.push({blob,filename});
     globalThis.appTest = { state, CRITERIOS, notaValida, mediaAvaliador, situacao, resultadoAluno,
+      chatRooms,chatView,openChatRoom,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,
       elapsedAt, formatElapsed, boardElapsed, timerRecord, controlTimer, closeBoard, reopenBoard,
       createBoardShareSnapshot, assertShareSnapshotCurrent, buildSharePdf, buildBoardShareText, whatsappTextUrl, boardShareFilename,
       assertBoardAccess, hasUnsavedDrafts, saveGrade, saveDelivery, reportHtml, refreshReportData,
-      printReports, exportCsv, csvCell, boardActions, timerHtml,
+      printReports, exportCsv, csvCell, boardActions, timerHtml,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,
       analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,
       localDayKey,boardMatchesDay,filteredBoards,filteredReportBoards,reportGroups,setBancaDateFilter,resetAppData,boardsView,reportsView,exportSchedulePdf,
-      teacherIdentity,teacherEditIdentity,teacherProfileFingerprint,addTeacher,changeTeacherAccess,saveTeacherEdit,
+      canManageGroups:typeof canManageGroups==='function'?canManageGroups:null,teachersView,createBoards,makeBoard,teacherIdentity,teacherEditIdentity,teacherProfileFingerprint,addTeacher,changeTeacherAccess,saveTeacherEdit,
       validatedGroupDraft,groupRelatedBoards,groupAdminFingerprint,resetGroupAdmin,editGroup,saveGroup,changeGroupAccess,addGroupStudentRow,removeGroupStudentRow,
-      confirmExcelImport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,gradeView,myEvaluationsView,evaluatorBoards,navItems,setNotesFilter,resetNotesFilters,
+      confirmExcelImport,confirmBoardImport,openBoardImport,closeBoardImport,renderBoardImportCard,downloadBoardImportModel,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,gradeView,myEvaluationsView,evaluatorBoards,navItems,setNotesFilter,resetNotesFilters,
       startTeacherEdit(uid){teacherEditSession={uid,ownerUid:state.user.uid,revision:accessRevision,profileFingerprint:teacherProfileFingerprint(state.users[uid]),dialog:{open:false,remove(){},querySelectorAll(){return[];}},saving:false};},
+      prepareBankImport(rows){const catalog={users:state.users,groups:state.groups,boards:state.boards,groupBoards:state.groupBoards,locks:state.locks,roomLocks:state.roomLocks},preview=BancaBoardImport.parseRows(rows,{...catalog,now:Date.now()});boardImportState={uid:state.user.uid,revision:accessRevision,busy:false,rows,catalog,preview,fingerprint:boardImportFingerprint(preview)};return boardImportState;},
       prepareImport(rows){const catalog={users:state.users,existingGroups:state.groups},preview=BancaFlowImport.parseRows(rows,catalog);excelImportState={uid:state.user.uid,revision:accessRevision,busy:false,rows,defaultCourse:'',catalog,preview,fingerprint:excelPreviewFingerprint(preview)};return excelImportState;},
       buildEvaluationPdf: typeof buildEvaluationPdf === 'function' ? buildEvaluationPdf : null };
   `, context, { filename: 'index.html.inline-module.js' });
   const app = context.appTest;
   Object.assign(app.state, clone(data), { user: { uid }, profile: clone(data.users[uid]), connected: true });
-  return { app, data, calls, options, elements, context, downloads: context.testDownloads, now: () => now, advance: ms => { now += ms; }, read, write };
+  return { app, data, calls, options, elements, context, downloads: context.testDownloads, now: () => now, advance: ms => { now += ms; }, read, write, emit, emitError };
 }
 
 test('individual averages require all four valid grades, including valid zeroes', () => {
@@ -476,13 +495,15 @@ function groupForm(draft){
 const newGroupDraft=()=>({name:'Grupo do novo curso',className:'1A',courseName:'Redes de Computadores',title:'Rede segura',advisorUid:'t1',students:[{sid:'s1',name:'Carla'},{sid:'s2',name:'Daniel'}]});
 const importRows=()=>[['Curso','Turma','Grupo','Título','Orientador','Aluno'],['Engenharia','1E','Grupo novo','Sensores','one@example.test','Carla'],['Engenharia','1E','Grupo novo','Sensores','one@example.test','Daniel']];
 
-test('only Alberson manages teachers or groups, including another coordinator account',async()=>{
+test('only Alberson manages access profiles while a teacher cannot manage groups or coordinators',async()=>{
   for(const uid of ['t1','coord']){
     const h=harness(uid);if(uid==='coord')h.app.state.profile.key='other-coordinator';
-    await assert.rejects(h.app.addTeacher(adminForm({name:'Nova',email:'new@example.test',key:'nova',method:'new',password:'strongpass'})),/Somente o Alberson/);
+    await assert.rejects(h.app.addTeacher(adminForm({name:'Nova',email:'new@example.test',key:'nova',method:'new',password:'strongpass',role:'coordinator'})),/Somente o Alberson/);
     await assert.rejects(h.app.changeTeacherAccess('t2',false),/Somente o Alberson/);
-    await assert.rejects(h.app.saveGroup(groupForm(newGroupDraft())),/Somente o Alberson/);
-    await assert.rejects(h.app.changeGroupAccess('g1',false),/Somente o Alberson/);
+    if(uid==='t1'){
+      await assert.rejects(h.app.saveGroup(groupForm(newGroupDraft())),/coordena|restrito|Somente/i);
+      await assert.rejects(h.app.changeGroupAccess('g1',false),/coordena|restrito|Somente/i);
+    }
     assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
   }
 });
@@ -1029,4 +1050,249 @@ test('coordinator monograph saving accepts zero only for an existing editable st
     const current=harness('coord');change(current);await assert.rejects(current.app.saveDelivery(form));assert.equal(current.calls.sets.length,0);
   }
   const teacher=harness();await assert.rejects(teacher.app.saveDelivery(form),/restrito|coordena/i);assert.equal(teacher.calls.sets.length,0);
+});
+
+test('chat rooms include the common room and only assigned banks, with coordinator access and inactive/session guards',()=>{
+  const teacher=harness(),{app}=teacher;
+  app.state.boards.b2={...clone(app.state.boards.b1),members:{t2:true},groupId:'g2'};
+  assert.deepEqual(Array.from(app.chatRooms(),room=>room.id),['geral','b1']);
+  assert.match(app.chatView(),/Sala dos professores/);
+  assert.throws(()=>app.openChatRoom('b2'),/acesso|sala/i);
+  assert.throws(()=>app.openChatRoom('missing'),/acesso|sala/i);
+  const coord=harness('coord');coord.app.state.boards=clone(app.state.boards);
+  assert.deepEqual(Array.from(coord.app.chatRooms(),room=>room.id),['geral','b1','b2']);
+  const disabled=harness('disabled');assert.equal(disabled.app.chatRooms().length,0);
+  app.state.user=null;assert.equal(app.chatRooms().length,0);assert.match(app.chatView(),/restrito/i);
+});
+
+test('chat sends plain text with canonical author/server time only to the selected authorized room and never changes grades',async()=>{
+  const h=harness(),{app}=h,before=clone({grades:h.data.grades,deliveries:h.data.deliveries,boards:h.data.boards});
+  app.state.chatRoom='b1';const form={dataset:{chatRoom:'b1'},values:{message:'  Boa apresentação!\r\nPodemos começar.  '}};
+  await app.sendChatMessage(form);
+  const writes=h.calls.sets.filter(([path])=>path.startsWith('chatMessages/'));
+  assert.equal(writes.length,1);assert.match(writes[0][0],/^chatMessages\/b1\/chat-/);
+  assert.deepEqual(writes[0][1],{uid:'t1',name:'Professor Um',text:'Boa apresentação!\nPodemos começar.',at:{'.sv':'timestamp'}});
+  assert.equal(app.state.chatSending,false);assert.equal(app.state.chatDrafts.has('b1'),false);
+  assert.deepEqual({grades:h.data.grades,deliveries:h.data.deliveries,boards:h.data.boards},before);
+  await assert.rejects(app.sendChatMessage({dataset:{chatRoom:'geral'},values:{message:'wrong room'}}),/sala mudou/i);
+});
+
+test('chat rejects blank, oversized, offline, loading, unauthorized and stale-room sends without queuing messages',async()=>{
+  for(const message of ['', ' \n\t ', 'x'.repeat(2001)]){
+    const h=harness();await assert.rejects(h.app.sendChatMessage({dataset:{chatRoom:'geral'},values:{message}}));assert.equal(h.calls.sets.length,0);
+  }
+  for(const change of [h=>{h.app.state.connected=false;},h=>{h.app.state.chatLoading=true;},h=>{h.app.state.chatError='Acesso negado';},h=>{h.app.state.profile.active=false;},h=>{h.app.state.user=null;}]){
+    const h=harness();change(h);await assert.rejects(h.app.sendChatMessage({dataset:{chatRoom:'geral'},values:{message:'Não deve enviar'}}));assert.equal(h.calls.sets.length,0);
+  }
+  const outsider=harness('outsider');outsider.app.state.chatRoom='b1';await assert.rejects(outsider.app.sendChatMessage({dataset:{chatRoom:'b1'},values:{message:'Sem acesso'}}),/acesso|sala/i);assert.equal(outsider.calls.sets.length,0);
+});
+
+test('a pending chat send prevents double submission, retains newly typed drafts and preserves failed messages for retry',async()=>{
+  const h=harness(),{app}=h;let release;
+  h.options.beforeSet=async path=>{if(path.startsWith('chatMessages/'))await new Promise(resolve=>release=resolve);};
+  const form={dataset:{chatRoom:'geral'},values:{message:'Mensagem original'}};
+  const sending=app.sendChatMessage(form);assert.equal(app.state.chatSending,true);
+  await app.sendChatMessage(form);assert.equal(h.calls.sets.length,1);
+  app.state.chatDrafts.set('geral','Próxima mensagem ainda em edição');release();await sending;
+  assert.equal(app.state.chatDrafts.get('geral'),'Próxima mensagem ainda em edição');assert.equal(app.state.chatSending,false);
+  const failed=harness();failed.options.setError=Error('Falha de conexão');
+  await assert.rejects(failed.app.sendChatMessage(form),/conexão/);
+  assert.equal(failed.app.state.chatDrafts.get('geral'),'Mensagem original');assert.equal(failed.app.state.chatSending,false);assert.equal(failed.data.chatMessages,undefined);
+});
+
+test('chat history pages by timestamp and id without losing older messages or changing rooms',async()=>{
+  const h=harness(),{app}=h;
+  h.data.chatMessages={geral:Object.fromEntries(Array.from({length:130},(_,i)=>['m'+String(i).padStart(3,'0'),{uid:'t2',name:'Professora Dois',text:'Mensagem '+i,at:h.now()-200000+i}]))};
+  app.state.route='chat';app.syncChat();
+  assert.equal(Object.keys(app.state.chatMessages).length,100);assert.equal(app.state.chatHasMore,true);
+  assert.equal(h.context.BancaChat.sortedMessages(app.state.chatMessages)[0].id,'m030');
+  await app.loadOlderChat();
+  assert.equal(Object.keys(app.state.chatMessages).length,130);assert.equal(app.state.chatHasMore,false);assert.equal(h.context.BancaChat.sortedMessages(app.state.chatMessages)[0].id,'m000');
+  app.state.chatDrafts.set('geral','Rascunho geral');app.openChatRoom('b1');app.syncChat();
+  assert.equal(app.state.chatRoom,'b1');assert.equal(Object.keys(app.state.chatMessages).length,0);assert.equal(app.state.chatDrafts.get('geral'),'Rascunho geral');
+  app.stopChat();assert.equal(app.state.chatRoom,'geral');assert.equal(app.state.chatDrafts.size,0);assert.equal(Object.keys(app.state.chatMessages).length,0);assert.equal(Object.keys(app.state.chatPresence).length,0);
+});
+
+test('chat presence registers disconnect cleanup, counts current people once across tabs, and clears the old session',async()=>{
+  const h=harness(),{app}=h;await app.startChatPresence();
+  const presence=h.calls.sets.filter(([path])=>path.startsWith('chatPresence/'));assert.equal(presence.length,1);assert.match(presence[0][0],/^chatPresence\/t1\/chat-/);
+  assert.deepEqual(presence[0][1],{name:'Professor Um',role:'teacher',at:{'.sv':'timestamp'}});assert.deepEqual(h.calls.disconnects,[{kind:'remove',path:presence[0][0]}]);
+  app.state.chatPresence={t1:{tab1:{name:'Professor Um',role:'teacher',at:h.now()},tab2:{name:'Professor Um',role:'teacher',at:h.now()}},t2:{tab:{name:'Professora Dois',role:'teacher',at:h.now()}},outsider:{tab:{name:'Outro Professor',role:'teacher',at:h.now()}},disabled:{tab:{name:'Desativado',role:'teacher',at:h.now()}},stale:{tab:{name:'Conexão antiga',role:'teacher',at:h.now()-130000}}};
+  assert.match(app.chatView(),/Professora Dois/);assert.doesNotMatch(app.chatView(),/Conexão antiga|Desativado/);
+  app.state.chatRoom='b1';const boardHtml=app.chatView();assert.doesNotMatch(boardHtml,/Outro Professor/);assert.match(boardHtml,/Professor Um/);
+  app.state.chatDrafts.set('b1','Privado');app.resetAppData();await new Promise(setImmediate);
+  assert.equal(app.state.chatDrafts.size,0);assert.equal(Object.keys(app.state.chatPresence).length,0);assert.ok(h.calls.removals.includes(presence[0][0]));
+  assert.ok(h.calls.disconnects.some(item=>item.kind==='cancel'&&item.path===presence[0][0]));
+});
+
+test('a delayed old presence acknowledgement cannot restore a disconnected tab or remove a new connection',async()=>{
+  const h=harness(),{app}=h;let oldPath,release;
+  h.options.beforeSet=async path=>{if(path.startsWith('chatPresence/')&&!oldPath){oldPath=path;await new Promise(resolve=>release=resolve);}};
+  const old=app.startChatPresence();await new Promise(setImmediate);assert.ok(oldPath);assert.equal(typeof release,'function');
+  await app.stopChatPresence();await app.startChatPresence();
+  const paths=h.calls.sets.filter(([path])=>path.startsWith('chatPresence/')).map(([path])=>path);assert.equal(paths.length,2);assert.notEqual(paths[0],paths[1]);
+  release();await old;await new Promise(setImmediate);
+  assert.equal(h.read(oldPath),undefined,'a late acknowledgement is removed instead of leaving a ghost online connection');
+  assert.equal(h.read(paths[1]).name,'Professor Um','the replacement connection remains online');
+});
+
+test('chat history uses Firebase key ordering for messages sharing the same timestamp',async()=>{
+  const h=harness(),{app}=h,at=h.now()-3000;
+  h.data.chatMessages={geral:Object.fromEntries([...Array.from({length:180},(_,i)=>'A'+String(i).padStart(3,'0')),...Array.from({length:20},(_,i)=>'a'+String(i).padStart(3,'0'))].map(id=>[id,{uid:'t2',name:'Professora Dois',text:id,at}]))};
+  app.state.route='chat';app.syncChat();assert.equal(Object.keys(app.state.chatMessages).length,100);
+  await app.loadOlderChat();assert.equal(Object.keys(app.state.chatMessages).length,200,'the previous page must include every ordinal key, including upper/lowercase ties');
+  assert.equal(h.context.BancaChat.sortedMessages(app.state.chatMessages)[0].id,'A000');
+});
+
+test('cancelled chat access prevents a pending older-history read from restoring private messages',async()=>{
+  const h=harness(),{app}=h;h.data.chatMessages={geral:Object.fromEntries(Array.from({length:130},(_,i)=>['m'+String(i).padStart(3,'0'),{uid:'t2',name:'Professora Dois',text:'Privado '+i,at:h.now()-200000+i}]))};
+  app.state.route='chat';app.syncChat();let release;
+  h.options.beforeRead=async path=>{if(path==='chatMessages/geral')await new Promise(resolve=>release=resolve);};
+  const older=app.loadOlderChat();assert.equal(app.state.chatLoadingOlder,true);h.emitError('chatMessages/geral');
+  assert.equal(Object.keys(app.state.chatMessages).length,0);assert.ok(app.state.chatError);release();await older;
+  assert.equal(Object.keys(app.state.chatMessages).length,0,'late history must stay cleared after access cancellation');assert.equal(app.state.chatLoadingOlder,false);
+});
+
+function installAdditionalCoordinator(h,uid='coord2'){
+  const profile={name:'Coordenação Nova',email:'coord2@example.test',key:'coord-nova',role:'coordinator',active:true};
+  h.data.users[uid]=clone(profile);h.app.state.users[uid]=clone(profile);h.app.state.user={uid};h.app.state.profile=clone(profile);return uid;
+}
+
+test('Alberson creates a coordinator with isolated Auth, canonical role and preserved existing assessments',async()=>{
+  const h=harness('coord'),before=clone(h.data),form=adminForm({name:' Nova Coordenação ',email:'COORD2@EXAMPLE.TEST',key:'coord-nova',role:'coordinator',method:'new',password:'strongpass'});
+  await h.app.addTeacher(form);
+  assert.equal(h.data.users['new-teacher'].role,'coordinator');assert.equal(h.data.users['new-teacher'].active,true);
+  assert.equal(h.data.users['new-teacher'].name,'Nova Coordenação');assert.equal(h.data.users['new-teacher'].email,'coord2@example.test');
+  assert.equal(h.app.state.user.uid,'coord');assert.equal(h.app.state.profile.key,'alberson');assert.equal(form.wasReset,true);
+  assert.equal(h.calls.authCreates.length,1);assert.equal(h.calls.authDeletes.length,0);assert.equal(h.calls.appDeletes.length,1);
+  assert.equal('password' in h.data.users['new-teacher'],false);assert.deepEqual(h.data.grades,before.grades);assert.deepEqual(h.data.deliveries,before.deliveries);assert.deepEqual(h.data.boards,before.boards);
+  assert.match(h.app.teachersView(),/Coordenador e avaliador/);
+});
+
+test('coordinator registration validates role, supports existing Auth and rolls back only a failed new account',async()=>{
+  const values={name:'Nova Coordenação',email:'coord2@example.test',key:'coord-nova',role:'coordinator',method:'new',password:'strongpass'};
+  for(const role of ['admin','owner','COORDINATOR']){
+    const h=harness('coord');await assert.rejects(h.app.addTeacher(adminForm({...values,role})),/função|perfil|acesso|inválid|Escolha/i);assert.equal(h.calls.authCreates.length,0);assert.equal(h.calls.transactions.length,0);
+  }
+  const existing=harness('coord');await existing.app.addTeacher(adminForm({...values,method:'existing',uid:'linked-coordinator'}));assert.equal(existing.data.users['linked-coordinator'].role,'coordinator');assert.equal(existing.calls.authCreates.length,0);
+  const failed=harness('coord');failed.options.transactionError=Error('permission-denied');await assert.rejects(failed.app.addTeacher(adminForm(values)),/permission-denied/);
+  assert.deepEqual(failed.calls.authDeletes,['new-teacher']);assert.equal(failed.data.users['new-teacher'],undefined);assert.equal(failed.app.state.user.uid,'coord');
+});
+
+test('Alberson can edit and reactivate another coordinator while his own protected profile cannot be changed',async()=>{
+  const h=harness('coord'),profile={name:'Coordenação Nova',email:'coord2@example.test',key:'coord-nova',role:'coordinator',active:true};
+  h.data.users.coord2=clone(profile);h.app.state.users.coord2=clone(profile);h.app.startTeacherEdit('coord2');
+  await h.app.saveTeacherEdit(adminForm({name:'Coordenação Atualizada',contactEmail:'contato@example.test'},{teacherUid:'coord2'}));
+  assert.equal(h.data.users.coord2.name,'Coordenação Atualizada');assert.equal(h.data.users.coord2.role,'coordinator');assert.equal(h.data.users.coord2.key,'coord-nova');assert.equal(h.data.users.coord2.email,'coord2@example.test');
+  await h.app.changeTeacherAccess('coord2',false);assert.equal(h.data.users.coord2.active,false);
+  await h.app.changeTeacherAccess('coord2',true);assert.equal(h.data.users.coord2.active,true);assert.equal(h.data.users.coord2.disabledAt,undefined);
+  await assert.rejects(h.app.changeTeacherAccess('coord',false),/Alberson|protegido|própri|coordenação/i);
+  h.data.users.protected={...clone(profile),key:'alberson'};h.app.state.users.protected=clone(h.data.users.protected);
+  await assert.rejects(h.app.changeTeacherAccess('protected',false),/Alberson|protegido|própri|coordenação/i);
+  assert.equal(h.data.users.coord.active,true);assert.equal(h.data.users.protected.active,true);
+  const saved=clone(h.data.grades);h.write('boards/b2',{groupId:'g1',members:{coord2:true,t1:true}});
+  await assert.rejects(h.app.changeTeacherAccess('coord2',false),/bancas em aberto/);assert.deepEqual(h.data.grades,saved);
+});
+
+test('additional active coordinators manage groups and import a group sheet without acquiring access administration',async()=>{
+  const h=harness('coord');installAdditionalCoordinator(h);const before=clone(h.data);h.app.resetGroupAdmin();
+  assert.equal(h.app.canManageGroups(),true);await h.app.saveGroup(groupForm(newGroupDraft()));
+  assert.equal(h.data.groups['new-group'].createdBy,'coord2');assert.equal(h.data.groups['new-group'].courseName,'Redes de Computadores');assert.deepEqual(h.data.grades,before.grades);
+  await assert.rejects(h.app.addTeacher(adminForm({name:'Indevida',email:'bad@example.test',key:'bad',role:'coordinator',method:'new',password:'strongpass'})),/Somente o Alberson/);
+  const importing=harness('coord');installAdditionalCoordinator(importing);const session=importing.app.prepareImport(importRows());await importing.app.confirmExcelImport(session);
+  assert.equal(importing.data.groups['new-group'].createdBy,'coord2');assert.equal(importing.data.groups['new-group'].courseName,'Engenharia');assert.deepEqual(importing.data.grades,fixture().grades);
+});
+
+test('an additional coordinator creates a manual bank with atomic teacher and room reservations',async()=>{
+  const h=harness('coord');installAdditionalCoordinator(h);const before=clone(h.data.grades);
+  const group={id:'g2',name:'Nova banca manual',courseName:'ADS',className:'3A',title:'Projeto novo',advisorUid:'t1',students:{s3:'Carla'},active:true};
+  h.data.groups.g2=clone(group);h.app.state.groups.g2=clone(group);
+  const start=Math.ceil((h.now()+3600000)/900000)*900000,board=h.app.makeBoard(group,start,30,'Sala 2',['t1','coord2']);
+  await h.app.createBoards([board]);
+  assert.equal(h.data.boards['new-group'].createdBy,'coord2');assert.equal(h.data.boards['new-group'].members.coord2,true);assert.equal(h.data.groupBoards.g2,'new-group');
+  const paths=Object.keys(h.calls.updates[0]);assert.ok(paths.includes('boards/new-group'));assert.ok(paths.includes('groupBoards/g2'));assert.ok(paths.some(path=>path.startsWith('locks/')));assert.ok(paths.some(path=>path.startsWith('roomLocks/')));
+  assert.deepEqual(h.data.grades,before);assert.equal(h.data.boards.b1.memberNames.t1,'Professor Um');
+});
+
+test('timer turns red strictly above fifteen minutes and keeps overrun state paused or sealed',()=>{
+  const h=harness(),{app}=h;
+  for(const ms of [0,899999,900000])assert.equal(app.timerIsOverrun(ms),false);
+  for(const ms of [900001,900010,1200000])assert.equal(app.timerIsOverrun(ms),true);
+  for(const invalid of [null,undefined,'900001',NaN,Infinity])assert.equal(app.timerIsOverrun(invalid),false);
+  for(const ms of [900000,900010]){
+    app.state.timers.b1={elapsedMs:ms,startedAt:0};const markup=app.timerHtml('b1'),display=markup.match(/<div class="timer-display[^"]*"/)[0];
+    assert.equal(display.includes('timer-overrun'),ms>900000);assert.equal(markup.match(/<p class="timer-overrun-warning"[^>]*>/)[0].includes(' hidden'),ms<=900000);
+  }
+  app.state.seals.b1={at:h.now(),by:'t1'};assert.ok(app.timerHtml('b1').match(/<div class="timer-display timer-overrun"/));
+  app.state.timers.b1={elapsedMs:0,startedAt:0};assert.ok(!app.timerHtml('b1').match(/<div class="timer-display timer-overrun"/));
+});
+
+test('timer tick updates red display, panel and warning without replacing the grading DOM',()=>{
+  const h=harness(),{app}=h,classes=new Set(),panelClasses=new Set(),warning={hidden:true},panel={classList:{toggle:(name,on)=>on?panelClasses.add(name):panelClasses.delete(name)},querySelector:()=>warning};
+  const display={dataset:{timerDisplay:'b1'},textContent:'',classList:{toggle:(name,on)=>on?classes.add(name):classes.delete(name)},closest:()=>panel};
+  h.context.document.querySelectorAll=selector=>selector==='[data-timer-display]'?[display]:[];
+  app.state.timers.b1={elapsedMs:899990,startedAt:h.now()};app.updateTimerDisplays();assert.equal(display.textContent,'14:59,99');assert.equal(classes.has('timer-overrun'),false);
+  h.advance(20);app.updateTimerDisplays();assert.equal(display.textContent,'15:00,01');assert.equal(classes.has('timer-overrun'),true);assert.equal(panelClasses.has('timer-overrun'),true);assert.equal(warning.hidden,false);
+  app.state.timers.b1={elapsedMs:0,startedAt:0};app.updateTimerDisplays();assert.equal(display.textContent,'00:00,00');assert.equal(classes.has('timer-overrun'),false);assert.equal(panelClasses.has('timer-overrun'),false);assert.equal(warning.hidden,true);
+});
+
+function installBankImportGroup(h){
+  const uid=installAdditionalCoordinator(h),group={id:'g2',name:'Banca da planilha',courseName:'ADS',className:'3A',title:'Agenda segura',advisorUid:'t1',students:{s3:'Carla',s4:'Daniel'},active:true};
+  h.data.groups.g2=clone(group);h.app.state.groups.g2=clone(group);return uid;
+}
+const bankImportRows=()=>[['ID do grupo','Data','Hora','Duração','Sala','Avaliador 1','Avaliador 2'],['g2','2027-01-17','10:00',30,'Sala Excel','one@example.test','coord2@example.test']];
+
+test('coordinator scheduled-bank Excel commit is explicit and reserves rooms and teachers atomically',async()=>{
+  const h=harness('coord');installBankImportGroup(h);const before=clone(h.data),session=h.app.prepareBankImport(bankImportRows());
+  assert.equal(session.preview.errors.length,0);assert.equal(session.preview.boards.length,1);
+  h.options.confirm=false;await h.app.confirmBoardImport(session);assert.equal(h.calls.updates.length,0);
+  h.options.confirm=true;await h.app.confirmBoardImport(session);
+  assert.equal(h.data.groupBoards.g2,'new-group');assert.equal(h.data.boards['new-group'].createdBy,'coord2');assert.equal(h.data.boards['new-group'].members.coord2,true);assert.equal(h.data.boards['new-group'].advisorName,'Professor Um');
+  assert.equal(h.calls.updates.length,1);assert.ok(Object.keys(h.calls.updates[0]).some(path=>path.startsWith('roomLocks/')));assert.ok(Object.keys(h.calls.updates[0]).some(path=>path.startsWith('locks/')));
+  assert.deepEqual(h.data.grades,before.grades);assert.deepEqual(h.data.deliveries,before.deliveries);assert.deepEqual(h.data.groups,before.groups);assert.deepEqual(h.data.boards.b1,before.boards.b1);
+});
+
+test('scheduled-bank import rejects fresh conflicts, invalid sheets, offline state and stale actors before writing',async()=>{
+  const changed=harness('coord');installBankImportGroup(changed);const session=changed.app.prepareBankImport(bankImportRows());changed.data.users.t1.active=false;
+  await assert.rejects(changed.app.confirmBoardImport(session),/agenda|cadastros|mudaram/i);assert.equal(changed.calls.updates.length,0);
+  const invalid=harness('coord');installBankImportGroup(invalid);const rows=bankImportRows();rows[1][2]='10:07';const bad=invalid.app.prepareBankImport(rows);assert.ok(bad.preview.errors.length);await assert.rejects(invalid.app.confirmBoardImport(bad),/planilha válida|prévia/);assert.equal(invalid.calls.updates.length,0);
+  const offline=harness('coord');installBankImportGroup(offline);const off=offline.app.prepareBankImport(bankImportRows());offline.app.state.connected=false;await assert.rejects(offline.app.confirmBoardImport(off),/internet|conect/);assert.equal(offline.calls.updates.length,0);
+  const revoked=harness('coord');installBankImportGroup(revoked);const stale=revoked.app.prepareBankImport(bankImportRows());revoked.data.users.coord2.role='teacher';await assert.rejects(revoked.app.confirmBoardImport(stale),/coordena|permissão/);assert.equal(revoked.calls.updates.length,0);
+  const teacher=harness('t1');assert.throws(()=>teacher.app.openBoardImport(),/coordena/);assert.equal(teacher.calls.updates.length,0);
+});
+
+test('scheduled-bank import retries never overwrite an existing bank or save after a session change',async()=>{
+  const h=harness('coord');installBankImportGroup(h);const session=h.app.prepareBankImport(bankImportRows());
+  h.options.onRead=()=>{h.app.state.user={uid:'t1'};h.app.state.profile=clone(h.data.users.t1);};
+  await assert.rejects(h.app.confirmBoardImport(session),/sessão|coordena/);assert.equal(h.calls.updates.length,0);
+  const once=harness('coord');installBankImportGroup(once);const original=clone(once.data.grades),first=once.app.prepareBankImport(bankImportRows());await once.app.confirmBoardImport(first);
+  const again=once.app.prepareBankImport(bankImportRows());await assert.rejects(once.app.confirmBoardImport(again),/agenda|cadastros|planilha válida|prévia/i);assert.equal(once.calls.updates.length,1);assert.deepEqual(once.data.grades,original);
+});
+
+test('manual bank creation rereads conflicts and coordinator access before any reservation is written',async()=>{
+  for(const scenario of ['conflict','revoked','offline']){
+    const h=harness('coord');installBankImportGroup(h);const group=h.data.groups.g2,start=Math.ceil((h.now()+3600000)/900000)*900000,plan=[h.app.makeBoard(group,start,30,'Sala Manual',['t1','coord2'])];
+    if(scenario==='conflict')h.data.boards.hidden={groupId:'g-hidden',advisorUid:'t1',members:{t1:true,t2:true},startAt:start,durationMin:30,room:'Outra sala'};
+    if(scenario==='revoked')h.data.users.coord2.role='teacher';
+    if(scenario==='offline')h.app.state.connected=false;
+    await assert.rejects(h.app.createBoards(plan),/sobreposta|coordena|internet|conect/);assert.equal(h.calls.updates.length,0);assert.equal(h.data.groupBoards?.g2,undefined);assert.equal(!!h.app.state.boardSaving,false);
+  }
+});
+
+test('double submission cannot create two banks while the first fresh catalog read is pending',async()=>{
+  const h=harness('coord');installBankImportGroup(h);const start=Math.ceil((h.now()+3600000)/900000)*900000,board=h.app.makeBoard(h.data.groups.g2,start,30,'Sala Manual',['t1','coord2']);
+  let release;h.options.beforeRead=path=>path==='users'?new Promise(resolve=>release=resolve):undefined;
+  const first=h.app.createBoards([board]);assert.equal(h.app.state.boardSaving,true);assert.equal(typeof release,'function');
+  await assert.rejects(h.app.createBoards([board]),/Aguarde|andamento/);assert.equal(h.calls.updates.length,0);
+  release();await first;assert.equal(h.calls.updates.length,1);assert.equal(h.data.groupBoards.g2,'new-group');assert.equal(h.app.state.boardSaving,false);
+});
+
+test('ID-only bank sheet renews its preview when the referenced group display or roster changes',async()=>{
+  for(const changedField of ['name','students']){
+    const h=harness('coord');installBankImportGroup(h);const session=h.app.prepareBankImport(bankImportRows());assert.equal(session.preview.errors.length,0);
+    if(changedField==='name')h.data.groups.g2.name='Nome atualizado fora desta janela';else h.data.groups.g2.students={s3:'Carla Atualizada',s4:'Daniel'};
+    await assert.rejects(h.app.confirmBoardImport(session),/agenda|cadastros|mudaram|prévia/i);assert.equal(h.calls.updates.length,0);assert.equal(session.preview.errors.length,0);assert.equal(session.preview.boards.length,1);
+    assert.deepEqual(session.catalog.groups.g2,h.data.groups.g2,'renewed preview contains the current group that will receive the bank');
+    await h.app.confirmBoardImport(session);assert.equal(h.calls.updates.length,1);assert.equal(h.data.groupBoards.g2,'new-group');
+  }
 });
