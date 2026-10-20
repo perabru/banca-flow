@@ -9,6 +9,7 @@ JSON.parse(rules);
 html = html.replace(/(<script type="application\/json" id="firebase-rules">)[\s\S]*?(<\/script>)/, (_,a,b)=>a+rules+b);
 for (const [asset, attribute, pattern] of [
   ['assets/board-chat.js', 'src', /src="assets\/board-chat\.js(?:\?[^\"]*)?"/g],
+  ['assets/chat-notifications.js', 'src', /src="assets\/chat-notifications\.js(?:\?[^\"]*)?"/g],
   ['assets/board-chat.css', 'href', /href="assets\/board-chat\.css(?:\?[^\"]*)?"/g]
 ]) {
   const version = crypto.createHash('sha256').update(fs.readFileSync(path.join(root, asset))).digest('hex').slice(0, 12);

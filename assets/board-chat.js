@@ -14,6 +14,9 @@
   const icon = path => `<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">${path}</svg>`;
   const CHAT = icon('<path d="M21 11.5a8.4 8.4 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.4 8.4 0 0 1 3.8-.9h.5a8.5 8.5 0 0 1 8 8v.5Z"/>');
   const SEND = icon('<path d="m22 2-7 20-4-9-9-4 20-7ZM22 2 11 13"/>');
+  const BELL = icon('<path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9ZM10 21h4"/>');
+  const VOLUME = icon('<path d="m11 5-6 4H2v6h3l6 4V5ZM15 8a6 6 0 0 1 0 8M18 5a10 10 0 0 1 0 14"/>');
+  const VOLUME_OFF = icon('<path d="m11 5-6 4H2v6h3l6 4V5ZM17 9l5 6M22 9l-5 6"/>');
 
   function validateMessage(value) {
     if (typeof value !== 'string') throw new TypeError('Digite uma mensagem.');
@@ -36,6 +39,22 @@
     const at = timestamp(value);
     if (at === null) return 'Horário indisponível';
     return new Date(at).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  }
+
+  function renderAlerts(input) {
+    const alerts = input && typeof input === 'object' ? input : {};
+    const muted = alerts.muted === true, enabled = alerts.enabled === true;
+    const permission = ['granted', 'denied', 'default', 'unsupported'].includes(alerts.permission) ? alerts.permission : 'unsupported';
+    const activated = permission === 'granted' && enabled;
+    const unread = Number.isSafeInteger(alerts.unread) && alerts.unread > 0 ? alerts.unread : 0;
+    const label = permission === 'denied' ? 'Verificar permissão' : activated ? 'Notificações ativadas' : 'Ativar notificações';
+    const help = permission === 'unsupported' ? 'As notificações do sistema não estão disponíveis neste navegador.' : permission === 'denied' ? 'As notificações estão bloqueadas. Altere a permissão nas configurações deste site no navegador e verifique novamente.' : activated ? 'As notificações estão autorizadas neste navegador.' : 'A ativação depende da permissão deste navegador.';
+    const status = [muted ? 'Sons, notificações e avisos na página estão silenciados.' : '', line(alerts.status) || (!muted ? 'Avisos de novas mensagens habilitados na página.' : '')].filter(Boolean).join(' ');
+    return `<section class="bf-chat-alerts${muted ? ' is-muted' : ''}" aria-labelledby="chat-alerts-heading">
+      <div class="bf-chat-alerts-intro"><span class="bf-chat-alerts-icon">${BELL}</span><div><h3 id="chat-alerts-heading">Avisos de mensagens${unread ? `<span class="bf-chat-unread" data-chat-unread="${unread}" aria-label="${unread.toLocaleString('pt-BR')} ${unread === 1 ? 'mensagem não lida' : 'mensagens não lidas'}">${unread > 99 ? '99+' : unread}</span>` : ''}</h3><p>Avisos de novas mensagens neste dispositivo.</p></div></div>
+      <div class="bf-chat-alerts-actions"><button type="button" class="btn soft" data-chat-notify="1" aria-describedby="chat-alerts-permission" ${permission === 'unsupported' || activated ? 'disabled' : ''}>${BELL}<span>${label}</span></button><button type="button" class="btn soft" data-chat-mute="1" aria-pressed="${muted}" aria-describedby="chat-alerts-status">${muted ? VOLUME_OFF : VOLUME}<span>${muted ? 'Reativar avisos' : 'Silenciar'}</span></button></div>
+      <p id="chat-alerts-status" class="bf-chat-alerts-status" role="status" aria-live="polite" aria-atomic="true">${esc(status)}</p><p id="chat-alerts-permission" class="bf-chat-alerts-permission">${help}</p>
+    </section>`;
   }
 
   function renderChat(options = {}) {
@@ -61,6 +80,7 @@
     return `<section class="bf-chat" data-chat-panel="${esc(roomId)}" aria-labelledby="chat-heading">
       <header class="bf-chat-heading"><div class="bf-chat-heading-icon">${CHAT}</div><div><p class="bf-chat-eyebrow">CONVERSAS DA BANCA</p><h2 id="chat-heading">${esc(title)}</h2>${description ? `<p class="bf-chat-description">${esc(description)}</p>` : ''}</div><span class="bf-chat-connection${chatReady ? ' is-online' : ''}"><i aria-hidden="true"></i>${connectionLabel}</span></header>
       <div class="bf-chat-room-control"><label for="chat-room-select">Sala de conversa</label><select id="chat-room-select" ${!rooms.length ? 'disabled' : ''}>${rooms.length ? rooms.map(item => `<option value="${esc(item.id)}" ${String(item.id) === roomId ? 'selected' : ''}>${esc(item.label)}</option>`).join('') : '<option>Nenhuma sala disponível</option>'}</select></div>
+      ${renderAlerts(options.alerts)}
       ${error ? `<div class="bf-chat-error" role="alert"><p>${esc(error)}</p><button type="button" class="btn soft" data-chat-retry="1">Tentar novamente</button></div>` : ''}
       ${!connected ? '<p class="bf-chat-offline">A conversa será atualizada ao reconectar. Você pode continuar escrevendo.</p>' : ''}
       <div class="bf-chat-layout"><div class="bf-chat-conversation">

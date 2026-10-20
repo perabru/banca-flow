@@ -56,6 +56,18 @@ Os caminhos novos são `chatMessages/SALA/MENSAGEM` e `chatPresence/UID/CONEXAO`
 
 Para ativar a comunicação entre dispositivos, aplique a versão atualizada de `database.rules.json`. Os HTMLs precisam ser publicados com `assets/board-chat.js` e `assets/board-chat.css`. Publicar no GitHub não atualiza as regras do Firebase. Os testes usam somente contas fictícias e um Firebase em memória ou o emulador local.
 
+## Avisos de mensagens no celular
+
+Em **Chat → Avisos de mensagens**, toque em **Ativar notificações** e permita os avisos no navegador. A permissão só é solicitada após esse toque. **Silenciar** desativa sons, vibração e avisos na página e no sistema; **Reativar avisos** restaura os alertas. A preferência é lembrada por conta neste navegador e sincronizada entre abas do mesmo dispositivo. As mensagens continuam disponíveis para leitura.
+
+Enquanto a página estiver executando, o sistema acompanha a sala geral e as bancas às quais o professor tem acesso, inclusive em outras áreas da aplicação. Novas mensagens de outros professores mostram um aviso com atalho para a conversa e uma contagem no botão do chat. Com a página oculta, navegadores compatíveis podem mostrar uma notificação do sistema. O clique abre a sala depois de conferir o acesso da conta. Mensagens antigas carregadas ao entrar, mensagens próprias e gravações recusadas não geram avisos.
+
+No Android, use um navegador com suporte a notificações e autorize a permissão do site. No iPhone/iPad, adicione o BancaFlow à **Tela de Início** e abra pelo ícone; as notificações requerem uma versão compatível do sistema, a partir do iOS/iPadOS 16.4. Se o navegador bloquear a permissão, libere os avisos nas configurações do site ou do aparelho e use **Verificar permissão**.
+
+Os avisos dependem de a página continuar executando. O celular pode suspender a página em segundo plano. Receber novas mensagens com o navegador totalmente fechado exige um serviço Web Push/FCM no servidor, ainda não conectado nesta versão. O manifesto e o service worker permitem a instalação e a exibição local dos avisos; o worker não guarda páginas, sessões, notas ou relatórios em cache.
+
+Publique também `assets/chat-notifications.js`, `chat-sw.js`, `manifest.webmanifest` e os ícones locais. As regras de acesso do chat permanecem as mesmas.
+
 ## Todas as notas — coordenação
 
 O Alberson pode consultar **Todas as notas** pelo menu lateral, pelo atalho da visão geral ou por **Notas** na navegação inferior do celular. A consulta inclui todas as bancas, abertas ou encerradas, com notas completas ou pendentes, inclusive o histórico de grupos removidos. Há filtros independentes por curso, turma, data e situação, além da busca por grupo, aluno ou professor. **Expandir todas** mostra os detalhes das bancas selecionadas.

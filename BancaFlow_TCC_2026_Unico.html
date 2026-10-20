@@ -4,9 +4,13 @@
 <meta name="theme-color" content="#014996"><meta name="description" content="BancaFlow: organização de bancas e avaliação de TCC por professores da Univap, com coordenação de acessos, notas individuais e relatórios.">
 <meta name="color-scheme" content="light">
 <meta name="referrer" content="strict-origin-when-cross-origin">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="assets/app-icon-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="BancaFlow">
 <link rel="stylesheet" href="assets/analytics.css">
-<link rel="stylesheet" href="assets/board-chat.css?v=170fee3d979f">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-AGJnS+lGRQWcvMijU8R6xm1zpCm83fgqSBS4vZJQ+ic='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<link rel="stylesheet" href="assets/board-chat.css?v=071b517f2274">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-z30Zpu7zLBSZDUkrk0VV0w75DscI+kAcn7SMKGnaiF4='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>BancaFlow · Gestão de bancas | Univap</title><style>
 /* Mobile first. Cores institucionais Univap; recursos locais em assets/. */
@@ -618,7 +622,8 @@ button.avatar{width:44px;height:44px;padding:0}
 </section>
 <div id="app-view" class="app-shell hidden">
   <aside class="sidebar"><div class="logo"><span>TCC</span><div>BancaFlow<small>Bancas de TCC · Univap</small></div></div><p class="side-heading">SISTEMA DE AVALIAÇÃO</p><nav id="desktop-nav" aria-label="Navegação principal"></nav><div class="side-foot"><div class="avatar" id="side-avatar">P</div><div><strong id="side-name">Professor</strong><small id="side-role">Avaliador</small></div><button type="button" id="logout" class="icon-btn" title="Sair" aria-label="Sair"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h4M9 12h12m-4-4 4 4-4 4"/></svg></button></div></aside>
-  <div class="main-column"><header class="topbar"><div><p class="eyebrow" id="page-eyebrow">PAINEL</p><h1 id="page-title">Visão geral</h1></div><div class="top-right"><span class="live-dot"></span><span class="online-label">BancaFlow · Univap</span><button type="button" id="open-chat" class="icon-btn" aria-label="Abrir chat dos professores"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8 10h8M8 14h5"/></svg></button><button type="button" id="top-initials" class="avatar" aria-label="Abrir menu da conta" aria-haspopup="dialog" aria-controls="mobile-menu">P</button></div></header>
+  <div class="main-column"><header class="topbar"><div><p class="eyebrow" id="page-eyebrow">PAINEL</p><h1 id="page-title">Visão geral</h1></div><div class="top-right"><span class="live-dot"></span><span class="online-label">BancaFlow · Univap</span><button type="button" id="open-chat" class="icon-btn" aria-label="Abrir chat dos professores"><svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 11.5a8.5 8.5 0 0 1-8.5 8.5 8.4 8.4 0 0 1-3.8-.9L3 21l1.9-5.7a8.4 8.4 0 0 1-.9-3.8A8.5 8.5 0 0 1 12.5 3h.5a8.5 8.5 0 0 1 8 8v.5Z"/><path d="M8 10h8M8 14h5"/></svg><span id="chat-unread-badge" class="bf-chat-top-badge" hidden aria-hidden="true"></span></button><button type="button" id="top-initials" class="avatar" aria-label="Abrir menu da conta" aria-haspopup="dialog" aria-controls="mobile-menu">P</button></div></header>
+    <aside id="chat-notification-banner" class="bf-chat-notification-banner" hidden role="status" aria-live="polite"></aside>
     <main id="view" tabindex="-1"></main><footer class="app-identity">BancaFlow · Professores da Univap · Coordenação: Alberson <a href="privacidade.html">Sobre e privacidade</a></footer>
   </div><nav id="mobile-nav" class="mobile-nav" aria-label="Navegação mobile"></nav>
 </div>
@@ -933,7 +938,8 @@ button.avatar{width:44px;height:44px;padding:0}
 <script src="assets/analytics-pdf.js" defer></script>
 <script src="assets/coordinator-report.js" defer></script>
 <script src="assets/coordinator-report-pdf.js" defer></script>
-<script src="assets/board-chat.js?v=d1f473c3771c" defer></script>
+<script src="assets/board-chat.js?v=f599a8da8799" defer></script>
+<script src="assets/chat-notifications.js?v=1407d8562564" defer></script>
 <script src="assets/board-import.js" defer></script>
 <script type="module">
 // Configuração pública do app Firebase (não é uma chave administrativa).
@@ -1067,6 +1073,92 @@ const stats = (label,n,code)=>`<div class="stat"><div class="stat-label"><span>$
 let accessRevision=0;
 // Chat: salas e presença isoladas das avaliações e dos relatórios.
 const chatRuntime={epoch:0,room:'',messagesOff:null,presenceOff:null,connection:null,presenceStarting:false,retryTicket:null,retryAttempt:0,messageScope:'',liveMessages:{},history:{},pendingWrites:new Map(),watchTicket:null};
+const chatAlertRuntime={client:null,session:'',subs:new Map(),uiKey:'',bannerTimer:null,repaintQueued:false,badgeCount:null};
+function ensureChatNotifier(){
+ if(chatAlertRuntime.client||typeof BancaChatAlerts==='undefined')return chatAlertRuntime.client;
+ const base=typeof location!=='undefined'?new URL('./',location.href).href:'';
+ chatAlertRuntime.client=BancaChatAlerts.createNotifier({environment:globalThis,now:()=>Date.now()+state.serverOffset,
+  serviceWorkerUrl:base?new URL('chat-sw.js',base).href:'chat-sw.js',iconUrl:base?new URL('assets/app-icon-192.png',base).href:'assets/app-icon-192.png',badgeUrl:base?new URL('assets/notification-badge.png',base).href:'assets/notification-badge.png',
+  isRoomVisible:room=>!document.hidden&&state.route==='chat'&&state.chatRoom===room,
+  canAccess:room=>chatRooms().some(item=>item.id===room),onBanner:showChatMessageBanner,onChange:refreshChatAlertUi});
+ return chatAlertRuntime.client;
+}
+function getChatAlertsState(){
+ const alerts=ensureChatNotifier()?.getState()||{muted:false,enabled:false,permission:'unsupported',status:'Os avisos não carregaram. Atualize o site para tentar novamente.',unread:0,countByRoom:{}};
+ const ios=/iPad|iPhone|iPod/i.test(navigator.userAgent||'')||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ const standalone=navigator.standalone===true||(typeof matchMedia==='function'&&matchMedia('(display-mode: standalone)').matches);
+ return ios&&!standalone?{...alerts,status:'No iPhone ou iPad, adicione o BancaFlow à Tela de Início e abra pelo ícone para ativar os avisos. Os avisos na página continuam disponíveis.'}:alerts;
+}
+function dismissChatMessageBanner(){if(chatAlertRuntime.bannerTimer)clearTimeout(chatAlertRuntime.bannerTimer);chatAlertRuntime.bannerTimer=null;const banner=document.querySelector('#chat-notification-banner');if(banner){banner.hidden=true;banner.innerHTML='';}}
+function refreshChatAlertUi(){
+ const alerts=chatAlertRuntime.client?.getState()||{unread:0,muted:false},count=state.user?alerts.unread||0:0;
+ const badge=document.querySelector('#chat-unread-badge');if(badge){badge.hidden=!count;badge.textContent=count>99?'99+':String(count);}
+ const opener=document.querySelector('#open-chat');opener?.setAttribute('aria-label',count?`Abrir chat dos professores: ${count} mensagens não lidas`:'Abrir chat dos professores');
+ for(const node of document.querySelectorAll('[data-nav-chat-count]')){node.hidden=!count;node.textContent=count>99?'99+':String(count);}
+ document.title=count?`(${count}) BancaFlow · Novas mensagens`:'BancaFlow · Gestão de bancas | Univap';
+ if(chatAlertRuntime.badgeCount!==count){chatAlertRuntime.badgeCount=count;try{const result=count?navigator.setAppBadge?.(count):navigator.clearAppBadge?.();result?.catch?.(()=>{});}catch{}}
+ if(alerts.muted||!state.user)dismissChatMessageBanner();
+ const key=JSON.stringify(alerts);if(key===chatAlertRuntime.uiKey)return;chatAlertRuntime.uiKey=key;
+ if(state.user&&state.route==='chat'&&chatAlertRuntime.session===state.user.uid&&!chatAlertRuntime.repaintQueued){chatAlertRuntime.repaintQueued=true;void Promise.resolve().then(()=>{chatAlertRuntime.repaintQueued=false;if(state.user&&state.route==='chat'&&chatAlertRuntime.session===state.user.uid)render();});}
+}
+function showChatMessageBanner(item){
+ if(!state.user||document.hidden||getChatAlertsState().muted||!chatRooms().some(room=>room.id===item.room))return;
+ const banner=document.querySelector('#chat-notification-banner');if(!banner)return;
+ const room=chatRooms().find(room=>room.id===item.room);dismissChatMessageBanner();
+ banner.innerHTML=`<button type="button" class="bf-chat-notification-open" data-chat-notification-room="${esc(item.room)}"><span>Nova mensagem · ${esc(room.label)}</span><strong>${esc(item.name||'Professor')}</strong><p>${esc(String(item.text||'').slice(0,180))}</p><small>Abrir conversa</small></button><div class="bf-chat-notification-actions"><button type="button" data-chat-alert-mute="1">Silenciar</button><button type="button" data-chat-alert-dismiss="1" aria-label="Fechar aviso de mensagem">Fechar</button></div>`;
+ banner.hidden=false;chatAlertRuntime.bannerTimer=setTimeout(dismissChatMessageBanner,7000);
+}
+function syncChatAlerts(){
+ if(!state.user||!isActiveTeacher(state.profile))return;
+ const client=ensureChatNotifier();if(!client)return;
+ const uid=state.user.uid,revision=accessRevision;
+ if(chatAlertRuntime.session!==uid){chatAlertRuntime.session=uid;client.setSession(uid);}
+ const rooms=new Set(chatRooms().map(room=>room.id));
+ for(const [room,entry]of chatAlertRuntime.subs)if(!rooms.has(room)){entry.off?.();if(entry.retry)clearTimeout(entry.retry);chatAlertRuntime.subs.delete(room);client.forgetRoom(room);}
+ for(const room of rooms){
+  if(chatAlertRuntime.subs.has(room))continue;
+  const entry={off:null,retry:null,attempt:0};chatAlertRuntime.subs.set(room,entry);
+  const subscribe=()=>{
+   if(chatAlertRuntime.subs.get(room)!==entry||state.user?.uid!==uid||accessRevision!==revision||!chatRooms().some(item=>item.id===room))return;
+   entry.off?.();entry.off=()=>{};
+   entry.off=onValue(query(ref(db,`chatMessages/${room}`),orderByChild('at'),limitToLast(100)),snapshot=>{
+    if(chatAlertRuntime.subs.get(room)!==entry||state.user?.uid!==uid||accessRevision!==revision||!chatRooms().some(item=>item.id===room))return;
+    entry.attempt=0;client.receive(room,snapshot.val()||{});
+   },()=>{
+    if(chatAlertRuntime.subs.get(room)!==entry||state.user?.uid!==uid||accessRevision!==revision)return;
+    entry.retry=setTimeout(()=>{entry.retry=null;subscribe();},Math.min(30000,2000*2**Math.min(entry.attempt++,4)));
+   });
+  };subscribe();
+ }
+ if(state.route==='chat'&&!document.hidden)client.markRead(state.chatRoom);
+ refreshChatAlertUi();
+}
+function stopChatAlerts(){
+ for(const entry of chatAlertRuntime.subs.values()){entry.off?.();if(entry.retry)clearTimeout(entry.retry);}
+ chatAlertRuntime.subs.clear();chatAlertRuntime.session='';chatAlertRuntime.client?.setSession('');dismissChatMessageBanner();refreshChatAlertUi();
+}
+async function requestChatNotifications(){
+ if(!state.user||!isActiveTeacher(state.profile))throw Error('Entre com uma conta de professor para ativar os avisos.');
+ const client=ensureChatNotifier();if(!client)throw Error('Os avisos não carregaram. Atualize o site.');
+ if(chatAlertRuntime.session!==state.user.uid){chatAlertRuntime.session=state.user.uid;client.setSession(state.user.uid);}
+ await client.requestPermission();refreshChatAlertUi();if(state.user&&state.route==='chat')render();
+}
+function toggleChatMuted(){
+ if(!state.user||!isActiveTeacher(state.profile))throw Error('Entre com uma conta de professor para configurar os avisos.');
+ const client=ensureChatNotifier();if(!client)throw Error('Os avisos não carregaram. Atualize o site.');
+ if(chatAlertRuntime.session!==state.user.uid){chatAlertRuntime.session=state.user.uid;client.setSession(state.user.uid);}
+ client.toggleMute();refreshChatAlertUi();if(state.route==='chat')render();
+}
+function openNotifiedChat(room,accountId=''){
+ if(!state.user||accountId&&accountId!==state.user.uid||!chatRooms().some(item=>item.id===room))return;
+ dismissChatMessageBanner();openChatRoom(room);chatAlertRuntime.client?.markRead(room);refreshChatAlertUi();
+}
+function consumeChatNotificationLink(){
+ if(!state.user||typeof location==='undefined'||!location.hash.startsWith('#chat='))return;
+ let room;try{room=decodeURIComponent(location.hash.slice(6));}catch{return;}
+ if(!chatRooms().some(item=>item.id===room))return;
+ history.replaceState(null,'',location.pathname+location.search);openNotifiedChat(room);
+}
 function rebuildChatMessages(){
  const pending=[...chatRuntime.pendingWrites].filter(([,item])=>item.uid===state.user?.uid&&item.revision===accessRevision&&item.room===state.chatRoom);
  state.chatPendingIds=new Set(pending.map(([id])=>id));
@@ -1116,7 +1208,7 @@ function chatView(){
  if(!rooms.some(room=>room.id===state.chatRoom)){state.chatRoom='geral';state.chatMessages={};state.chatPendingIds=new Set();state.chatSendError='';state.chatSendCode='';state.chatLoading=true;state.chatError='';state.chatHasMore=false;}
  if(typeof BancaChat==='undefined')return empty('O chat não carregou','Reabra a página para carregar a conversa.');
  const room=rooms.find(item=>item.id===state.chatRoom);
- return (state.chatPresenceError?`<div class="notice"><p>${esc(state.chatPresenceError)}</p><button type="button" class="btn soft" data-chat-retry="1">Reconectar chat</button></div>`:'')+BancaChat.renderChat({rooms,roomId:room.id,title:room.id==='geral'?'Sala dos professores':`Chat da banca · ${groupOf(state.boards[room.id])?.name||room.label}`,roomDescription:room.description,messages:state.chatMessages,people:onlineChatPeople(),uid:state.user.uid,loading:state.chatLoading,connected:state.connected,error:state.chatError,sendError:state.chatSendError,canCopyAccessPolicy:isCoord()&&/permission.?denied/i.test(state.chatSendCode||''),draft:state.chatDrafts.get(room.id)||'',sending:state.chatSending,pendingIds:[...(state.chatPendingIds||[])],hasMore:state.chatHasMore,loadingOlder:state.chatLoadingOlder});
+ return (state.chatPresenceError?`<div class="notice"><p>${esc(state.chatPresenceError)}</p><button type="button" class="btn soft" data-chat-retry="1">Reconectar chat</button></div>`:'')+BancaChat.renderChat({rooms,alerts:getChatAlertsState(),roomId:room.id,title:room.id==='geral'?'Sala dos professores':`Chat da banca · ${groupOf(state.boards[room.id])?.name||room.label}`,roomDescription:room.description,messages:state.chatMessages,people:onlineChatPeople(),uid:state.user.uid,loading:state.chatLoading,connected:state.connected,error:state.chatError,sendError:state.chatSendError,canCopyAccessPolicy:isCoord()&&/permission.?denied/i.test(state.chatSendCode||''),draft:state.chatDrafts.get(room.id)||'',sending:state.chatSending,pendingIds:[...(state.chatPendingIds||[])],hasMore:state.chatHasMore,loadingOlder:state.chatLoadingOlder});
 }
 function openChatRoom(room='geral'){
  assertChatAccess(room);captureChatUi();
@@ -1276,6 +1368,7 @@ async function stopChatPresence(){
  try{await remove(connection.entry);await connection.disconnect.cancel();}catch{/* A limpeza no servidor continua registrada em caso de queda. */}
 }
 function stopChat(){
+ stopChatAlerts();
  clearChatReconnect(true);clearChatWatch();chatRuntime.pendingWrites.clear();chatRuntime.messageScope='';chatRuntime.liveMessages={};chatRuntime.history={};
  ++chatRuntime.epoch;chatRuntime.messagesOff?.();chatRuntime.messagesOff=null;chatRuntime.room='';chatRuntime.presenceOff?.();chatRuntime.presenceOff=null;
  void stopChatPresence();
@@ -1333,6 +1426,16 @@ $('#toggle-password').addEventListener('click',()=>{
 });
 $('#logout').addEventListener('click',()=>logoutAccount().catch(fail));
 $('#open-chat').addEventListener('click',()=>handle(openGeneralChat));
+$('#chat-notification-banner').addEventListener('click',e=>{
+ const button=e.target.closest('button');if(!button)return;
+ if(button.dataset.chatNotificationRoom)return handle(()=>openNotifiedChat(button.dataset.chatNotificationRoom));
+ if(button.dataset.chatAlertMute)return handle(toggleChatMuted);
+ if(button.dataset.chatAlertDismiss)dismissChatMessageBanner();
+});
+document.addEventListener?.('visibilitychange',()=>{if(!document.hidden&&state.user){syncChatAlerts();refreshChatAlertUi();}});
+window.addEventListener('focus',()=>{if(state.user){syncChatAlerts();refreshChatAlertUi();}});
+window.addEventListener('hashchange',consumeChatNotificationLink);
+navigator.serviceWorker?.addEventListener?.('message',event=>{if(event.data?.type==='bancaflow-open-chat')handle(()=>openNotifiedChat(event.data.room,event.data.accountId));});
 $('#top-initials').addEventListener('click',openMobileMenu);
 $('#mobile-menu').addEventListener('close',()=>document.body.classList.remove('menu-open'));
 $('#mobile-menu').addEventListener('click',e=>{
@@ -1394,12 +1497,12 @@ function render(){if(!state.user)return;const chatUi=captureChatUi();const notes
  const pageTitles={inicio:'Visão geral',bancas:'Bancas de avaliação',sortear:'Sorteio de bancas',entregas:'Monografia e entregas',relatorios:'Relatórios finais',professores:'Professores',grupos:'Grupos e cursos',avaliar:'Avaliação individual',minhasavaliacoes:'Minhas avaliações',notas:'Todas as notas',chat:'Chat dos professores'};
  $('#page-title').textContent=pageTitles[state.route];$('#page-eyebrow').textContent=isCoord()?'COORDENAÇÃO • TCC 2026':'CORPO DOCENTE • TCC 2026';
  const active=route=>state.route===route||(route==='bancas'&&state.route==='avaliar'&&isCoord());
- const navButton=(route,label)=>`<button type="button" class="${active(route)?'active':''}" data-route="${route}" ${active(route)?'aria-current="page"':''}><span class="nav-ico">${icon(route)}</span><span>${label}</span></button>`;
+ const navButton=(route,label)=>`<button type="button" class="${active(route)?'active':''}" data-route="${route}" ${active(route)?'aria-current="page"':''}><span class="nav-ico">${icon(route)}</span><span>${label}${route==='chat'?'<span class="bf-chat-nav-badge" data-nav-chat-count hidden aria-hidden="true"></span>':''}</span></button>`;
  $('#desktop-nav').innerHTML=routes.map(([route,,label])=>navButton(route,label)).join('');
  const primary=isCoord()?[['inicio','Início'],['bancas','Bancas'],['minhasavaliacoes','Avaliar'],['notas','Notas']]:[['inicio','Início'],['bancas','Bancas'],['avaliar','Avaliar'],['chat','Chat']];
  $('#mobile-nav').innerHTML=primary.map(([route,label])=>navButton(route,label)).join('')+(isCoord()?`<button type="button" data-open-menu="1" class="${['sortear','entregas','relatorios','grupos','professores','chat'].includes(state.route)?'active':''}" aria-label="Mais áreas e opções da conta" aria-haspopup="dialog" aria-controls="mobile-menu"><span class="nav-ico">${icon('mais')}</span><span>Mais</span></button>`:navButton('sair','Sair'));
  const views={inicio:dashboard,bancas:boardsView,sortear:lotteryView,avaliar:gradeView,entregas:deliveriesView,relatorios:reportsView,professores:teachersView,grupos:groupsView,notas:allNotesView,minhasavaliacoes:myEvaluationsView,chat:chatView};$('#view').innerHTML=views[state.route]?.()||'';restoreDrafts();if(notesFocus){const field=$('#notes-search');field?.focus({preventScroll:true});field?.setSelectionRange(notesFocus.start,notesFocus.end);}
- restoreChatUi(chatUi);syncChat();
+ restoreChatUi(chatUi);syncChat();syncChatAlerts();consumeChatNotificationLink();
 }
 function dashboard(){const boards=activeBoards();const ready=boards.filter(([id,b])=>{const g=groupOf(b);return g&&isCoord()&&situacao(b,g,boardGrades(id),state.deliveries[id]).pronta;});
  const completed=isCoord()?ready.length:boards.filter(([id,b])=>{const g=groupOf(b);return g&&studentsOf(g).every(([sid])=>mediaAvaliador(state.grades[id]?.[state.user.uid]?.[sid])!==null);}).length;
@@ -3498,6 +3601,8 @@ $('#view').addEventListener('click',e=>{
  if(el.dataset.pdfPlan)return handle(()=>exportSchedulePdf(true));
  if(el.dataset.pdfAgenda)return handle(()=>exportSchedulePdf(false));
  if(el.dataset.chatBoard)return handle(()=>openChatRoom(el.dataset.chatBoard));
+ if(el.dataset.chatNotify)return handle(requestChatNotifications);
+ if(el.dataset.chatMute)return handle(toggleChatMuted);
  if(el.dataset.chatRefresh)return handle(()=>retryChat({messages:true,presence:!!state.chatPresenceError}));
  if(el.dataset.chatLatest)return scrollChatToLatest();
  if(el.dataset.chatOlder)return handle(loadOlderChat);

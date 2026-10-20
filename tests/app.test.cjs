@@ -32,7 +32,7 @@ const fixture = () => ({
 function harness(uid = 't1') {
   let now = 1_800_000_000_000;
   const data = fixture();
-  const calls = { reads: [], sets: [], updates: [], transactions: [], confirmations: [], authCreates:[], authDeletes:[], appDeletes:[], listens:[], disconnects:[], removals:[], pushCount:0 };
+  const calls = { reads: [], sets: [], updates: [], transactions: [], confirmations: [], authCreates:[], authDeletes:[], appDeletes:[], listens:[], disconnects:[], removals:[], pushCount:0, notificationRequests:0, notifications:[] };
   const options = { confirm: true, setError: null, updateError: null, transactionError: null };
   const elements = new Map(), pendingTimeouts = new Map();
   let timeoutId = 0;
@@ -78,12 +78,22 @@ function harness(uid = 't1') {
     get(key) { return this.values[key] ?? null; }
     getAll(key) { return [].concat(this.values[key] || []); }
   }
+  const storage = new Map(), localStorage = {getItem:key=>storage.get(key)??null,setItem:(key,value)=>storage.set(key,String(value)),removeItem:key=>storage.delete(key)};
+  class NotificationAdapter {
+    static get permission(){return options.notificationPermission||'default';}
+    static async requestPermission(){calls.notificationRequests++;options.notificationPermission=options.notificationResult||'granted';return options.notificationPermission;}
+    constructor(title,config){calls.notifications.push({title,config:clone(config)});}
+    close(){}
+  }
+  const notificationRegistration = {showNotification:async(title,config)=>calls.notifications.push({title,config:clone(config)}),getNotifications:async()=>[]};
+  const navigator = {serviceWorker:{register:async()=>notificationRegistration,ready:Promise.resolve(notificationRegistration),getRegistration:async()=>notificationRegistration,addEventListener(){}}};
+  const location = {href:'https://bancaflow.example.test/',origin:'https://bancaflow.example.test',pathname:'/'};
   const context = vm.createContext({
     console, Date: Clock, Blob, File, TextEncoder, TextDecoder, Uint8Array, Uint32Array,
     FormData: FormDataAdapter, URL, atob, btoa, crypto:{randomUUID:()=> 'test-uuid'},
-    window: { scrollTo() {}, addEventListener() {} }, navigator: {},
+    window: { scrollTo() {}, addEventListener() {},localStorage,Notification:NotificationAdapter,navigator,location }, navigator, localStorage,Notification:NotificationAdapter,location,
     document: {
-      hidden: false, body: { classList: { add() {}, remove() {} } },
+      hidden: false, visibilityState:'visible',addEventListener(){}, body: { classList: { add() {}, remove() {} } },
       querySelector: element, querySelectorAll: () => [],
       createElement: () => ({ getContext: () => ({ font: '10px Arial', measureText(value) { return { width: String(value).length * (parseFloat(this.font.match(/[\d.]+/)?.[0]) || 10) * .55 }; } }) }),
       getElementById: id => id === 'roster-criptografado' ? { textContent: '{}' } : element('#' + id)
@@ -133,7 +143,7 @@ function harness(uid = 't1') {
       return { committed: true, snapshot: snapshot(read(path)) };
     }
   });
-  for(const asset of ['roster-import.js','analytics.js','analytics-pdf.js','coordinator-report.js','coordinator-report-pdf.js','board-chat.js','board-import.js'].filter(asset=>require('node:fs').existsSync(join(__dirname,'..','assets',asset))))vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
+  for(const asset of ['roster-import.js','analytics.js','analytics-pdf.js','coordinator-report.js','coordinator-report-pdf.js','board-chat.js','board-import.js','chat-notifications.js'].filter(asset=>require('node:fs').existsSync(join(__dirname,'..','assets',asset))))vm.runInContext(readFileSync(join(__dirname,'..','assets',asset),'utf8'),context,{filename:'assets/'+asset});
   vm.runInContext(source + `
     render = () => {};
     refreshTimerUi = () => {};
@@ -141,6 +151,7 @@ function harness(uid = 't1') {
     downloadBlob = (blob, filename) => globalThis.testDownloads.push({blob,filename});
     globalThis.appTest = { state, CRITERIOS, notaValida, mediaAvaliador, situacao, resultadoAluno,
       chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,
+      requestChatNotifications:typeof requestChatNotifications==='function'?requestChatNotifications:null,toggleChatMuted:typeof toggleChatMuted==='function'?toggleChatMuted:null,syncChatAlerts:typeof syncChatAlerts==='function'?syncChatAlerts:null,stopChatAlerts:typeof stopChatAlerts==='function'?stopChatAlerts:null,getChatAlertsState:typeof getChatAlertsState==='function'?getChatAlertsState:null,
       elapsedAt, formatElapsed, boardElapsed, timerRecord, controlTimer, closeBoard, reopenBoard,
       createBoardShareSnapshot, assertShareSnapshotCurrent, buildSharePdf, buildBoardShareText, whatsappTextUrl, boardShareFilename,
       assertBoardAccess, hasUnsavedDrafts, saveGrade, saveDelivery, reportHtml, refreshReportData,
@@ -1073,6 +1084,19 @@ test('chat rooms include the common room and only assigned banks, with coordinat
   assert.deepEqual(Array.from(coord.app.chatRooms(),room=>room.id),['geral','b1','b2']);
   const disabled=harness('disabled');assert.equal(disabled.app.chatRooms().length,0);
   app.state.user=null;assert.equal(app.chatRooms().length,0);assert.match(app.chatView(),/restrito/i);
+});
+
+test('chat alert helpers observe only authorized rooms outside chat and retain separate mute preferences per account',async()=>{
+  const h=harness(),{app}=h;app.state.route='inicio';app.state.boards.b2={...clone(app.state.boards.b1),members:{t2:true}};
+  app.syncChatAlerts();
+  assert.ok(h.calls.listens.includes('chatMessages/geral'));assert.ok(h.calls.listens.includes('chatMessages/b1'));assert.equal(h.calls.listens.includes('chatMessages/b2'),false);
+  assert.equal(h.calls.notificationRequests,0,'starting alert observers never prompts for permission');
+  await app.requestChatNotifications();assert.equal(h.calls.notificationRequests,1);assert.equal(app.getChatAlertsState().enabled,true);
+  app.toggleChatMuted();assert.equal(app.getChatAlertsState().muted,true);
+  app.stopChatAlerts();app.state.user={uid:'t2'};app.state.profile=clone(h.data.users.t2);app.syncChatAlerts();assert.equal(app.getChatAlertsState().muted,false);
+  app.stopChatAlerts();app.state.user={uid:'t1'};app.state.profile=clone(h.data.users.t1);app.syncChatAlerts();assert.equal(app.getChatAlertsState().muted,true,'the original account keeps its saved preference');
+  app.toggleChatMuted();assert.equal(app.getChatAlertsState().muted,false);
+  app.stopChatAlerts();app.state.profile.active=false;const before=h.calls.listens.length;app.syncChatAlerts();assert.equal(h.calls.listens.length,before,'inactive accounts cannot restart message alerts');
 });
 
 test('legacy registered teacher without active flag, login key or bank membership immediately uses general chat and presence',async()=>{

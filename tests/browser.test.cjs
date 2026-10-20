@@ -14,6 +14,9 @@ const html = readFileSync(join(__dirname, '..', 'index.html'), 'utf8');
 const source = html.match(/<script type="module">([\s\S]*?)<\/script>/)[1].replace(/^import\s.+?;\s*$/gm, '');
 const markup = html.replace(/<script type="module">[\s\S]*?<\/script>/, '');
 const XLSX=require('../assets/vendor/xlsx-0.20.3.full.min.js');
+const localAssetPaths=['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js','/assets/board-chat.js','/assets/board-chat.css','/assets/board-import.js','/assets/chat-notifications.js','/manifest.webmanifest','/chat-sw.js','/assets/app-icon-180.png','/assets/app-icon-192.png','/assets/app-icon-512.png','/assets/notification-badge.png'];
+const assetContentType=path=>path.endsWith('.png')?'image/png':path.endsWith('.webmanifest')?'application/manifest+json':path.endsWith('.css')?'text/css':'text/javascript';
+const readLocalAsset=path=>readFileSync(join(__dirname,'..',path.slice(1)));
 const fixture = {
   users: {
     coord: { name: 'Alberson', email:'coord@example.test', role: 'coordinator', key: 'alberson', active: true },
@@ -32,6 +35,29 @@ const fixture = {
 
 function adapter() {
   return `
+    const notificationMock=globalThis.notificationMock={permission:localStorage.getItem('bancaflow-test-notification-permission')||'default',requestResult:'granted',requests:0,shown:[],registrations:[],workerMessages:[],workerListeners:new Set(),hidden:false,
+      show(title,options={}){const record={title:String(title),options:JSON.parse(JSON.stringify(options)),closed:false};this.shown.push(record);return record;},
+      setHidden(value){this.hidden=!!value;document.dispatchEvent(new Event('visibilitychange'));},
+      dispatchWorkerMessage(data){for(const callback of this.workerListeners)callback({data});}
+    };
+    class MockNotification{
+      static get permission(){return notificationMock.permission;}
+      static async requestPermission(){notificationMock.requests++;if(notificationMock.requestError)throw Error(notificationMock.requestError);notificationMock.permission=notificationMock.requestResult;localStorage.setItem('bancaflow-test-notification-permission',notificationMock.permission);return notificationMock.permission;}
+      constructor(title,options){this.record=notificationMock.show(title,options);}
+      close(){this.record.closed=true;}
+    }
+    globalThis.Notification=MockNotification;
+    const mockWorker={postMessage(value){notificationMock.workerMessages.push(value);}},mockRegistration={scope:location.origin+'/',active:mockWorker,waiting:null,installing:null,
+      async showNotification(title,options){notificationMock.show(title,options);},
+      async getNotifications(){return notificationMock.shown.filter(record=>!record.closed).map(record=>({tag:record.options.tag,data:record.options.data,close(){record.closed=true;}}));},
+      async update(){},addEventListener(){}
+    };
+    Object.defineProperty(navigator,'serviceWorker',{configurable:true,value:{controller:mockWorker,ready:Promise.resolve(mockRegistration),
+      async register(url,options){notificationMock.registrations.push({url:String(url),options});return mockRegistration;},
+      async getRegistration(){return mockRegistration;},addEventListener(type,callback){if(type==='message')notificationMock.workerListeners.add(callback);}
+    }});
+    Object.defineProperty(document,'hidden',{configurable:true,get:()=>notificationMock.hidden});
+    Object.defineProperty(document,'visibilityState',{configurable:true,get:()=>notificationMock.hidden?'hidden':'visible'});
     const mock=globalThis.firebaseMock={data:${JSON.stringify(fixture)},uid:'t1',listeners:new Map(),writes:[],reads:[],listens:[],pushCount:0,
       clone(v){return v===undefined?undefined:JSON.parse(JSON.stringify(v));},
       path(target){return typeof target==='string'?target:(target?.path||'');},
@@ -81,16 +107,16 @@ async function openApp(t,{timezoneId='UTC'}={}) {
   page.on('console',message=>{if(message.type()==='error'&&/Content Security Policy|violates.*directive|Refused to execute/i.test(message.text()))cspErrors.push(message.text());});
   page.on('download', file => downloads.push(file.suggestedFilename()));
   let servedMarkup;
-  const assets=new Map(['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js','/assets/board-chat.js','/assets/board-chat.css','/assets/board-import.js'].map(path=>[path,readFileSync(join(__dirname,'..',path.slice(1)),'utf8')]));
+  const assets=new Map(localAssetPaths.filter(path=>existsSync(join(__dirname,'..',path.slice(1)))).map(path=>[path,readLocalAsset(path)]));
   const requestHandler=route => {
     requests.push(route.request().url());
     const url=new URL(route.request().url());
-    if(url.origin==='https://bancaflow.example.test'&&assets.has(url.pathname))return route.fulfill({contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:assets.get(url.pathname)});
+    if(url.origin==='https://bancaflow.example.test'&&assets.has(url.pathname))return route.fulfill({contentType:assetContentType(url.pathname),body:assets.get(url.pathname)});
     return route.request().url() === 'https://bancaflow.example.test/' ? route.fulfill({ contentType: 'text/html', body: servedMarkup }) : route.abort();
   };
   await page.route('**/*',requestHandler);
   const bootstrap = adapter() + source + `
-    globalThis.appTest={state,go,render,resetAppData,createBoards,makeBoard,openBoardImport,closeBoardImport,confirmBoardImport,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
+    globalThis.appTest={state,go,render,resetAppData,createBoards,makeBoard,openBoardImport,closeBoardImport,confirmBoardImport,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,retryChat,sendChatMessage,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,toggleChatMuted:typeof toggleChatMuted==='function'?toggleChatMuted:null,requestChatNotifications:typeof requestChatNotifications==='function'?requestChatNotifications:null,syncChatAlerts:typeof syncChatAlerts==='function'?syncChatAlerts:null,stopChatAlerts:typeof stopChatAlerts==='function'?stopChatAlerts:null,getChatAlertsState:typeof getChatAlertsState==='function'?getChatAlertsState:null,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
       mount(uid){clearListeners();resetAppData();mock.uid=uid;state.user={uid,email:uid+'@example.test'};state.profile=mock.clone(mock.data.users[uid]);for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])state[key]=mock.clone(mock.data[key]||{});state.connected=true;document.querySelector('#login-view').classList.add('hidden');document.querySelector('#app-view').classList.remove('hidden');if(isCoord())for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])listen(key,key);else syncTeacherSubs();syncTimerSubs();go('avaliar','b1');}
     };appTest.mount('t1');
   `;
@@ -314,13 +340,24 @@ test('unmodified production HTML loads local Excel and analytics assets and Fire
   await page.route('**/*',route=>{
     const url=new URL(route.request().url());
     if(url.href==='https://bancaflow.production.test/')return route.fulfill({contentType:'text/html',body:html});
-    if(url.origin==='https://bancaflow.production.test'&&['/assets/vendor/xlsx-0.20.3.full.min.js','/assets/roster-import.js','/assets/analytics.js','/assets/analytics-pdf.js','/assets/analytics.css','/assets/coordinator-report.js','/assets/coordinator-report-pdf.js','/assets/board-chat.js','/assets/board-chat.css','/assets/board-import.js'].includes(url.pathname))return route.fulfill({contentType:url.pathname.endsWith('.css')?'text/css':'text/javascript',body:readFileSync(join(__dirname,'..',url.pathname.slice(1)),'utf8')});
+    if(url.origin==='https://bancaflow.production.test'&&localAssetPaths.includes(url.pathname))return route.fulfill({contentType:assetContentType(url.pathname),body:readLocalAsset(url.pathname)});
     if(url.origin==='https://bancaflow-csp-fixture.firebaseio.com'&&url.pathname==='/.lp')return route.fulfill({contentType:'text/javascript',body:'parent.__fixtureLongPollLoaded=true;'});
     const name=url.pathname.split('/').at(-1);if(url.origin==='https://www.gstatic.com'&&modules[name])return route.fulfill({contentType:'text/javascript',headers:{'access-control-allow-origin':'*'},body:modules[name]});
     return route.abort();
   });
   await page.goto('https://bancaflow.production.test/');
-  await page.waitForFunction(()=>globalThis.XLSX?.version==='0.20.3'&&!!globalThis.BancaFlowImport&&!!globalThis.BancaAnalytics&&!!globalThis.BancaAnalyticsPdf&&!!globalThis.BancaCoordinatorReport&&!!globalThis.BancaCoordinatorPdf&&!!globalThis.BancaChat&&!!globalThis.BancaBoardImport);
+  await page.waitForFunction(()=>globalThis.XLSX?.version==='0.20.3'&&!!globalThis.BancaFlowImport&&!!globalThis.BancaAnalytics&&!!globalThis.BancaAnalyticsPdf&&!!globalThis.BancaCoordinatorReport&&!!globalThis.BancaCoordinatorPdf&&!!globalThis.BancaChat&&!!globalThis.BancaBoardImport&&!!globalThis.BancaChatAlerts);
+  const pwa=await page.evaluate(async()=>{
+    const manifestResponse=await fetch(document.querySelector('link[rel="manifest"]').href),manifest=await manifestResponse.json();
+    const paths=['assets/app-icon-180.png','assets/app-icon-192.png','assets/app-icon-512.png','assets/notification-badge.png'];
+    const icons=await Promise.all(paths.map(async path=>{const response=await fetch(path),bytes=new Uint8Array(await response.arrayBuffer()),image=new Image();image.src=path;await image.decode();return{path,status:response.status,type:response.headers.get('content-type'),signature:[...bytes.slice(0,8)],width:image.naturalWidth,height:image.naturalHeight};}));
+    const worker=await fetch('chat-sw.js');return{manifest,manifestType:manifestResponse.headers.get('content-type'),icons,workerStatus:worker.status,workerType:worker.headers.get('content-type'),workerSource:await worker.text()};
+  });
+  assert.match(pwa.manifestType,/application\/manifest\+json/);assert.equal(pwa.manifest.scope,'./');assert.equal(pwa.manifest.start_url,'./');assert.equal(pwa.manifest.display,'standalone');
+  for(const icon of pwa.manifest.icons){assert.ok(icon.src.startsWith('assets/'));assert.equal(new URL(icon.src,'https://bancaflow.production.test/manifest.webmanifest').origin,'https://bancaflow.production.test');}
+  for(const icon of pwa.icons){assert.equal(icon.status,200);assert.match(icon.type,/image\/png/);assert.deepEqual(icon.signature,[137,80,78,71,13,10,26,10]);assert.ok(icon.width>0&&icon.height>0);}
+  for(const size of [180,192,512]){const icon=pwa.icons.find(item=>item.path===`assets/app-icon-${size}.png`);assert.equal(icon.width,size);assert.equal(icon.height,size);}
+  assert.equal(pwa.workerStatus,200);assert.match(pwa.workerType,/javascript/);assert.match(pwa.workerSource,/notificationclick/);
   await page.locator('#email').fill('fixture@example.test');await page.locator('#password').fill('password123');await page.locator('#toggle-password').click();
   assert.equal(await page.locator('#password').getAttribute('type'),'text');
   await page.locator('#login-button').click();await page.waitForFunction(()=>document.querySelector('#login-status').textContent.includes('E-mail ou senha incorretos'));
@@ -741,6 +778,58 @@ test('chat distinguishes pending server delivery, rejected optimistic sends and 
   await page.locator('#chat-message-list').evaluate(el=>{el.style.removeProperty('height');el.style.removeProperty('min-height');});
   for(const width of [320,390,1440]){await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:join(qa,`chat-delivery-confirmed-${width}.png`),fullPage:true});}
   assert.equal(await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries,boards:firebaseMock.data.boards,timers:firebaseMock.data.timers})),before);assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('mobile chat alerts require a permission gesture and mute persists by account without blocking messages', {skip}, async t=>{
+  const{page,errors,cspErrors,createPeer,reload}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-chat-qa';mkdirSync(qa,{recursive:true});
+  assert.equal(await page.evaluate(()=>notificationMock.requests),0,'opening the app never requests notification permission');
+  const peer=await createPeer('t2');await peer.locator('#open-chat').click();
+  await peer.locator('#chat-message').fill('Há uma nova mensagem na sala geral.');await peer.locator('#chat-message').press('Enter');
+  await page.locator('[data-chat-notification-room="geral"]').waitFor();
+  assert.equal(await page.evaluate(()=>notificationMock.shown.length),0,'foreground messages use an in-page alert before permission is granted');
+  assert.equal(await page.evaluate(()=>notificationMock.requests),0);
+  assert.ok(await page.evaluate(()=>appTest.getChatAlertsState().unread)>0);
+  await page.locator('[data-chat-notification-room="geral"]').click();await page.waitForFunction(()=>appTest.state.route==='chat'&&appTest.state.chatRoom==='geral');
+  assert.equal(await page.locator('[data-chat-message]').count(),1);assert.equal(await page.evaluate(()=>appTest.getChatAlertsState().unread),0);
+  await page.locator('[data-chat-notify]').click();await page.waitForFunction(()=>notificationMock.requests===1&&appTest.getChatAlertsState().enabled);
+  assert.equal(await page.evaluate(()=>notificationMock.permission),'granted');
+  await page.evaluate(()=>{appTest.go('inicio');notificationMock.setHidden(true);});
+  await peer.locator('#chat-message').fill('Aviso com o aplicativo em segundo plano.');await peer.locator('#chat-message').press('Enter');
+  await page.waitForFunction(()=>notificationMock.shown.length===1);
+  assert.ok(await page.evaluate(()=>notificationMock.registrations.length)>0,'mobile notifications use a registered service worker');
+  await page.evaluate(()=>{notificationMock.setHidden(false);notificationMock.dispatchWorkerMessage({type:'bancaflow-open-chat',room:'geral',accountId:'t2'});});
+  assert.equal(await page.evaluate(()=>appTest.state.route),'inicio','a notification from another signed-in account cannot change the current conversation');
+  await page.evaluate(()=>notificationMock.dispatchWorkerMessage({type:'bancaflow-open-chat',...notificationMock.shown[0].options.data}));await page.waitForFunction(()=>appTest.state.route==='chat'&&appTest.state.chatRoom==='geral');
+  await page.locator('[data-chat-mute]').click();assert.equal(await page.locator('[data-chat-mute]').getAttribute('aria-pressed'),'true');
+  await page.evaluate(()=>{appTest.go('inicio');notificationMock.setHidden(true);});
+  await peer.locator('#chat-message').fill('Mensagem recebida com avisos silenciados.');await peer.locator('#chat-message').press('Enter');
+  await page.waitForFunction(()=>Object.values(firebaseMock.data.chatMessages?.geral||{}).some(message=>message.text==='Mensagem recebida com avisos silenciados.'));
+  assert.equal(await page.evaluate(()=>notificationMock.shown.length),1,'mute suppresses system alerts while messages continue to arrive');
+  await page.evaluate(()=>notificationMock.setHidden(false));
+  await peer.locator('#chat-message').fill('A página recebe sem abrir um aviso enquanto silenciada.');await peer.locator('#chat-message').press('Enter');
+  await page.waitForFunction(()=>Object.values(firebaseMock.data.chatMessages?.geral||{}).some(message=>message.text==='A página recebe sem abrir um aviso enquanto silenciada.'));
+  assert.equal(await page.locator('[data-chat-notification-room]').count(),0,'mute also suppresses foreground banners');
+  await page.evaluate(()=>{notificationMock.setHidden(false);appTest.openGeneralChat();});
+  assert.equal(await page.locator('[data-chat-message]').count(),4);
+  for(const width of [320,390,1440]){await page.setViewportSize({width,height:920});assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);await page.screenshot({path:join(qa,`chat-alerts-muted-${width}.png`),fullPage:true});}
+  await reload();await page.locator('#open-chat').click();assert.equal(await page.locator('[data-chat-mute]').getAttribute('aria-pressed'),'true','mute survives reloading the same account on this device');
+  await page.evaluate(()=>{appTest.mount('t2');appTest.openGeneralChat();});assert.equal(await page.locator('[data-chat-mute]').getAttribute('aria-pressed'),'false','another account keeps its own preference');
+  await page.evaluate(()=>{appTest.mount('t1');appTest.openGeneralChat();});assert.equal(await page.locator('[data-chat-mute]').getAttribute('aria-pressed'),'true');
+  await page.locator('[data-chat-mute]').click();assert.equal(await page.locator('[data-chat-mute]').getAttribute('aria-pressed'),'false');assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('denied mobile notification permission leaves in-page chat alerts and message delivery available', {skip}, async t=>{
+  const{page,errors,cspErrors,createPeer}=await openApp(t);await page.locator('#open-chat').click();
+  await page.evaluate(()=>{notificationMock.requestResult='denied';});await page.locator('[data-chat-notify]').click();await page.waitForFunction(()=>notificationMock.requests===1);
+  assert.equal(await page.evaluate(()=>appTest.getChatAlertsState().permission),'denied');assert.equal(await page.evaluate(()=>appTest.getChatAlertsState().enabled),false);
+  assert.match(await page.locator('#chat-alerts-permission').textContent(),/permiss|navegador|configura/i);
+  const peer=await createPeer('t2');await peer.locator('#open-chat').click();await page.evaluate(()=>appTest.go('inicio'));
+  await peer.locator('#chat-message').fill('A conversa funciona sem permissão de notificação.');await peer.locator('#chat-message').press('Enter');
+  await page.locator('[data-chat-notification-room="geral"]').waitFor();assert.equal(await page.evaluate(()=>notificationMock.shown.length),0);
+  await page.locator('[data-chat-notification-room="geral"]').click();
+  await page.locator('#chat-message').fill('Mensagem de resposta entregue.');await page.locator('#chat-message').press('Enter');
+  await peer.waitForFunction(()=>document.querySelectorAll('[data-chat-message]').length===2);
+  assert.equal(await page.evaluate(()=>notificationMock.requests),1,'chat navigation and sending never retry the permission prompt');assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
 });
 
 test('legacy and newly registered teachers without banks recover denied general chat and converse without reloading', {skip}, async t=>{

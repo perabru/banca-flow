@@ -51,6 +51,61 @@ test('empty conversation contains truthful online roster, room selector and acce
   assert.doesNotMatch(html.match(/<button type="submit"[^>]*>/)[0], /disabled/);
 });
 
+test('notification permission controls explain every browser state without changing message submission', () => {
+  const cases = [
+    { permission: 'default', enabled: false, label: 'Ativar notificações', disabled: false, help: /depende da permissão deste navegador/ },
+    { permission: 'granted', enabled: false, label: 'Ativar notificações', disabled: false, help: /depende da permissão deste navegador/ },
+    { permission: 'granted', enabled: true, label: 'Notificações ativadas', disabled: true, help: /autorizadas neste navegador/ },
+    { permission: 'denied', enabled: false, label: 'Verificar permissão', disabled: false, help: /configurações deste site no navegador/ },
+    { permission: 'unsupported', enabled: false, label: 'Ativar notificações', disabled: true, help: /não estão disponíveis neste navegador/ }
+  ];
+  for (const { permission, enabled, label, disabled, help } of cases) {
+    const html = chat.renderChat(fixture({ alerts: { permission, enabled } }));
+    const button = html.match(/<button[^>]*data-chat-notify="1"[^>]*>[\s\S]*?<\/button>/)[0];
+    assert.match(button, /type="button"/);
+    assert.ok(button.includes(`<span>${label}</span>`), `Unexpected notification action for: ${permission}`);
+    assert.equal(/\sdisabled[\s>]/.test(button), disabled, `Unexpected notification availability for: ${permission}`);
+    assert.match(html, help);
+    assert.match(html, /Avisos de novas mensagens neste dispositivo\./);
+    assert.doesNotMatch(html.match(/<button type="submit"[^>]*>/)[0], /disabled/);
+    assert.match(html, /id="chat-room-select"/);
+    assert.match(html, /id="chat-form"/);
+  }
+});
+
+test('mute is an explicit accessible toggle and leaves the conversation and roster available', () => {
+  for (const muted of [false, true]) {
+    const html = chat.renderChat(fixture({ alerts: { permission: 'granted', enabled: true, muted, status: 'Preferência salva.' } }));
+    const button = html.match(/<button[^>]*data-chat-mute="1"[^>]*>[\s\S]*?<\/button>/)[0];
+    assert.match(button, /type="button"/);
+    assert.ok(button.includes(`aria-pressed="${muted}"`));
+    assert.ok(button.includes(`<span>${muted ? 'Reativar avisos' : 'Silenciar'}</span>`));
+    assert.doesNotMatch(button, /disabled/);
+    assert.match(html, /id="chat-alerts-status"[^>]*role="status"[^>]*aria-live="polite"[^>]*aria-atomic="true"/);
+    assert.match(html, /Preferência salva\./);
+    if (muted) assert.match(html, /Sons, notificações e avisos na página estão silenciados\./);
+    assert.match(html, /data-chat-person="t1"/);
+    assert.doesNotMatch(html.match(/<textarea[^>]*>/)[0], /disabled/);
+    assert.doesNotMatch(html.match(/<button type="submit"[^>]*>/)[0], /disabled/);
+  }
+});
+
+test('notification feedback escapes user text and unread counts accept only positive safe integers', () => {
+  const attack = '</p><img src=x onerror=alert(1)>';
+  const html = chat.renderChat(fixture({ alerts: { permission: 'default', status: attack, unread: 150 } }));
+  assert.match(html, /&lt;\/p&gt;&lt;img src=x onerror=alert\(1\)&gt;/);
+  assert.doesNotMatch(html, /<img|<script/);
+  assert.match(html, /data-chat-unread="150" aria-label="150 mensagens não lidas">99\+<\/span>/);
+  const single = chat.renderChat(fixture({ alerts: { permission: 'default', unread: 1 } }));
+  assert.match(single, /aria-label="1 mensagem não lida">1<\/span>/);
+  for (const unread of [0, -1, NaN, Infinity, 1.5, '4', attack, Number.MAX_SAFE_INTEGER + 1]) {
+    assert.doesNotMatch(chat.renderChat(fixture({ alerts: { unread } })), /data-chat-unread=/);
+  }
+  const unknownPermission = chat.renderChat(fixture({ alerts: { permission: attack, enabled: true } }));
+  assert.match(unknownPermission.match(/<button[^>]*data-chat-notify="1"[^>]*>/)[0], /disabled/);
+  assert.doesNotMatch(unknownPermission, /<img|Notificações ativadas/);
+});
+
 test('message and metadata content is escaped, multiline and never creates user HTML or autolinks', () => {
   const attack = '</textarea><img src=x onerror=alert(1)>';
   const html = chat.renderChat(fixture({

@@ -67,7 +67,7 @@ Para usar um pacote Chromium de servidor, `BANCAFLOW_CHROMIUM_MODULE` pode apont
 As suítes da aplicação, importação, gráficos e navegador podem rodar juntas:
 
 ```bash
-BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/app.test.cjs tests/import.test.cjs tests/board-import.test.cjs tests/analytics.test.cjs tests/analytics-pdf.test.cjs tests/coordinator-report.test.cjs tests/coordinator-report-pdf.test.cjs tests/browser.test.cjs
+BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/app.test.cjs tests/import.test.cjs tests/board-import.test.cjs tests/analytics.test.cjs tests/analytics-pdf.test.cjs tests/coordinator-report.test.cjs tests/coordinator-report-pdf.test.cjs tests/chat-ui.test.cjs tests/chat-notifications.test.cjs tests/chat-worker.test.cjs tests/browser.test.cjs
 ```
 
 ## Chat dos professores
@@ -75,7 +75,7 @@ BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test tests/app.test.cjs tests/imp
 O chat possui testes próprios da interface e regressões nos testes da aplicação e do navegador:
 
 ```bash
-node --test tests/chat-ui.test.cjs tests/app.test.cjs
+node --test tests/chat-ui.test.cjs tests/chat-notifications.test.cjs tests/chat-worker.test.cjs tests/app.test.cjs
 BANCAFLOW_CHROMIUM=/caminho/do/chromium node --test --test-name-pattern=chat tests/browser.test.cjs
 ```
 
@@ -96,6 +96,16 @@ O fluxo de entrega usa duas abas e adia a confirmação da gravação. Ele confe
 A interface é conferida em 320, 390, 768 e 1440 px. Capturas do chat ficam em `BANCAFLOW_SCREENSHOT_DIR` ou `/tmp/bancaflow-chat-qa`. Outro cenário percorre o histórico e confere que uma falha de leitura do chat não bloqueia a avaliação da banca. A abertura do HTML sem alterações também valida os novos arquivos locais e os imports do SDK sob a política CSP.
 
 Os testes modificam apenas dados fictícios locais. Não publicam o site, não atualizam regras no projeto real e não enviam mensagens para professores reais.
+
+## Avisos de novas mensagens
+
+O navegador simula a permissão de notificações, o registro do Service Worker e a exibição do aviso do sistema. Os cenários verificam que abrir o aplicativo, navegar e enviar mensagens não solicitam permissão automaticamente: a solicitação ocorre pelo botão de ativação. Uma mensagem de outro professor recebida fora da conversa mostra o aviso na página e a contagem de não lidas; clicar no aviso abre a sala correta. Com a permissão concedida e a aba em segundo plano, o teste registra a notificação enviada ao Service Worker. A mensagem do Service Worker abre a conversa indicada e respeita a identidade da conta que recebeu o aviso.
+
+O botão **Silenciar** é exercitado sem bloquear o recebimento das mensagens. A preferência permanece após recarregar a página, é separada por conta neste dispositivo e pode ser desfeita pelo mesmo controle. Outro cenário recusa a permissão do navegador e confirma que os avisos na página e a conversa continuam funcionando. O teste dos helpers da aplicação confere que apenas a sala geral e as bancas autorizadas recebem assinaturas de alerta, inclusive fora da tela do chat, e que um professor desativado não pode reiniciá-las.
+
+O HTML de produção também carrega o manifesto, o script do Service Worker e as imagens locais com seus tipos de conteúdo corretos. O teste confere escopo e endereço inicial relativos, modo de exibição instalado, ícones locais, decodificação real dos PNGs e tamanhos de 180, 192 e 512 px.
+
+As verificações usam notificações simuladas e abas visíveis ou em segundo plano. Elas não enviam notificações reais a celulares nem validam recebimento com o aplicativo completamente fechado; esse fluxo depende de um serviço de push conectado ao projeto.
 
 ## Coordenadores, bancas por Excel e alerta de tempo
 
