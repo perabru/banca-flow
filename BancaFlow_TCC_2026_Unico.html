@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="assets/weighted-report.css?v=d9d716668535">
 <link rel="stylesheet" href="assets/report-center.css?v=d34fd1a391e3">
 <link rel="stylesheet" href="assets/board-chat.css?v=0a6b9c746a2e">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-t43wKcw11EpPaAVS6ysV1jcl4vg2IjevyCOwf/6awjg='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com https://southamerica-east1-avaliadortcc.cloudfunctions.net; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-kBcIJzaQYiMPIfmw0Nmo9xDdZmPh4l1IXA2qr5tuByE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com https://southamerica-east1-avaliadortcc.cloudfunctions.net; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>BancaFlow · Gestão de bancas | Univap</title><style>
 /* Mobile first. Cores institucionais Univap; recursos locais em assets/. */
@@ -207,7 +207,7 @@ button.avatar{width:44px;height:44px;padding:0}
 .grade-grid{display:grid;grid-template-columns:minmax(0,1fr);gap:16px 12px}
 .grade-grid .field label{font-size:.84rem}
 .grade-grid .field input{text-align:center;font-size:1.1rem;font-weight:700}
-.grade-foot{display:flex;flex-direction:column;align-items:stretch;gap:14px;margin-top:20px;padding-top:18px;border-top:1px solid var(--borda)}
+.grade-foot{display:flex;flex-direction:column;flex-wrap:wrap;align-items:stretch;gap:14px;margin-top:20px;padding-top:18px;border-top:1px solid var(--borda)}
 .grade-foot strong{color:var(--azul)}
 .delivery-row{flex-direction:column;align-items:stretch;gap:10px}
 .delivery-controls{flex-wrap:nowrap}
@@ -1110,7 +1110,7 @@ const ICON_PATHS={
 };
 const icon=name=>`<svg class="ui-icon" viewBox="0 0 24 24" aria-hidden="true">${ICON_PATHS[name==='minhasavaliacoes'?'avaliar':name]||ICON_PATHS.bancas}</svg>`;
 const ROSTER_PROTEGIDO = JSON.parse(document.getElementById('roster-criptografado').textContent);
-const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), connected:false, serverOffset:0, route:'inicio', academicYear:'todos', backupBusy:false, filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', analyticsBoard:'', reportCharts:true, reportOfficialOpen:false, reportAnalyticsOpen:false, notesFilters:{course:'todas',className:'todas',date:'',status:'todas',search:''}, notesSearchDraft:'', notesChartBoard:'', notesChartsOpen:false, coordinatorExportBusy:false, notesExpanded:new Set(), chatOpen:false, chatRoom:'geral', chatMessages:{}, chatPresence:{}, chatDrafts:new Map(), chatLoading:false, chatError:'', chatPresenceError:'', chatSendError:'', chatSendCode:'', chatPendingIds:new Set(), chatSending:false, chatMutation:null, chatHasMore:false, chatLoadingOlder:false, unsubs:[], teacherSubs:new Map() };
+const state = { user:null, profile:null, users:{}, groups:{}, boards:{}, groupBoards:{}, locks:{}, roomLocks:{}, grades:{}, deliveries:{}, seals:{}, timers:{}, timerErrors:{}, timerSubs:new Map(), drafts:new Map(), busyBoards:new Set(), gradeSaves:new Set(), replicatingBoards:new Set(), connected:false, serverOffset:0, route:'inicio', academicYear:'todos', backupBusy:false, filter:'todas', reportFilter:'todas', selectedBoard:'', plan:[], planMeta:null, planUnassigned:[], teacherBusy:false, courseFilter:'todas', reportCourseFilter:'todas', boardDateFilter:'', reportDateFilter:'', analyticsBoard:'', reportCharts:true, reportOfficialOpen:false, reportAnalyticsOpen:false, notesFilters:{course:'todas',className:'todas',date:'',status:'todas',search:''}, notesSearchDraft:'', notesChartBoard:'', notesChartsOpen:false, coordinatorExportBusy:false, notesExpanded:new Set(), chatOpen:false, chatRoom:'geral', chatMessages:{}, chatPresence:{}, chatDrafts:new Map(), chatLoading:false, chatError:'', chatPresenceError:'', chatSendError:'', chatSendCode:'', chatPendingIds:new Set(), chatSending:false, chatMutation:null, chatHasMore:false, chatLoadingOlder:false, unsubs:[], teacherSubs:new Map() };
 const isActiveTeacher = profile => !!profile && ['coordinator','teacher'].includes(profile.role) && profile.active !== false;
 const activeTeachers = () => Object.entries(state.users).filter(([,profile])=>isActiveTeacher(profile));
 const isCoord = () => state.profile?.role === 'coordinator' && state.profile.active !== false;
@@ -1155,7 +1155,7 @@ const heading=(title,sub,action='')=>`<div class="section-heading"><div><h3>${es
 const stats = (label,n,code)=>`<div class="stat"><div class="stat-label"><span>${esc(label)}</span><span class="stat-icon">${icon(({'01':'entregas','02':'bancas','03':'relatorios','04':'professores','05':'professores','06':'sair'})[code])}</span></div><strong>${esc(n)}</strong></div>`;
 
 let accessRevision=0;
-const APP_VERSION='2.0.0';
+const APP_VERSION='2.0.1';
 let accountReturnFocus=null,accountMarkup='';
 function accountActionSettings(){return {url:new URL('index.html',location.href).href,handleCodeInApp:false};}
 async function sendNativePasswordReset(email){
@@ -1681,7 +1681,7 @@ function resetAppData(){
  if(typeof closeBoardImport==='function')closeBoardImport(true);
  if(typeof closeTeacherEdit==='function')closeTeacherEdit(true);
  for(const key of ['users','groups','boards','groupBoards','locks','roomLocks','grades','deliveries','seals','timers','timerErrors'])state[key]={};
- state.drafts.clear();state.busyBoards.clear();if(typeof closeBoardShare==='function')closeBoardShare();$('#view').innerHTML='';
+ state.drafts.clear();state.busyBoards.clear();state.gradeSaves.clear();state.replicatingBoards.clear();if(typeof closeBoardShare==='function')closeBoardShare();$('#view').innerHTML='';
  state.plan=[];state.planMeta=null;state.planUnassigned=[];state.selectedBoard='';state.boardSaving=false;
  state.filter='todas';state.courseFilter='todas';state.reportFilter='todas';state.reportCourseFilter='todas';state.boardDateFilter='';state.reportDateFilter='';
  state.analyticsBoard='';state.reportCharts=true;state.reportOfficialOpen=false;state.reportAnalyticsOpen=false;state.coordinatorExportBusy=false;resetNotesFilters();state.notesExpanded.clear();
@@ -2023,8 +2023,8 @@ function gradeView({ownOnly=false}={}){
  const board=state.boards[id];
  if(!board)return `${empty('Nenhuma banca atribuída para avaliação',isCoord()?'Seu nome precisa constar entre os avaliadores da banca.':'A atribuição das bancas é feita pela coordenação.')}${isCoord()?'<div class="row"><button type="button" class="btn soft" data-route="bancas">Consultar bancas</button><button type="button" class="btn soft" data-route="sortear">Agendar banca</button></div>':''}`;
  const g=groupOf(board);if(!g)return empty('Cadastro do grupo indisponível');
- const sealed=!!state.seals[id],selfMember=board.members?.[state.user.uid]===true,locked=sealed||g.active===false,own=state.grades[id]?.[state.user.uid]||{};
- const ownForms=selfMember?`<section class="my-evaluation" aria-labelledby="my-grade-heading"><div class="my-grade-heading"><div><h3 id="my-grade-heading">Minha avaliação</h3><p>${esc(state.profile.name)} · Critérios de 0 a 10</p></div>${badge(sealed?'Notas bloqueadas':'Avaliador da banca',sealed?'gray':'blue')}</div>${studentsOf(g).map(([sid,name])=>`<form class="student" data-grade-form="${esc(id)}" data-student="${esc(sid)}"><h4>${esc(name)}</h4><p>${esc(g.name)} · ${esc(g.title)}</p><div class="grade-grid">${CRITERIOS.map(([key,label])=>`<div class="field"><label for="${esc(id)}-${esc(sid)}-${key}">${label}</label><input id="${esc(id)}-${esc(sid)}-${key}" name="${key}" type="number" inputmode="decimal" min="0" max="10" step="0.1" required ${locked?'disabled':''} value="${own[sid]?.[key]??''}" placeholder="0 a 10"></div>`).join('')}</div><div class="grade-foot"><span class="muted tiny">Média deste avaliador: <strong>${mediaAvaliador(own[sid])===null?'—':fmt(mediaAvaliador(own[sid]))}</strong></span>${!locked?'<button class="btn primary" type="submit">Salvar notas</button>':''}<button class="btn whatsapp" type="button" data-share-board="${esc(id)}" data-share-student="${esc(sid)}">Compartilhar avaliação deste aluno</button></div></form>`).join('')}</section>`:'';
+ const sealed=!!state.seals[id],selfMember=board.members?.[state.user.uid]===true,replicating=state.replicatingBoards.has(id),locked=sealed||g.active===false||replicating,own=state.grades[id]?.[state.user.uid]||{};
+ const ownForms=selfMember?`<section class="my-evaluation" aria-labelledby="my-grade-heading"><div class="my-grade-heading"><div><h3 id="my-grade-heading">Minha avaliação</h3><p>${esc(state.profile.name)} · Critérios de 0 a 10</p></div>${badge(replicating?'Replicando notas…':sealed?'Notas bloqueadas':'Avaliador da banca',sealed?'gray':'blue')}</div>${studentsOf(g).map(([sid,name])=>`<form class="student" data-grade-form="${esc(id)}" data-student="${esc(sid)}"><h4>${esc(name)}</h4><p>${esc(g.name)} · ${esc(g.title)}</p><div class="grade-grid">${CRITERIOS.map(([key,label])=>`<div class="field"><label for="${esc(id)}-${esc(sid)}-${key}">${label}</label><input id="${esc(id)}-${esc(sid)}-${key}" name="${key}" type="number" inputmode="decimal" min="0" max="10" step="0.1" required ${locked?'disabled':''} value="${esc((replicating?state.drafts.get(`grade/${id}/${sid}`)?.[key]:undefined)??own[sid]?.[key]??'')}" placeholder="0 a 10"></div>`).join('')}</div><div class="grade-foot"><span class="muted tiny">Média deste avaliador: <strong>${mediaAvaliador(own[sid])===null?'—':fmt(mediaAvaliador(own[sid]))}</strong></span>${!sealed&&g.active!==false?`<button class="btn primary" type="submit" ${replicating?'disabled':''}>Salvar notas</button><button class="btn soft" type="button" data-replicate-grade="${esc(id)}" data-source-student="${esc(sid)}" aria-label="Replicar notas de ${esc(name)} para os alunos desta banca" title="Aplicar estas quatro notas a todos os alunos desta banca, na sua avaliação" ${!state.connected||replicating||state.busyBoards.has(id)||hasPendingGradeSave(id)||studentsOf(g).length<2?'disabled':''}>${replicating?'Replicando…':'Replicar Nota'}</button>`:''}<button class="btn whatsapp" type="button" data-share-board="${esc(id)}" data-share-student="${esc(sid)}">Compartilhar avaliação deste aluno</button></div></form>`).join('')}</section>`:'';
  const context=!selfMember?'<div class="notice">Esta banca não está atribuída à sua conta como avaliador. A consulta das notas continua disponível.</div>':g.active===false?'<div class="notice">Grupo removido. Restaure o grupo antes de retomar a avaliação.</div>':sealed?'<div class="notice good">Banca encerrada. As notas estão bloqueadas para edição. Reabra a banca para corrigir sua avaliação.</div>':'<div class="notice">As notas abaixo correspondem à sua avaliação individual. Salve os quatro critérios de cada aluno.</div>';
  return `<div class="row space">${heading(g.name,g.title)}<select class="filter" id="board-switch" aria-label="Selecionar banca para avaliação">${opts(choices.map(([bid,b])=>[bid,`${groupOf(b)?.name||bid} · ${dateStr(b.startAt)}`]),id)}</select></div>
  <div class="card"><div class="row space"><div class="board-details"><div><b>Orientador:</b> ${esc(board.advisorName)} · ${board.members?.[board.advisorUid]?"participa da banca":"não participa da banca"}</div><div><b>Horário:</b> ${dateStr(board.startAt)} · ${esc(board.room)} · ${board.durationMin} min</div><div><b>Banca:</b> ${Object.keys(board.members||{}).map(uid=>esc(board.memberNames?.[uid]||who(uid))).join(', ')}</div></div>${badge(sealed?'Avaliação encerrada':'Em avaliação',sealed?'green':'orange')}</div><div class="board-actions">${boardActions(id)}<button type="button" class="btn whatsapp" data-share-board="${esc(id)}">${isCoord()?'Compartilhar resultado':'Compartilhar minhas avaliações'}</button></div></div>${timerHtml(id)}
@@ -3129,7 +3129,57 @@ function makeLottery(data){
  const config={className,courseName,perDay,maxDays,size,rooms,durationMin,prefix,skipWeekends,dateRaw,startRaw,endRaw};
  return {plan:best.plan,unassigned,config};
 }
-async function saveGrade(form){const uid=state.user?.uid,revision=accessRevision;const bid=form.dataset.gradeForm,sid=form.dataset.student;const board=state.boards[bid];if(!uid||!isActiveTeacher(state.profile)||board?.members?.[uid]!==true||state.seals[bid]||groupOf(board)?.active===false)throw Error('Banca não disponível para avaliação.');const entries=new FormData(form);if(CRITERIOS.some(([key])=>!String(entries.get(key)??'').trim()))throw Error('Preencha todos os critérios.');const scores=Object.fromEntries(CRITERIOS.map(([key])=>[key,Number(String(entries.get(key)).replace(',','.'))]));if(!CRITERIOS.every(([k])=>notaValida(scores[k])))throw Error('Informe quatro notas entre 0 e 10.');await set(ref(db,`grades/${bid}/${uid}/${sid}`),scores);assertCurrentSession(uid,revision);clearSavedDraft(form,scores);notice(`Notas de ${state.groups[board.groupId].students[sid]} salvas.`);}
+function gradeFormScores(form){
+ const entries=new FormData(form);
+ if(CRITERIOS.some(([key])=>!String(entries.get(key)??'').trim()))throw Error('Preencha todos os critérios.');
+ const scores=Object.fromEntries(CRITERIOS.map(([key])=>[key,Number(String(entries.get(key)).replace(',','.'))]));
+ if(!CRITERIOS.every(([key])=>notaValida(scores[key])))throw Error('Informe quatro notas entre 0 e 10.');
+ return scores;
+}
+function hasPendingGradeSave(bid,uid=state.user?.uid){return [...state.gradeSaves].some(key=>key.startsWith(`${bid}/${uid}/`));}
+function refreshGradeReplicationButtons(bid){
+ const board=state.boards[bid],group=groupOf(board);
+ for(const button of document.querySelectorAll('[data-replicate-grade]'))if(button.dataset.replicateGrade===bid)button.disabled=!state.connected||!isActiveTeacher(state.profile)||board?.members?.[state.user?.uid]!==true||!!state.seals[bid]||!group||group.active===false||studentsOf(group).length<2||state.busyBoards.has(bid)||hasPendingGradeSave(bid);
+}
+async function saveGrade(form){
+ const uid=state.user?.uid,revision=accessRevision,bid=form.dataset.gradeForm,sid=form.dataset.student,board=state.boards[bid],group=groupOf(board);
+ if(!uid||!isActiveTeacher(state.profile)||board?.members?.[uid]!==true||state.seals[bid]||!group||group.active===false||!Object.hasOwn(group.students||{},sid))throw Error('Banca não disponível para avaliação.');
+ if(state.busyBoards.has(bid))throw Error('Aguarde a alteração em andamento nesta banca.');
+ const scores=gradeFormScores(form),key=`${bid}/${uid}/${sid}`;
+ if(state.gradeSaves.has(key))return;
+ state.gradeSaves.add(key);refreshGradeReplicationButtons(bid);
+ try{await set(ref(db,`grades/${bid}/${uid}/${sid}`),scores);assertCurrentSession(uid,revision);clearSavedDraft(form,scores);notice(`Notas de ${group.students[sid]} salvas.`);}
+ finally{if(state.user?.uid===uid&&accessRevision===revision){state.gradeSaves.delete(key);refreshGradeReplicationButtons(bid);}}
+}
+async function replicateGrade(form){
+ const uid=state.user?.uid,revision=accessRevision,bid=form?.dataset?.gradeForm,sid=form?.dataset?.student,board=state.boards[bid],group=groupOf(board);
+ if(!uid||!isActiveTeacher(state.profile)||board?.members?.[uid]!==true||state.seals[bid]||!group||group.active===false||!Object.hasOwn(group.students||{},sid))throw Error('Banca não disponível para avaliação.');
+ if(state.busyBoards.has(bid)||state.replicatingBoards.has(bid))return;
+ if(!state.connected)throw Error('Conecte-se à internet para replicar as notas.');
+ if(hasPendingGradeSave(bid,uid))throw Error('Aguarde o salvamento das notas antes de replicar.');
+ const students=studentsOf(group),scores=gradeFormScores(form);
+ if(students.length<2)throw Error('A replicação exige uma banca com mais de um aluno.');
+ const details=CRITERIOS.map(([key,label])=>`${label}: ${fmt(scores[key])}`).join('\n');
+ if(!confirm(`Replicar as notas de ${group.students[sid]} para os ${students.length} alunos de ${group.name}?\n\n${details}\n\nAs quatro notas da sua avaliação serão substituídas para todos os alunos desta banca, incluindo campos em edição. As demais avaliações e a monografia serão preservadas.`))return;
+ captureDrafts();state.drafts.set(`grade/${bid}/${sid}`,Object.fromEntries(CRITERIOS.map(([key])=>[key,String(new FormData(form).get(key)??'')])));
+ const draftSnapshot=new Map(students.map(([student])=>{const key=`grade/${bid}/${student}`,draft=state.drafts.get(key);return [key,draft?JSON.stringify(draft):null];}));
+ const roster=JSON.stringify(students.slice().sort(([a],[b])=>a.localeCompare(b))),groupId=board.groupId;
+ state.replicatingBoards.add(bid);state.busyBoards.add(bid);render();
+ try{
+  const snapshots=await Promise.all([get(ref(db,`users/${uid}`)),get(ref(db,`boards/${bid}`)),get(ref(db,`groups/${groupId}`)),get(ref(db,`seals/${bid}`))]);
+  assertCurrentSession(uid,revision);
+  const [profile,currentBoard,currentGroup,seal]=snapshots.map(snapshot=>snapshot.val());
+  if(!isActiveTeacher(profile)||currentBoard?.members?.[uid]!==true||currentBoard.groupId!==groupId||!currentGroup||currentGroup.active===false||seal||state.seals[bid]||state.boards[bid]?.members?.[uid]!==true||groupOf(state.boards[bid])?.active===false)throw Error('A banca ou seu acesso foi alterado. Atualize a avaliação antes de replicar.');
+  if(JSON.stringify(studentsOf(currentGroup).sort(([a],[b])=>a.localeCompare(b)))!==roster)throw Error('Os alunos desta banca foram alterados. Confira a avaliação antes de replicar.');
+  if(!state.connected)throw Error('Conecte-se à internet para replicar as notas.');
+  const changes=Object.fromEntries(students.map(([student])=>[student,{...scores}]));
+  await update(ref(db,`grades/${bid}/${uid}`),changes);assertCurrentSession(uid,revision);
+  // As notas exibidas acompanham o listener do Firebase, inclusive alterações
+  // posteriores feitas pelo mesmo avaliador em outro dispositivo.
+  for(const [key,before]of draftSnapshot){const current=state.drafts.get(key);if((current?JSON.stringify(current):null)===before)state.drafts.delete(key);}
+  notice(`Notas replicadas para os ${students.length} alunos de ${currentGroup.name}.`);
+ }finally{if(state.user?.uid===uid&&accessRevision===revision){state.replicatingBoards.delete(bid);state.busyBoards.delete(bid);render();}}
+}
 async function saveDelivery(form){
  if(!state.user||!isCoord())throw Error('Acesso restrito à coordenação.');
  const uid=state.user.uid,revision=accessRevision,bid=form.dataset.deliveryForm,sid=form.dataset.student,board=state.boards[bid],group=groupOf(board);
@@ -4121,6 +4171,7 @@ $('#view').addEventListener('click',e=>{
  if(notesBoard&&isCoord()){if(summary.parentElement.open)state.notesExpanded.delete(notesBoard);else state.notesExpanded.add(notesBoard);return;}
  const el=e.target.closest('button');if(!el||el.disabled)return;
  if(el.dataset.academicBackup)return handle(exportAcademicBackup);
+ if(el.dataset.replicateGrade)return handle(()=>replicateGrade(el.closest('form[data-grade-form]')));
  if(el.dataset.generalChat||el.dataset.route==='chat')return handle(openGeneralChat);
  if(el.dataset.route)return go(el.dataset.route);
  if(el.dataset.coordinatorExport)return handle(()=>exportCoordinatorReport(el.dataset.coordinatorExport));

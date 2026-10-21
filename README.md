@@ -55,6 +55,8 @@ Somente professores ativos que participam da banca podem controlar essa banca. O
 
 O encerramento pode ocorrer antes de todos os lançamentos. O relatório e o resultado oficial só ficam disponíveis com a banca encerrada e todas as notas completas, incluindo as entregas. Campos em edição devem ser salvos antes do encerramento. Rascunhos são preservados durante atualizações da tela e salvamentos pendentes; a troca de conta limpa os campos e qualquer prévia de compartilhamento da sessão anterior.
 
+Em **Minha avaliação**, preencha os quatro critérios de um aluno e clique em **Replicar Nota** para aplicar essas mesmas notas a todos os alunos da mesma banca, na sua avaliação. O botão usa os valores que estão nos campos, inclusive antes de clicar em Salvar notas, e pede confirmação para substituir lançamentos e rascunhos dos demais alunos. A gravação é feita de uma só vez, com a banca aberta e conexão ativa; as notas dos outros avaliadores e da monografia são preservadas. Se houver falha, os campos em edição permanecem disponíveis.
+
 ## Relatórios e médias
 
 A coordenação encontra as exportações em **Relatórios e médias**. No celular, abra **Mais → Relatórios e médias**.

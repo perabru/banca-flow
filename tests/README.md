@@ -160,7 +160,7 @@ As regressões conferem inferência compatível do ano de registros antigos, lim
 Com as dependências de emulador descritas abaixo, a validação nativa de Auth e banco pode ser executada junto das regras e do chat:
 
 ```bash
-npx firebase emulators:exec --project demo-banca-flow-account --only auth,database --config tests/firebase-account.json "node --test --test-force-exit tests/account-auth-sdk.test.mjs tests/rules.test.mjs tests/chat-sdk.test.mjs"
+npx firebase emulators:exec --project demo-banca-flow-account --only auth,database --config tests/firebase-account.json "node --test --test-force-exit tests/account-auth-sdk.test.mjs tests/rules.test.mjs tests/chat-sdk.test.mjs tests/grade-replication-sdk.test.mjs"
 ```
 
 O cenário usa Auth em `127.0.0.1:9099` e banco em `127.0.0.1:9000`, com identidades fictícias e regras carregadas por namespace. Os códigos são lidos pela API local do emulador. São verificadas a recuperação nativa de senha, a troca de e-mail somente após confirmação, a preservação do UID e dos registros acadêmicos e a sincronização do e-mail pelo token verificado, inclusive para Alberson. Códigos inválidos ou já utilizados são recusados. `--test-force-exit` encerra os temporizadores internos do SDK após os testes.
@@ -173,7 +173,7 @@ Requer Node.js 20 ou 22 e Java 17 ou posterior. O Firebase CLI 14.22.0 permite u
 
 ```bash
 npm install --no-save --package-lock=false firebase-tools@14.22.0 firebase@12.19.0 @firebase/rules-unit-testing@5.0.0
-npx firebase emulators:exec --project demo-banca-flow --only database --config tests/firebase.json "node --test tests/rules.test.mjs tests/chat-sdk.test.mjs"
+npx firebase emulators:exec --project demo-banca-flow --only database --config tests/firebase.json "node --test tests/rules.test.mjs tests/chat-sdk.test.mjs tests/grade-replication-sdk.test.mjs"
 ```
 
 O primeiro uso baixa o emulador. Nenhum login no Firebase é necessário. As dependências também podem ser instaladas fora do repositório com `npm install --prefix DIRETORIO ...`. Nesse caso, defina `BANCAFLOW_RULES_DEPS` com o caminho absoluto desse diretório e use o executável Firebase instalado nele. Para conectar a um emulador já iniciado, defina `FIREBASE_DATABASE_EMULATOR_HOST=127.0.0.1:9000`.

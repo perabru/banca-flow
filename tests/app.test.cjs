@@ -33,7 +33,7 @@ const fixture = () => ({
 function harness(uid = 't1') {
   let now = 1_800_000_000_000;
   const data = fixture();
-  const calls = { reads: [], sets: [], updates: [], transactions: [], confirmations: [], authCreates:[], authDeletes:[], appDeletes:[], listens:[], disconnects:[], removals:[], pushCount:0, notificationRequests:0, notifications:[], passwordResets:[], emailChanges:[], reauthentications:[], tokenRefreshes:[], authReloads:[], passwordConfirmations:[], accountRequests:[] };
+  const calls = { reads: [], sets: [], updates: [], updateBases: [], transactions: [], confirmations: [], authCreates:[], authDeletes:[], appDeletes:[], listens:[], disconnects:[], removals:[], pushCount:0, notificationRequests:0, notifications:[], passwordResets:[], emailChanges:[], reauthentications:[], tokenRefreshes:[], authReloads:[], passwordConfirmations:[], accountRequests:[] };
   const options = { confirm: true, setError: null, updateError: null, transactionError: null };
   const elements = new Map(), pendingTimeouts = new Map();
   let timeoutId = 0;
@@ -141,10 +141,11 @@ function harness(uid = 't1') {
       write(path, value);if(!options.suppressChatMessageEmits||!path.startsWith('chatMessages/'))emit(path);
     },
     update: async (base, changes) => {
-      calls.updates.push(clone(changes));
+      calls.updates.push(clone(changes));calls.updateBases.push(base);
       await options.beforeUpdate?.(base,changes);
       if (options.updateError) throw options.updateError;
       Object.entries(changes).forEach(([path, value]) => write(base?`${base}/${path}`:path, value));
+      await options.afterUpdate?.(base,changes);
     },
     runTransaction: async (path, updater, config) => {
       calls.transactions.push({ path, config });
@@ -174,7 +175,7 @@ function harness(uid = 't1') {
       weightedWorkbench:typeof weightedWorkbench!=='undefined'?weightedWorkbench:null,weightedReportsView:typeof weightedReportsView==='function'?weightedReportsView:null,buildWeightedReportPdf:typeof buildWeightedReportPdf==='function'?buildWeightedReportPdf:null,
       elapsedAt, formatElapsed, boardElapsed, timerRecord, controlTimer, closeBoard, reopenBoard,
       createBoardShareSnapshot, assertShareSnapshotCurrent, buildSharePdf, buildBoardShareText, whatsappTextUrl, boardShareFilename,
-      assertBoardAccess, hasUnsavedDrafts, saveGrade, saveDelivery, reportHtml, refreshReportData,
+      assertBoardAccess, hasUnsavedDrafts, saveGrade,replicateGrade:typeof replicateGrade==='function'?replicateGrade:null, saveDelivery, reportHtml, refreshReportData,
       printReports, exportCsv, csvCell, boardActions, timerHtml,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,
       analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,
       localDayKey,boardMatchesDay,filteredBoards,filteredReportBoards,reportGroups,setBancaDateFilter,resetAppData,boardsView,reportsView,exportSchedulePdf,
@@ -1916,4 +1917,70 @@ test('legacy compatibility never strips a future or already explicit year and ne
   await assert.rejects(existing.app.saveGroup(groupForm({...newGroupDraft(),academicYear:year,title:'Alteração'})),/regras|Firebase|PERMISSION_DENIED/i);assert.equal(existing.calls.transactions.length,1);assert.deepEqual(existing.data.groups.historical,clone(group));
   const revoked=harness('coord');revoked.app.resetGroupAdmin();revoked.options.beforeSet=()=>{revoked.data.users.coord.active=false;throw Object.assign(Error('PERMISSION_DENIED'),{code:'PERMISSION_DENIED'});};
   await assert.rejects(revoked.app.saveGroup(groupForm(newGroupDraft())),/permissão|acesso|coordenação|PERMISSION_DENIED/i);assert.equal(revoked.calls.sets.length,1);assert.equal(revoked.data.groups['new-group'],undefined);
+});
+
+function replicationForm(values,sid='s1',defaults=values){
+  const data=Object.fromEntries(Object.entries(values).map(([key,value])=>[key,String(value)]));
+  const inputs=Object.keys(data).map(name=>{const input={name,defaultValue:String(defaults[name]??''),disabled:false};Object.defineProperty(input,'value',{get:()=>data[name],set:value=>data[name]=String(value)});return input;});
+  const buttons=[{type:'submit',disabled:false},{type:'button',disabled:false,dataset:{replicateGrade:'b1',sourceStudent:sid}}];
+  return {dataset:{gradeForm:'b1',student:sid},values:data,isConnected:true,elements:{namedItem:name=>inputs.find(input=>input.name===name)},querySelector:selector=>inputs.find(input=>selector.includes(input.name))||buttons[0],querySelectorAll:selector=>selector.includes('button')?[...inputs,...buttons]:selector.includes(':not(:disabled)')?inputs.filter(input=>!input.disabled):inputs};
+}
+
+test('Replicar Nota copies the current unsaved four criteria including zero with one atomic update limited to this author and board',async()=>{
+  const h=harness('t1'),{app}=h;h.write('groups/g2',{...clone(h.data.groups.g1),id:'g2'});h.write('boards/b2',{...clone(h.data.boards.b1),groupId:'g2'});h.write('grades/b2',{t1:{s1:grade(4),s2:grade(3)}});
+  const before=clone(h.data),scores={presentation:'0',practice:'9,5',code:'8',time:'10'},form=replicationForm(scores,'s1',grade(10,8,6,8));
+  app.state.drafts.set('grade/b1/s1',clone(scores));app.state.drafts.set('grade/b1/s2',{presentation:'1',practice:'2',code:'3',time:'4'});app.state.drafts.set('delivery/b1/s1',{delivery:'7'});app.state.drafts.set('grade/b2/s1',{presentation:'5'});
+  await app.replicateGrade(form);assert.equal(h.calls.confirmations.length,1);assert.match(h.calls.confirmations[0],/Ana|alunos|grupo|banca/i);
+  assert.equal(h.calls.updates.length,1);assert.equal(h.calls.updateBases[0],'grades/b1/t1');assert.deepEqual(h.calls.updates[0],{s1:grade(0,9.5,8,10),s2:grade(0,9.5,8,10)});assert.equal(h.calls.sets.length,0);
+  assert.deepEqual(h.data.grades.b1.t1,{s1:grade(0,9.5,8,10),s2:grade(0,9.5,8,10)});assert.deepEqual(h.data.grades.b1.t2,before.grades.b1.t2);assert.deepEqual(h.data.grades.b2,before.grades.b2);assert.deepEqual(h.data.deliveries,before.deliveries);assert.deepEqual(h.data.groups,before.groups);assert.deepEqual(h.data.boards,before.boards);
+  assert.deepEqual(clone(app.state.drafts.get('delivery/b1/s1')),{delivery:'7'});assert.deepEqual(clone(app.state.drafts.get('grade/b2/s1')),{presentation:'5'});assert.equal(app.state.busyBoards.has('b1'),false);
+});
+
+test('Replicar Nota rejects invalid values and preserves pending notes when confirmation is cancelled or the server refuses the batch',async()=>{
+  const cancelled=harness('t1'),form=replicationForm(grade(8));cancelled.options.confirm=false;const before=clone(cancelled.data);await cancelled.app.replicateGrade(form);assert.equal(cancelled.calls.updates.length,0);assert.deepEqual(cancelled.data,before);
+  for(const values of [{presentation:'',practice:'8',code:'8',time:'8'},{presentation:'0',practice:'8',code:'11',time:'8'},{presentation:'NaN',practice:'8',code:'8',time:'8'}]){
+    const invalid=harness('t1');await assert.rejects(invalid.app.replicateGrade(replicationForm(values)),/Preencha|notas|critérios|0 e 10/i);assert.equal(invalid.calls.updates.length,0);assert.equal(invalid.calls.confirmations.length,0);
+  }
+  const denied=harness('t1'),draft={presentation:'9',practice:'0',code:'7',time:'6'};denied.app.state.drafts.set('grade/b1/s1',clone(draft));denied.app.state.drafts.set('grade/b1/s2',{presentation:'4'});const existing=clone(denied.data),drafts=clone([...denied.app.state.drafts]);denied.options.updateError=Object.assign(Error('PERMISSION_DENIED'),{code:'PERMISSION_DENIED'});
+  await assert.rejects(denied.app.replicateGrade(replicationForm(draft)),/PERMISSION_DENIED|permiss|replicar/i);assert.deepEqual(denied.data,existing);assert.deepEqual(clone([...denied.app.state.drafts]),drafts);assert.equal(denied.app.state.busyBoards.has('b1'),false);
+});
+
+test('Replicar Nota is available to an assigned coordinator but never permits nonmembers, disabled users or unavailable banks',async()=>{
+  const coordinator=harness('coord');coordinator.data.boards.b1.members.coord=true;coordinator.app.state.boards.b1.members.coord=true;const old=clone(coordinator.data.grades.b1);await coordinator.app.replicateGrade(replicationForm(grade(7)));
+  assert.equal(coordinator.calls.updateBases[0],'grades/b1/coord');assert.deepEqual(coordinator.data.grades.b1.coord,{s1:grade(7),s2:grade(7)});assert.deepEqual(coordinator.data.grades.b1.t1,old.t1);assert.deepEqual(coordinator.data.grades.b1.t2,old.t2);
+  for(const [uid,setup] of [['coord',h=>{}],['t1',h=>{h.app.state.profile.active=false;}],['t1',h=>{h.app.state.connected=false;}],['t1',h=>{h.app.state.seals.b1={by:'t2',at:h.now()};}],['t1',h=>{h.app.state.groups.g1.active=false;}],['t1',h=>{delete h.app.state.boards.b1.members.t1;}],['t1',h=>{h.app.state.user=null;}]]){
+    const h=harness(uid);setup(h);await assert.rejects(h.app.replicateGrade(replicationForm(grade(8))),/banca|avalia|acesso|internet|conta|sessão|disponível/i);assert.equal(h.calls.updates.length,0);
+  }
+});
+
+test('Replicar Nota rechecks fresh seals, membership, roster and actor before writing and cannot overwrite another session after a read',async()=>{
+  for(const change of [h=>h.write('seals/b1',{by:'t2',at:h.now()}),h=>{delete h.data.boards.b1.members.t1;},h=>{h.data.users.t1.active=false;},h=>{delete h.data.groups.g1.students.s2;},h=>{h.app.state.user={uid:'t2'};h.app.state.profile=clone(h.data.users.t2);}]){
+    const h=harness('t1');let changed=false;h.options.beforeRead=()=>{if(!changed){changed=true;change(h);}};
+    await assert.rejects(h.app.replicateGrade(replicationForm(grade(8))),/banca|avalia|acesso|sessão|mud|grupo|aluno|disponível/i);assert.equal(h.calls.updates.length,0);assert.deepEqual(h.data.grades,fixture().grades);
+  }
+});
+
+test('Replicar Nota prevents duplicate batch and regular saves while pending and keeps newly edited drafts made after confirmation',async()=>{
+  const h=harness('t1'),{app}=h,form=replicationForm(grade(6));let release,started;
+  const pending=new Promise(resolve=>started=resolve);h.options.beforeUpdate=()=>{started();return new Promise(resolve=>release=resolve);};
+  const task=app.replicateGrade(form);await pending;assert.equal(app.state.busyBoards.has('b1'),true);
+  await app.replicateGrade(form);assert.equal(h.calls.updates.length,1);await assert.rejects(app.saveGrade(replicationForm(grade(9))),/aguarde|andamento|salv|ocupad/i);assert.equal(h.calls.sets.length,0);
+  const late={presentation:'2',practice:'3',code:'4',time:'5'};app.state.drafts.set('grade/b1/s2',clone(late));release();await task;
+  assert.deepEqual(clone(app.state.drafts.get('grade/b1/s2')),late);assert.equal(app.state.busyBoards.has('b1'),false);
+});
+
+test('Replicar Nota waits for a pending regular save and never races or duplicates an individual grade write',async()=>{
+  const h=harness('t1'),{app}=h,form=replicationForm(grade(5));let release,started;
+  const pending=new Promise(resolve=>started=resolve);h.options.beforeSet=path=>{if(path.startsWith('grades/')){started();return new Promise(resolve=>release=resolve);}};
+  const saving=app.saveGrade(form);await pending;assert.equal(app.state.gradeSaves.has('b1/t1/s1'),true);
+  await app.saveGrade(form);assert.equal(h.calls.sets.length,1);await assert.rejects(app.replicateGrade(form),/Aguarde.*salvamento|salvando|notas.*andamento/i);assert.equal(h.calls.updates.length,0);assert.equal(h.calls.confirmations.length,0);
+  release();await saving;assert.equal(app.state.gradeSaves.size,0);h.options.beforeSet=null;
+  await app.replicateGrade(form);assert.equal(h.calls.updates.length,1);assert.deepEqual(h.data.grades.b1.t1.s2,grade(5));
+});
+
+test('Replicar Nota does not replace a newer same-author score delivered from another session before its acknowledgement finishes',async()=>{
+  const h=harness('t1'),{app}=h;
+  h.options.afterUpdate=(base)=>{if(base==='grades/b1/t1'){h.write('grades/b1/t1/s2',grade(2));app.state.grades.b1.t1=clone(h.data.grades.b1.t1);}};
+  await app.replicateGrade(replicationForm(grade(6)));
+  assert.deepEqual(h.data.grades.b1.t1.s2,grade(2));assert.deepEqual(clone(app.state.grades.b1.t1.s2),grade(2));assert.deepEqual(clone(app.state.grades.b1.t1.s1),grade(6));assert.equal(app.state.busyBoards.has('b1'),false);
 });
