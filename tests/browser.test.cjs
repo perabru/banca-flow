@@ -77,7 +77,7 @@ function adapter() {
     const onDisconnect=target=>({remove:async()=>{mock.disconnects||=[];mock.disconnects.push({kind:'remove',path:mock.path(target)});},cancel:async()=>{mock.disconnects||=[];mock.disconnects.push({kind:'cancel',path:mock.path(target)});}});
     const chatChannel=new BroadcastChannel('bancaflow-chat-test');chatChannel.onmessage=event=>{const{path,value}=event.data||{};if(typeof path==='string'&&path.startsWith('chat')){mock.write(path,value);mock.emit(path);}};
     const remove=async target=>{const path=mock.path(target);mock.write(path,null);mock.writes.push({path,value:null});mock.emit(path);if(path.startsWith('chat'))chatChannel.postMessage({path,value:null});};
-    const get=async target=>{mock.reads.push(mock.path(target));return mock.snapshot(target);},serverTimestamp=()=>({'.sv':'timestamp'});
+    const get=async target=>{const path=mock.path(target);mock.reads.push(path);await mock.beforeRead?.(path);return mock.snapshot(target);},serverTimestamp=()=>({'.sv':'timestamp'});
     const set=async(target,value)=>{
       const path=mock.path(target);
       mock.writes.push({path,value:mock.clone(value)});
@@ -122,7 +122,7 @@ async function openApp(t,{timezoneId='UTC'}={}) {
   };
   await page.route('**/*',requestHandler);
   const bootstrap = adapter() + source + `
-    globalThis.appTest={state,auth,replicateGrade:typeof replicateGrade==='function'?replicateGrade:null,saveGrade,accountSecurity:typeof accountSecurity!=='undefined'?accountSecurity:null,openAccountSecurity:typeof openAccountSecurity==='function'?openAccountSecurity:null,openRecoveryDialog:typeof openRecoveryDialog==='function'?openRecoveryDialog:null,syncVerifiedAccountEmail:typeof syncVerifiedAccountEmail==='function'?syncVerifiedAccountEmail:null,getAccessRevision:()=>accessRevision,go,render,resetAppData,openBoardAssignment:typeof openBoardAssignment==='function'?openBoardAssignment:null,saveBoardAssignment:typeof saveBoardAssignment==='function'?saveBoardAssignment:null,closeBoardAssignment:typeof closeBoardAssignment==='function'?closeBoardAssignment:null,promoteTeacher:typeof promoteTeacher==='function'?promoteTeacher:null,prepareAdministratorRegistration:typeof prepareAdministratorRegistration==='function'?prepareAdministratorRegistration:null,createBoards,makeBoard,openBoardImport,closeBoardImport,confirmBoardImport,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,isChatVisible:typeof isChatVisible==='function'?isChatVisible:null,toggleChatWidget:typeof toggleChatWidget==='function'?toggleChatWidget:null,closeChatWidget:typeof closeChatWidget==='function'?closeChatWidget:null,retryChat,sendChatMessage,beginChatEdit:typeof beginChatEdit==='function'?beginChatEdit:null,beginChatDelete:typeof beginChatDelete==='function'?beginChatDelete:null,cancelChatMutation:typeof cancelChatMutation==='function'?cancelChatMutation:null,submitChatEdit:typeof submitChatEdit==='function'?submitChatEdit:null,confirmChatDelete:typeof confirmChatDelete==='function'?confirmChatDelete:null,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,toggleChatMuted:typeof toggleChatMuted==='function'?toggleChatMuted:null,requestChatNotifications:typeof requestChatNotifications==='function'?requestChatNotifications:null,syncChatAlerts:typeof syncChatAlerts==='function'?syncChatAlerts:null,stopChatAlerts:typeof stopChatAlerts==='function'?stopChatAlerts:null,getChatAlertsState:typeof getChatAlertsState==='function'?getChatAlertsState:null,weightedWorkbench:typeof weightedWorkbench!=='undefined'?weightedWorkbench:null,weightedReportsView:typeof weightedReportsView==='function'?weightedReportsView:null,buildWeightedReportPdf:typeof buildWeightedReportPdf==='function'?buildWeightedReportPdf:null,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
+    globalThis.appTest={state,auth,verificarAcesso,beginLoading:typeof beginLoading==='function'?beginLoading:null,resetLoading:typeof resetLoading==='function'?resetLoading:null,withLoading:typeof withLoading==='function'?withLoading:null,printReports,printCsv:typeof printCsv==='function'?printCsv:null,exportSchedulePdf,replicateGrade:typeof replicateGrade==='function'?replicateGrade:null,saveGrade,accountSecurity:typeof accountSecurity!=='undefined'?accountSecurity:null,openAccountSecurity:typeof openAccountSecurity==='function'?openAccountSecurity:null,openRecoveryDialog:typeof openRecoveryDialog==='function'?openRecoveryDialog:null,syncVerifiedAccountEmail:typeof syncVerifiedAccountEmail==='function'?syncVerifiedAccountEmail:null,getAccessRevision:()=>accessRevision,go,render,resetAppData,openBoardAssignment:typeof openBoardAssignment==='function'?openBoardAssignment:null,saveBoardAssignment:typeof saveBoardAssignment==='function'?saveBoardAssignment:null,closeBoardAssignment:typeof closeBoardAssignment==='function'?closeBoardAssignment:null,promoteTeacher:typeof promoteTeacher==='function'?promoteTeacher:null,prepareAdministratorRegistration:typeof prepareAdministratorRegistration==='function'?prepareAdministratorRegistration:null,createBoards,makeBoard,openBoardImport,closeBoardImport,confirmBoardImport,timerIsOverrun:typeof timerIsOverrun==='function'?timerIsOverrun:null,updateTimerDisplays:typeof updateTimerDisplays==='function'?updateTimerDisplays:null,chatRooms,chatView,openChatRoom,openGeneralChat:typeof openGeneralChat==='function'?openGeneralChat:null,isChatVisible:typeof isChatVisible==='function'?isChatVisible:null,toggleChatWidget:typeof toggleChatWidget==='function'?toggleChatWidget:null,closeChatWidget:typeof closeChatWidget==='function'?closeChatWidget:null,retryChat,sendChatMessage,beginChatEdit:typeof beginChatEdit==='function'?beginChatEdit:null,beginChatDelete:typeof beginChatDelete==='function'?beginChatDelete:null,cancelChatMutation:typeof cancelChatMutation==='function'?cancelChatMutation:null,submitChatEdit:typeof submitChatEdit==='function'?submitChatEdit:null,confirmChatDelete:typeof confirmChatDelete==='function'?confirmChatDelete:null,loadOlderChat,syncChat,stopChat,startChatPresence,stopChatPresence,toggleChatMuted:typeof toggleChatMuted==='function'?toggleChatMuted:null,requestChatNotifications:typeof requestChatNotifications==='function'?requestChatNotifications:null,syncChatAlerts:typeof syncChatAlerts==='function'?syncChatAlerts:null,stopChatAlerts:typeof stopChatAlerts==='function'?stopChatAlerts:null,getChatAlertsState:typeof getChatAlertsState==='function'?getChatAlertsState:null,weightedWorkbench:typeof weightedWorkbench!=='undefined'?weightedWorkbench:null,weightedReportsView:typeof weightedReportsView==='function'?weightedReportsView:null,buildWeightedReportPdf:typeof buildWeightedReportPdf==='function'?buildWeightedReportPdf:null,openBoardShare,closeBoardShare,analyticsBoards,analyticsView,printAnalytics,buildAnalyticsPdf,buildEvaluationPdf,coordinatorReportBoards,buildCoordinatorReportPdf,exportCoordinatorReport,coordinatorBoardRecord,filteredNotesBoards,boardNotesHtml,allNotesView,evaluatorBoards,myEvaluationsView,
       mount(uid){clearListeners();resetAppData();mock.uid=uid;state.user=mockUser(uid);authMock.currentUser=state.user;state.profile=mock.clone(mock.data.users[uid]);for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])state[key]=mock.clone(mock.data[key]||{});state.connected=true;document.querySelector('#login-view').classList.add('hidden');document.querySelector('#app-view').classList.remove('hidden');if(isCoord())for(const key of ['users','groups','boards','groupBoards','grades','deliveries','seals'])listen(key,key);else syncTeacherSubs();syncTimerSubs();go('avaliar','b1');}
     };appTest.mount('t1');
   `;
@@ -1317,4 +1317,65 @@ test('Replicar Nota locks grade controls during the shared write and preserves a
   assert.equal(await page.evaluate(()=>JSON.stringify(firebaseMock.data.grades)),before);assert.equal(await source.locator('input[name="presentation"]').inputValue(),'9');assert.equal(await source.locator('input[name="practice"]').inputValue(),'0');assert.equal(await target.locator('input[name="presentation"]').inputValue(),'2');assert.equal(await button.isEnabled(),true);
   await page.evaluate(()=>{firebaseMock.deferUpdates=false;firebaseMock.updateError='';});page.once('dialog',dialog=>dialog.accept());await button.click();await page.waitForFunction(()=>firebaseMock.data.grades.b1.t1.s2.presentation===9);
   assert.equal(await target.locator('input[name="practice"]').inputValue(),'0');assert.equal(await page.evaluate(()=>firebaseMock.data.grades.b1.t2.s1.presentation),6);assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('profile loader is centered, accessible and honors reduced motion on mobile and desktop, then restores access on success and failure', {skip}, async t=>{
+  const {page,errors,cspErrors}=await openApp(t),qa=process.env.BANCAFLOW_SCREENSHOT_DIR||'/tmp/bancaflow-loading-qa';mkdirSync(qa,{recursive:true});
+  const before=await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries}));
+  await page.evaluate(()=>{
+    firebaseMock.beforeRead=path=>path==='users/t1'?new Promise(resolve=>firebaseMock.releaseProfile=resolve):undefined;
+    globalThis.profileLoadingTask=appTest.verificarAcesso(appTest.auth.currentUser);
+  });
+  await page.waitForFunction(()=>typeof firebaseMock.releaseProfile==='function');
+  assert.equal(await page.locator('#app-loading').isVisible(),true);assert.match(await page.locator('#app-loading-text').textContent(),/Carregando perfil/);
+  const busy=await page.evaluate(()=>({role:document.querySelector('#app-loading').getAttribute('role'),focus:document.activeElement.id,inert:document.querySelector('#login-view').inert,aria:document.querySelector('#login-view').getAttribute('aria-busy'),color:getComputedStyle(document.querySelector('.loader'),'::before').borderTopColor,animation:getComputedStyle(document.querySelector('.loader'),'::after').animationName}));
+  assert.equal(busy.role,'status');assert.equal(busy.focus,'app-loading');assert.equal(busy.inert,true);assert.equal(busy.aria,'true');assert.equal(busy.color,'rgb(0, 123, 255)');assert.match(busy.animation,/spin/);
+  for(const width of [320,390,1440]){
+    await page.setViewportSize({width,height:900});
+    const box=await page.locator('#app-loading').boundingBox();assert.equal(box.x,0);assert.equal(box.y,0);assert.equal(box.width,width);assert.equal(box.height,900);
+    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),true);
+    await page.screenshot({path:join(qa,'loading-profile-'+width+'.png')});
+  }
+  await page.emulateMedia({reducedMotion:'reduce'});assert.equal(await page.locator('.loader').evaluate(el=>getComputedStyle(el,'::after').animationName),'none');
+  await page.evaluate(async()=>{firebaseMock.releaseProfile();await globalThis.profileLoadingTask;firebaseMock.beforeRead=null;});
+  assert.equal(await page.locator('#app-loading').isVisible(),false);assert.equal(await page.locator('#app-view').evaluate(el=>el.inert),false);assert.equal(await page.locator('#app-view').isVisible(),true);
+  await page.evaluate(async()=>{firebaseMock.beforeRead=async()=>{throw Error('network-unavailable');};await appTest.verificarAcesso(appTest.auth.currentUser);firebaseMock.beforeRead=null;});
+  assert.equal(await page.locator('#app-loading').isVisible(),false);assert.equal(await page.locator('#login-view').isVisible(),true);assert.equal(await page.locator('#login-view').evaluate(el=>el.inert),false);
+  assert.equal(await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries})),before);assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
+});
+
+test('report buttons keep the loader through fresh data and actual PDF or CSV downloads, and recover cleanly after a failed export', {skip}, async t=>{
+  const {page,errors,cspErrors,downloads}=await openApp(t);
+  await page.evaluate(()=>{appTest.mount('coord');firebaseMock.write('seals/b1',{by:'coord',at:Date.now()});firebaseMock.emit('seals/b1');appTest.go('relatorios');});
+  const before=await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries}));
+  async function downloadWhileLoading(selector,readPath){
+    await page.evaluate(path=>{firebaseMock.releaseReport=null;firebaseMock.beforeRead=current=>current===path?new Promise(resolve=>firebaseMock.releaseReport=resolve):undefined;},readPath);
+    const count=downloads.length;await page.locator(selector).click();
+    await page.waitForFunction(()=>typeof firebaseMock.releaseReport==='function');
+    assert.equal(await page.locator('#app-loading').isVisible(),true);assert.match(await page.locator('#app-loading-text').textContent(),/Gerando relatório/);
+    assert.equal(await page.locator('#app-view').evaluate(el=>el.inert),true);assert.equal(downloads.length,count);
+    const downloading=page.waitForEvent('download');await page.evaluate(()=>firebaseMock.releaseReport());const file=await downloading;
+    const body=readFileSync(await file.path(),'utf8');assert.match(body,file.suggestedFilename().endsWith('.csv')?/Ana/:/^%PDF-1\.4/);
+    await page.waitForFunction(()=>document.querySelector('#app-loading').hidden);
+    assert.equal(await page.locator('#app-view').evaluate(el=>el.inert),false);
+    await page.evaluate(()=>firebaseMock.beforeRead=null);
+  }
+  await openOfficialReports(page,true);
+  await downloadWhileLoading('[data-print-one="b1"]','grades/b1');
+  await openOfficialReports(page,true);await downloadWhileLoading('[data-print-analytics]','grades/b1');
+  await openOfficialReports(page);await downloadWhileLoading('[data-export-csv]','grades/b1');
+  for(const kind of ['pdf','csv','charts']){
+    await page.evaluate(()=>appTest.go('relatorios'));
+    await downloadWhileLoading('#report-center [data-coordinator-export="'+kind+'"]','grades');
+  }
+  for(const kind of ['pdf','csv','charts']){
+    await page.evaluate(()=>appTest.go('personalizados'));
+    await downloadWhileLoading('[data-weighted-export="'+kind+'"]','grades');
+  }
+  await page.evaluate(()=>{appTest.go('relatorios');firebaseMock.beforeRead=async()=>{throw Error('report-network-failure');};});
+  const count=downloads.length;await page.locator('#report-center [data-coordinator-export="pdf"]').click();
+  await page.waitForFunction(()=>document.querySelector('#toast').textContent.includes('report-network-failure'));
+  assert.equal(await page.locator('#app-loading').isVisible(),false);assert.equal(await page.locator('#app-view').evaluate(el=>el.inert),false);assert.equal(downloads.length,count);
+  await page.evaluate(()=>firebaseMock.beforeRead=null);
+  assert.equal(await page.evaluate(()=>JSON.stringify({grades:firebaseMock.data.grades,deliveries:firebaseMock.data.deliveries})),before);assert.deepEqual(errors,[]);assert.deepEqual(cspErrors,[]);
 });

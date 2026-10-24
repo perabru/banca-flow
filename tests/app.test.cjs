@@ -39,9 +39,9 @@ function harness(uid = 't1') {
   let timeoutId = 0;
   const element = selector => {
     if (!elements.has(selector)) elements.set(selector, {
-      textContent: '', innerHTML: '', value: '', dataset: {}, style: {},
+      textContent: '', innerHTML: '', value: '', dataset: {}, style: {}, attributes: {}, hidden: selector === '#app-loading', inert: false,
       classList: { add() {}, remove() {}, toggle() {} }, addEventListener() {},
-      setAttribute() {}, focus() {}, scrollIntoView() {}, remove() {}, querySelector(selector) { return element(selector); },querySelectorAll() { return []; },
+      setAttribute(name,value) { this.attributes[name] = String(value); }, getAttribute(name) { return this.attributes[name] ?? null; }, removeAttribute(name) { delete this.attributes[name]; }, focus() {}, scrollIntoView() {}, remove() {}, querySelector(selector) { return element(selector); },querySelectorAll() { return []; },
       showModal() { this.open = true; }, close() { this.open = false; }
     });
     return elements.get(selector);
@@ -164,8 +164,9 @@ function harness(uid = 't1') {
     render = () => {};
     refreshTimerUi = () => {};
     globalThis.testDownloads = [];
-    downloadBlob = (blob, filename) => globalThis.testDownloads.push({blob,filename});
-    globalThis.appTest = { state, auth, accountSecurity:typeof accountSecurity!=='undefined'?accountSecurity:null,
+    globalThis.testDownloadLoadingStates = [];
+    downloadBlob = (blob, filename) => {globalThis.testDownloadLoadingStates.push(document.querySelector('#app-loading').hidden===false);globalThis.testDownloads.push({blob,filename});};
+    globalThis.appTest = { state, auth, verificarAcesso, beginLoading:typeof beginLoading==='function'?beginLoading:null,resetLoading:typeof resetLoading==='function'?resetLoading:null,withLoading:typeof withLoading==='function'?withLoading:null,printCsv:typeof printCsv==='function'?printCsv:null, accountSecurity:typeof accountSecurity!=='undefined'?accountSecurity:null,
       syncVerifiedAccountEmail:typeof syncVerifiedAccountEmail==='function'?syncVerifiedAccountEmail:null,openAccountSecurity:typeof openAccountSecurity==='function'?openAccountSecurity:null,openRecoveryDialog:typeof openRecoveryDialog==='function'?openRecoveryDialog:null,closeAccountSecurity:typeof closeAccountSecurity==='function'?closeAccountSecurity:null,setAcademicYear:typeof setAcademicYear==='function'?setAcademicYear:null,exportAcademicBackup:typeof exportAcademicBackup==='function'?exportAcademicBackup:null,
       getAccessRevision:()=>accessRevision,setAccessRevision:value=>accessRevision=value,
       CRITERIOS, notaValida, mediaAvaliador, situacao, resultadoAluno,
@@ -191,7 +192,7 @@ function harness(uid = 't1') {
   const app = context.appTest;
   Object.assign(app.state, clone(data), { user: authUser, profile: clone(data.users[uid]), connected: true });
   const runTimeouts = (maxDelay=Infinity) => { for(const[id,timer]of [...pendingTimeouts])if(timer.delay<=maxDelay&&pendingTimeouts.delete(id))timer.callback(); };
-  return { app, data, calls, options, elements, context, downloads: context.testDownloads, now: () => now, advance: ms => { now += ms; }, read, write, emit, emitError, runTimeouts, pendingTimeouts };
+  return { app, data, calls, options, elements, context, downloads: context.testDownloads, downloadLoadingStates: context.testDownloadLoadingStates, now: () => now, advance: ms => { now += ms; }, read, write, emit, emitError, runTimeouts, pendingTimeouts };
 }
 
 test('individual averages require all four valid grades, including valid zeroes', () => {
@@ -706,7 +707,7 @@ test('date-filtered consolidated readiness ignores unscheduled groups only for a
 test('date-filtered agenda export includes exactly the visible boards and changes no saved data',async()=>{
   const h=harness('coord');installDateCatalog(h);const{app}=h,before=clone(h.data);
   Object.assign(app.state,{courseFilter:'ADS',filter:'2A',boardDateFilter:'2026-10-18'});
-  app.exportSchedulePdf(false);const pdf=await h.downloads[0].blob.text();
+  await app.exportSchedulePdf(false);const pdf=await h.downloads[0].blob.text();
   for(const included of ['DAY18','OTHERTEACHER18'])assert.ok(pdf.includes(included),included);
   for(const excluded of ['DAY19','ENGINEERING18','CLASS3A18','NOTSCHEDULED'])assert.ok(!pdf.includes(excluded),excluded);
   assert.deepEqual(h.data,before);assert.equal(h.calls.sets.length+h.calls.updates.length+h.calls.transactions.length,0);
@@ -1734,7 +1735,7 @@ test('additional coordinators and the administrator can issue agenda, official, 
   for(const actor of ['coord2','admin']){
     const h=harness('coord');if(actor==='admin')installAdministrator(h);else installAdditionalCoordinator(h);
     h.write('seals/b1',{by:actor,at:h.now()});h.app.state.seals.b1=clone(h.data.seals.b1);const before=academicSnapshot(h);
-    h.app.exportSchedulePdf(false);await h.app.printReports(['b1']);await h.app.printAnalytics();
+    await h.app.exportSchedulePdf(false);await h.app.printReports(['b1']);await h.app.printAnalytics();
     for(const kind of ['pdf','charts','csv'])await h.app.exportCoordinatorReport(kind);
     for(const kind of ['pdf','charts','csv'])await h.app.weightedWorkbench.exportReport(kind);
     assert.equal(h.downloads.length,9);for(const file of h.downloads.filter(file=>file.filename.endsWith('.pdf'))){const contents=await file.blob.text();assert.match(contents,/^%PDF-1\.4/);assert.match(contents,/%%EOF\s*$/);}
@@ -1983,4 +1984,72 @@ test('Replicar Nota does not replace a newer same-author score delivered from an
   h.options.afterUpdate=(base)=>{if(base==='grades/b1/t1'){h.write('grades/b1/t1/s2',grade(2));app.state.grades.b1.t1=clone(h.data.grades.b1.t1);}};
   await app.replicateGrade(replicationForm(grade(6)));
   assert.deepEqual(h.data.grades.b1.t1.s2,grade(2));assert.deepEqual(clone(app.state.grades.b1.t1.s2),grade(2));assert.deepEqual(clone(app.state.grades.b1.t1.s1),grade(6));assert.equal(app.state.busyBoards.has('b1'),false);
+});
+
+const nextLoadingTurn = () => new Promise(resolve => setImmediate(resolve));
+function assertLoading(h, visible, text) {
+  assert.equal(h.elements.get('#app-loading')?.hidden, !visible);
+  for (const id of ['#login-view','#app-view']) {
+    assert.equal(h.elements.get(id)?.inert, visible);
+    assert.equal(h.elements.get(id)?.getAttribute('aria-busy'), visible ? 'true' : null);
+  }
+  if(text)assert.match(h.elements.get('#app-loading-text').textContent,text);
+}
+
+test('profile loading keeps the busy screen visible until the authenticated profile resolves, and clears it for denied or failed access',async()=>{
+  for(const outcome of ['success','missing','network']){
+    const h=harness('t1'),before=clone(h.data);h.app.state.connected=false;
+    if(outcome==='missing')delete h.data.users.t1;
+    let release,reject;
+    h.options.beforeRead=path=>path==='users/t1'?new Promise((resolve,failure)=>{release=resolve;reject=failure;}):undefined;
+    const pending=h.app.verificarAcesso(h.app.auth.currentUser);
+    assertLoading(h,true,/Carregando perfil/);
+    await nextLoadingTurn();assert.equal(typeof release,'function');assertLoading(h,true);
+    if(outcome==='network')reject(Error('network-unavailable'));else release();
+    await pending;
+    assertLoading(h,false);
+    if(outcome==='success')assert.equal(h.app.state.user.uid,'t1');
+    else assert.equal(h.app.state.user,null);
+    assert.deepEqual(h.data.grades,before.grades);assert.deepEqual(h.data.deliveries,before.deliveries);
+    assert.equal(h.calls.updates.length,0);
+  }
+});
+
+test('an obsolete profile response and cleanup cannot hide the loader for the next account',async()=>{
+  const h=harness('t1'),releases={};h.app.state.connected=false;
+  h.options.beforeRead=path=>path.startsWith('users/')?new Promise(resolve=>releases[path]=resolve):undefined;
+  const first=h.app.verificarAcesso(h.app.auth.currentUser);await nextLoadingTurn();
+  const other={...h.app.auth.currentUser,uid:'t2',email:'two@example.test'};h.app.auth.currentUser=other;
+  const second=h.app.verificarAcesso(other);await nextLoadingTurn();assertLoading(h,true,/Carregando perfil/);
+  releases['users/t1']();await first;assertLoading(h,true);assert.equal(h.app.state.user,null);
+  releases['users/t2']();await second;assertLoading(h,false);assert.equal(h.app.state.user.uid,'t2');
+});
+
+test('official and personalized report loaders cover refresh and download and clear after a rejected read without changing notes',async()=>{
+  for(const kind of ['official','analytic','global-pdf','global-csv','global-charts','custom-pdf','custom-csv','custom-charts']){
+    const h=harness('coord'),before=clone(h.data);
+    h.write('seals/b1',{by:'coord',at:h.now()});h.app.state.seals.b1=clone(h.data.seals.b1);
+    let release;const path=kind==='official'||kind==='analytic'?'grades/b1':'grades';
+    h.options.beforeRead=current=>current===path?new Promise(resolve=>release=resolve):undefined;
+    const invoke=()=>kind==='official'?h.app.printReports(['b1']):kind==='analytic'?h.app.printAnalytics():kind.startsWith('global-')?h.app.exportCoordinatorReport(kind.slice(7)):h.app.weightedWorkbench.exportReport(kind.slice(7));
+    const pending=invoke();assertLoading(h,true,/Gerando relatório/);await nextLoadingTurn();
+    assert.equal(typeof release,'function',kind);assertLoading(h,true);assert.equal(h.downloads.length,0);
+    release();await pending;assertLoading(h,false);assert.equal(h.downloads.length,1,kind);
+    assert.deepEqual(clone(h.downloadLoadingStates),[true],kind+' remains loading through generated download');
+    assert.deepEqual(h.data.grades,before.grades);assert.deepEqual(h.data.deliveries,before.deliveries);
+    h.options.beforeRead=async()=>{throw Error('report-network-failure');};
+    await assert.rejects(invoke(),/report-network-failure/);assertLoading(h,false);
+    assert.equal(h.downloads.length,1,kind+' does not download an incomplete retry');
+    assert.deepEqual(h.data.grades,before.grades);assert.deepEqual(h.data.deliveries,before.deliveries);
+  }
+});
+
+test('agenda remains busy through generation, nested loading remains owned, and session reset never runs an old queued export',async()=>{
+  const h=harness('coord');h.write('seals/b1',{by:'coord',at:h.now()});h.app.state.seals.b1=clone(h.data.seals.b1);
+  await h.app.exportSchedulePdf(false);assertLoading(h,false);assert.deepEqual(clone(h.downloadLoadingStates),[true]);
+  const finish=h.app.beginLoading('Carregando perfil…'),nested=h.app.beginLoading('Gerando relatório…');
+  finish();finish();assertLoading(h,true,/Gerando relatório/);nested();assertLoading(h,false);
+  let ran=false;const queued=h.app.withLoading('Gerando relatório…',()=>{ran=true;});
+  h.app.setAccessRevision(h.app.getAccessRevision()+1);h.app.resetLoading();
+  await assert.rejects(queued,/sessão|acesso|conta/i);assert.equal(ran,false);assertLoading(h,false);
 });

@@ -13,7 +13,7 @@
 <link rel="stylesheet" href="assets/weighted-report.css?v=d9d716668535">
 <link rel="stylesheet" href="assets/report-center.css?v=d34fd1a391e3">
 <link rel="stylesheet" href="assets/board-chat.css?v=0a6b9c746a2e">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-kBcIJzaQYiMPIfmw0Nmo9xDdZmPh4l1IXA2qr5tuByE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com https://southamerica-east1-avaliadortcc.cloudfunctions.net; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://www.gstatic.com https://*.firebaseio.com https://*.firebasedatabase.app 'sha256-11ByqPp/V89kAj2rjRfsHZhXP5LPo3I5Prn0gkqydHE='; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://*.firebasedatabase.app wss://*.firebasedatabase.app https://*.firebaseapp.com https://southamerica-east1-avaliadortcc.cloudfunctions.net; frame-src 'self' https://*.firebaseapp.com https://*.firebaseio.com https://*.firebasedatabase.app; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'; upgrade-insecure-requests">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='6' fill='%23014996'/%3E%3Ctext x='32' y='42' font-family='Arial' font-size='27' font-weight='bold' text-anchor='middle' fill='white'%3ET%3C/text%3E%3C/svg%3E">
 <title>BancaFlow · Gestão de bancas | Univap</title><style>
 /* Mobile first. Cores institucionais Univap; recursos locais em assets/. */
@@ -595,9 +595,24 @@ button.avatar{width:44px;height:44px;padding:0}
 .banca-date-field small{font-size:.72rem;color:var(--cinza);line-height:1.5}
 .banca-date-actions{display:flex;flex-wrap:wrap;gap:8px;width:100%}
 .banca-date-actions .btn{flex:1 1 auto;justify-content:center}
+.app-loading.loader-container{position:fixed;inset:0;z-index:120;display:flex;flex-direction:column;justify-content:center;align-items:center;min-height:100vh;min-height:100dvh;padding:32px max(24px,env(safe-area-inset-right)) 32px max(24px,env(safe-area-inset-left));background:#fff;text-align:center}
+.app-loading[hidden]{display:none}
+.app-loading .loader{width:70px;height:70px;position:relative;flex-shrink:0}
+.app-loading .loader:before,.app-loading .loader:after{content:"";width:70px;height:70px;border-radius:50%;position:absolute;top:0;left:0}
+.app-loading .loader:before{border:6px solid #007bff;animation:bancaflow-loader-pulse 1s ease-in-out infinite}
+.app-loading .loader:after{border:6px solid transparent;border-top-color:#007bff;animation:bancaflow-loader-spin 2s linear infinite}
+.app-loading .loader-text{font-size:clamp(18px,4vw,24px);margin:20px 0 0;color:#007bff;font-family:Arial,sans-serif;text-align:center;text-transform:uppercase;line-height:1.5;overflow-wrap:anywhere}
+body.app-is-loading{overflow:hidden}
+@keyframes bancaflow-loader-pulse{0%,100%{transform:scale(.6);opacity:1}50%{transform:scale(1.2);opacity:0}}
+@keyframes bancaflow-loader-spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.app-loading .loader:before,.app-loading .loader:after{animation:none}.app-loading .loader:before{opacity:.25}}
 @media(min-width:640px){.banca-date-field{width:190px;flex:0 1 190px}.banca-date-actions{width:auto;align-self:center}.banca-date-actions .btn{flex:initial}}
 </style>
 </head><body>
+<div id="app-loading" class="app-loading loader-container" role="status" aria-live="polite" aria-atomic="true" tabindex="-1" hidden>
+  <div class="loader" aria-hidden="true"></div>
+  <p id="app-loading-text" class="loader-text">Carregando perfil…</p>
+</div>
 <noscript><p class="notice">Ative o JavaScript para acessar o BancaFlow. Em caso de dúvida, procure a coordenação.</p></noscript>
 <div id="toast" role="status" aria-live="polite"></div>
 <section id="login-view" class="auth-page">
@@ -1000,7 +1015,7 @@ button.avatar{width:44px;height:44px;padding:0}
 <script src="assets/weighted-model.js?v=5887802b715c" defer></script>
 <script src="assets/weighted-report-ui.js?v=5d38189b0766" defer></script>
 <script src="assets/weighted-report-pdf.js?v=90d9640d6b99" defer></script>
-<script src="assets/weighted-workbench.js?v=9735e4307f6c" defer></script>
+<script src="assets/weighted-workbench.js?v=ad9c5231b7bc" defer></script>
 <script src="assets/board-chat.js?v=4e32dcc63119" defer></script>
 <script src="assets/chat-notifications.js?v=c18cc9a27802" defer></script>
 <script src="assets/board-import.js" defer></script>
@@ -1087,6 +1102,47 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app), db = getDatabase(app);
 auth.languageCode='pt-BR';
 const $ = selector => document.querySelector(selector);
+const loadingOperations=new Map();
+let loadingRoots=[],loadingReturnFocus=null;
+function renderLoading(){
+ const overlay=$('#app-loading'),active=loadingOperations.size>0;
+ if(active){
+  $('#app-loading-text').textContent=[...loadingOperations.values()].at(-1);
+  if(overlay.hidden!==false){
+   loadingReturnFocus=document.activeElement;
+   loadingRoots=[$('#login-view'),$('#app-view')].map(element=>({element,inert:element.inert,busy:element.getAttribute?.('aria-busy')??null}));
+   for(const {element}of loadingRoots){element.inert=true;element.setAttribute('aria-busy','true');}
+   overlay.hidden=false;document.body.classList.add('app-is-loading');overlay.focus({preventScroll:true});
+  }
+ }else{
+  const wasLoading=loadingRoots.length>0;
+  overlay.hidden=true;document.body.classList.remove('app-is-loading');
+  for(const {element,inert,busy}of loadingRoots){element.inert=inert;if(busy===null)element.removeAttribute?.('aria-busy');else element.setAttribute('aria-busy',busy);}
+  loadingRoots=[];
+  if(loadingReturnFocus?.isConnected&&!loadingReturnFocus.disabled&&!loadingReturnFocus.closest('[hidden],.hidden'))loadingReturnFocus.focus({preventScroll:true});
+  else if(wasLoading&&!document.querySelector('dialog[open]'))($('#app-view').classList.contains?.('hidden')?$('#email'):$('#view')).focus({preventScroll:true});
+  loadingReturnFocus=null;
+ }
+}
+function beginLoading(message){
+ const token=Symbol('loading');loadingOperations.set(token,message);renderLoading();
+ return ()=>{if(loadingOperations.delete(token))renderLoading();};
+}
+function resetLoading(){loadingOperations.clear();renderLoading();}
+function waitForLoadingPaint(){
+ if(typeof requestAnimationFrame!=='function')return Promise.resolve();
+ return new Promise(resolve=>{
+  let settled=false;
+  const done=()=>{if(settled)return;settled=true;clearTimeout(timeout);resolve();};
+  const timeout=setTimeout(done,100);
+  requestAnimationFrame(()=>requestAnimationFrame(done));
+ });
+}
+async function withLoading(message,action){
+ const uid=state.user?.uid,revision=accessRevision,finish=beginLoading(message);
+ try{await waitForLoadingPaint();if(uid)assertCurrentSession(uid,revision);return await action();}
+ finally{finish();}
+}
 const esc = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const initials = name => String(name||'').replace(/^Prof\.?\s+/i,'').trim().split(/\s+/).slice(0,2).map(part=>part[0]||'').join('').toLocaleUpperCase('pt-BR')||'P';
 const ICON_PATHS={
@@ -1120,7 +1176,7 @@ const weightedWorkbench = typeof BancaWeightedWorkbench==='undefined' ? null : B
  getSession:()=>({uid:state.user?.uid,role:state.profile?.role,active:state.profile?.active,revision:accessRevision}),
  getBoards:()=>coordinatorReportBoards(),getUsers:()=>state.users,
  refreshData:()=>refreshWeightedReportData(),assertSaved:assertWeightedGradesSaved,
- buildPdf:(boards,options)=>buildWeightedReportPdf(boards,options),download:(blob,name)=>downloadBlob(blob,name),
+ buildPdf:(boards,options)=>buildWeightedReportPdf(boards,options),download:(blob,name)=>downloadBlob(blob,name),beginLoading,waitForLoadingPaint,
  onChange:()=>{if(state.user&&isCoord()&&state.route==='personalizados')render();},onNotice:message=>notice(message)
 });
 function weightedReportsView(){
@@ -1155,7 +1211,7 @@ const heading=(title,sub,action='')=>`<div class="section-heading"><div><h3>${es
 const stats = (label,n,code)=>`<div class="stat"><div class="stat-label"><span>${esc(label)}</span><span class="stat-icon">${icon(({'01':'entregas','02':'bancas','03':'relatorios','04':'professores','05':'professores','06':'sair'})[code])}</span></div><strong>${esc(n)}</strong></div>`;
 
 let accessRevision=0;
-const APP_VERSION='2.0.1';
+const APP_VERSION='2.0.2';
 let accountReturnFocus=null,accountMarkup='';
 function accountActionSettings(){return {url:new URL('index.html',location.href).href,handleCodeInApp:false};}
 async function sendNativePasswordReset(email){
@@ -1671,6 +1727,7 @@ function showAccessProblem(message,user=auth.currentUser){
  $('#access-help').open=true;notice(message,true);
 }
 function resetAppData(){
+ resetLoading();
  accountSecurity?.reset();renderAccountSecurity();accountReturnFocus=null;state.academicYear='todos';state.backupBusy=false;
  stopChat();
  weightedWorkbench?.reset();
@@ -1768,8 +1825,10 @@ function syncTeacherSubs(){if(!state.user||isCoord())return;const uid=state.user
 async function verificarAcesso(user){
  const revision=++accessRevision;clearListeners();state.user=null;state.profile=null;resetAppData();showLogin();showAccessAccount(user);
  if(!user)return;
+ const finishLoading=beginLoading('Carregando perfil…');
  $('#login-status').classList.add('hidden');
  try{
+  await waitForLoadingPaint();if(revision!==accessRevision||auth.currentUser?.uid!==user.uid)return;
   const snap=await get(ref(db,`users/${user.uid}`));if(revision!==accessRevision || auth.currentUser?.uid!==user.uid)return;
   if(!snap.exists()){showAccessProblem('E-mail e senha confirmados. Falta cadastrar o perfil em users/'+user.uid+'. Peça à administração para vincular o UID desta conta.',user);return;}
   let profile=snap.val();
@@ -1788,6 +1847,7 @@ async function verificarAcesso(user){
   },error=>dataReadFailed(error,revision)));
   listen('groups','groups');listen('boards','boards');listen('users','users',isCoord());listen('groupBoards','groupBoards',isCoord());listen('locks','locks',isCoord());listen('roomLocks','roomLocks',isCoord());listen('grades','grades',isCoord());listen('deliveries','deliveries',isCoord());listen('seals','seals',isCoord());if(state.connected)void startChatPresence();render();
  }catch(err){if(revision!==accessRevision)return;dataReadFailed(err,revision);}
+ finally{finishLoading();}
 }
 onAuthStateChanged(auth,verificarAcesso);
 const navItems=()=>isCoord()? [['inicio','01','Visão geral'],['bancas','02','Bancas'],['minhasavaliacoes','09','Minhas avaliações'],['notas','08','Todas as notas'],['sortear','03','Sorteio'],['entregas','04','Monografia'],['relatorios','05','Relatórios e médias'],['grupos','07','Grupos e cursos'],['professores','06','Professores'],['chat','10','Chat dos professores']] : [['inicio','01','Início'],['bancas','02','Minhas bancas'],['avaliar','03','Avaliar'],['chat','04','Chat']];
@@ -2130,6 +2190,7 @@ function buildAnalyticsPdf(ids){
  return pdf.finish();
 }
 async function printAnalytics(){
+ return withLoading('Gerando relatório…',async()=>{
  if(!isCoord())throw Error('Os gráficos oficiais são exclusivos da coordenação.');
  const {ids}=analyticsSelection();
  const selectionKey=()=>JSON.stringify({ids:analyticsSelection().ids,course:state.reportCourseFilter,className:state.reportFilter,day:state.reportDateFilter,board:state.analyticsBoard});
@@ -2138,6 +2199,7 @@ async function printAnalytics(){
  if(selection!==selectionKey())throw Error('A seleção dos gráficos mudou durante a emissão. Gere o PDF novamente.');
  downloadBlob(buildAnalyticsPdf(ids),`graficos_bancas_${localDayKey(Date.now())}.pdf`);
  render();notice('PDF dos gráficos gerado com os resultados atualizados da seleção.');
+ });
 }
 function teachersView(){
  if(!isCoord())return empty('Acesso exclusivo da coordenação');
@@ -3228,7 +3290,8 @@ function reportHtml(ids){let html=`<header><h1>Relatório de Avaliação de TCC<
  html+=`<p class="print-footer">Banca concluída em ${dateStr(state.seals[bid].at)}. Registro emitido exclusivamente pela coordenação.</p></article>`;
  }return html;
 }
-async function printReports(ids){if(!isCoord())throw Error('Acesso restrito.');await refreshReportData(ids);downloadBlob(buildEvaluationPdf(ids,{charts:state.reportCharts!==false}),`relatorio_tcc_${ids.length===1?ids[0]:'consolidado'}_${localDayKey(Date.now())}.pdf`);notice('Relatório PDF gerado. Verifique os downloads do navegador.');}
+async function printReports(ids){return withLoading('Gerando relatório…',async()=>{if(!isCoord())throw Error('Acesso restrito.');await refreshReportData(ids);downloadBlob(buildEvaluationPdf(ids,{charts:state.reportCharts!==false}),`relatorio_tcc_${ids.length===1?ids[0]:'consolidado'}_${localDayKey(Date.now())}.pdf`);notice('Relatório PDF gerado. Verifique os downloads do navegador.');});}
+async function printCsv(ids){return withLoading('Gerando relatório…',async()=>{await refreshReportData(ids);exportCsv(ids);});}
 
 // PDF nativo: texto selecionável, fontes padrão e paginação, sem arquivo ou CDN adicional.
 const PDF_WINANSI={'€':128,'‚':130,'ƒ':131,'„':132,'…':133,'†':134,'‡':135,'ˆ':136,'‰':137,'Š':138,'‹':139,'Œ':140,'Ž':142,'‘':145,'’':146,'“':147,'”':148,'•':149,'–':150,'—':151,'˜':152,'™':153,'š':154,'›':155,'œ':156,'ž':158,'Ÿ':159};
@@ -3472,6 +3535,7 @@ function buildCoordinatorReportPdf({chartsOnly=false}={}){
  return pdf.finish();
 }
 async function exportCoordinatorReport(kind){
+ return withLoading('Gerando relatório…',async()=>{
  if(!state.user||!isCoord())throw Error('O consolidado de notas é exclusivo da coordenação.');
  if(!['pdf','csv','charts'].includes(kind))throw Error('Formato de exportação inválido.');
  if(!state.connected)throw Error('Conecte-se à internet para atualizar e exportar as notas.');
@@ -3495,6 +3559,7 @@ async function exportCoordinatorReport(kind){
  }finally{
   if(state.user?.uid===uid&&accessRevision===revision){state.coordinatorExportBusy=false;render();}
  }
+ });
 }
 
 function buildEvaluationPdf(ids,{charts=true}={}){
@@ -3674,12 +3739,14 @@ function downloadBlob(blob,filename){
  const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=filename;
  document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);
 }
-function exportSchedulePdf(preview){
+async function exportSchedulePdf(preview){
+ return withLoading('Gerando relatório…',()=>{
  if(!isCoord())throw Error('Somente a coordenação pode exportar a escala.');
  const boards=preview?state.plan:filteredBoards().map(([,board])=>board);
  const options=preview?{preview:true,unassigned:state.planUnassigned,className:state.planMeta?.className||'todas'}:{className:state.filter};
  downloadBlob(buildSchedulePdf(boards,options),`${preview?'sorteio':'agenda'}_bancas_univap_${localDayKey(Date.now())}.pdf`);
  notice('PDF gerado. Verifique os downloads do navegador.');
+ });
 }
 function csvCell(value){
  const text=String(value??'');
@@ -4016,6 +4083,7 @@ function closeBoardShare() {
   session.snapshot = null;
 }
 async function openBoardShare(boardId, { studentId = '' } = {}) {
+  return withLoading('Gerando relatório…',async()=>{
   closeBoardShare();
   const request = boardShareRequest;
   // Firebase e PDF são preparados antes da próxima ação explícita de compartilhar.
@@ -4158,6 +4226,7 @@ async function openBoardShare(boardId, { studentId = '' } = {}) {
   boardShareSession = session;
   try { prepare(); document.body.appendChild(dialog); dialog.showModal(); }
   catch (error) { closeBoardShare(); throw error; }
+  });
 }
 
 const handle = async cb=>{try{await cb();}catch(err){fail(err);}};
@@ -4227,7 +4296,7 @@ $('#view').addEventListener('click',e=>{
   if(!targetGroups.length||selected.length!==targetGroups.length||targetGroups.some(g=>!state.groupBoards[g.id]||!state.seals[state.groupBoards[g.id]]))throw Error('Agende e conclua todos os grupos do filtro antes do consolidado.');
   await printReports(selected);
  });
- if(el.dataset.exportCsv)return handle(async()=>{const ids=filteredReportBoards().filter(([id,b])=>state.seals[id]&&situacao(b,groupOf(b),boardGrades(id),state.deliveries[id]).pronta).map(([id])=>id);await refreshReportData(ids);exportCsv(ids);});
+ if(el.dataset.exportCsv)return handle(async()=>{const ids=filteredReportBoards().filter(([id,b])=>state.seals[id]&&situacao(b,groupOf(b),boardGrades(id),state.deliveries[id]).pronta).map(([id])=>id);await printCsv(ids);});
 });
 $('#view').addEventListener('change',e=>{if(e.target.id==='academic-year-filter')return handle(()=>setAcademicYear(e.target.value));if(e.target.id==='filter-date'||e.target.id==='report-date-filter')return handle(()=>setBancaDateFilter(e.target.value,e.target.id==='report-date-filter'));if(['group-course-filter','group-class-filter','group-search','group-show-archived'].includes(e.target.id))return groupFiltersChanged(e);if(e.target.id==='manual-group')manualMemberPicker();if(e.target.id==='teacher-method')teacherRegistrationMethod();if(e.target.id==='filter-course'){state.courseFilter=e.target.value;render();}if(e.target.id==='report-course-filter'){state.reportCourseFilter=e.target.value;state.analyticsBoard='';render();}if(e.target.id==='filter-class'){state.filter=e.target.value;render();}if(e.target.id==='report-filter'){state.reportFilter=e.target.value;state.analyticsBoard='';render();}if(e.target.id==='board-switch'){state.selectedBoard=e.target.value;render();}});
 $('#view').addEventListener('change',e=>{

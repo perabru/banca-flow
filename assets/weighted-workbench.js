@@ -273,7 +273,9 @@
       options.assertSaved?.();
       const token = sequence, model = clone(applied), chosen = clone(filters), sections = clone(report);
       busy = true; error = ''; changed();
+      const finishLoading = options.beginLoading?.('Gerando relatório…');
       try {
+        await options.waitForLoadingPaint?.(); sameActor(actor);
         await options.refreshData?.(actor); sameActor(actor);
         if (sequence !== token) throw Error('A configuração mudou. Confira a prévia e gere o arquivo novamente.');
         options.assertSaved?.();
@@ -291,6 +293,7 @@
         options.onNotice?.('Arquivo gerado com as notas salvas e o modelo da prévia.');
         return { boards, model, summary };
       } finally {
+        finishLoading?.();
         if (session().uid === actor.uid && session().revision === actor.revision) { busy = false; changed(); }
       }
     }
